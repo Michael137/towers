@@ -1,0 +1,24 @@
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:377:44: This catches all Throwables. If this is really intended, use `case _ : Throwable` to clear this warning.[0m
+[0m[[0m[33mwarn[0m] [0m[0m    case Var(x) => try env(x) catch { case _ => "?" }[0m
+[0m[[0m[33mwarn[0m] [0m[0m                                           ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:243:27: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (Code(_), _), (_, Code(_)), (_, _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m    case RefWrite(a,e) => (evalms(env,a),evalms(env,e)) match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m                          ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:284:7: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (Code(_), Cst(_)), (Code(_), _), (Cst(_), Code(_)), (Cst(_), _), (Val(), _), (_, Code(_)), (_, Cst(_)), (_, Val()), (_, _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m      (evalms(env,e1), evalms(env,e2)) match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:291:7: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (Code(_), Cst(_)), (Code(_), _), (Cst(_), Code(_)), (Cst(_), _), (Val(), _), (_, Code(_)), (_, Cst(_)), (_, Val()), (_, _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m      (evalms(env,e1), evalms(env,e2)) match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:298:7: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (Code(_), Cst(_)), (Code(_), _), (Cst(_), Code(_)), (Cst(_), _), (Val(), _), (_, Code(_)), (_, Cst(_)), (_, Val()), (_, _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m      (evalms(env,e1), evalms(env,e2)) match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m/home/gardeimasei/Git/towers/base.scala:305:7: match may not be exhaustive.[0m
+[0m[[0m[33mwarn[0m] [0m[0mIt would fail on the following inputs: (Code(_), Str(_)), (Code(_), _), (Str(_), Code(_)), (Str(_), _), (Val(), _), (_, Code(_)), (_, Str(_)), (_, Val()), (_, _)[0m
+[0m[[0m[33mwarn[0m] [0m[0m      (evalms(env,e1), evalms(env,e2)) match {[0m
+[0m[[0m[33mwarn[0m] [0m[0m      ^[0m
+[0m[[0m[33mwarn[0m] [0m[0m6 warnings found[0m

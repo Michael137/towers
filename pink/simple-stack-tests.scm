@@ -15,3 +15,5 @@
 (run-test '(pop))
 (run-test '(pop))
 (run-test '(pop))
+(push-k 10 empty-stack (lambda (x) (push-k 20 x disp-k)))
+(push-k 10 empty-stack (lambda (x) (push-k 20 x (lambda (y) (pop-k y (lambda (z) (pop-k z (lambda (a) (pop-k a disp-k)))))))))

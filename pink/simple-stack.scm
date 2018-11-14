@@ -29,7 +29,27 @@
     (<= (length stk) 1))
 
 ; CPS stack machine:
-    
+;   cont: next operation (program counter)
+;   env: stack
+;   expr: instruction
+;
+;   Usage: (push-k 10 empty-stack (lambda (x) (push-k 20 x disp-k)))
+;          (push-k 10 empty-stack (lambda (x) (push-k 20 x (lambda (y) (pop-k y (lambda (z) (pop-k z (lambda (a) (pop-k a disp-k))))))))))
+(define empty-stack '(stack))
+(define (disp-k x) (display x))
+(define (id-k x) (x))
+
+(define (push-k num stk k)
+    (k (cons stk num)))
+
+(define (stack-empty-k? stk)
+    (eq? (cdr stk) '()))
+
+(define (pop-k stk k)
+    (k (if (not (stack-empty-k? stk))
+        (car stk)
+        '(Error: stack underflow))))
+
 ; Pink stack machine:
 ;   Calling convention: evalms( env, exp )
 ;	    env: program

@@ -8,10 +8,11 @@
               (iter new-r (+ i 1) (cdr env))))))
     (iter -1 0 env)))
 
+; recursively evaluate code that uses one of: cadr, caddr, cadddr
 (define sug
   (lambda (e)
-    (if (pair? e)
-      (if (member (car e) '(cadr caddr cadddr))
+    (if (pair? e) ; e.g. '(cadr (cons a b)) or '(lambda eval (...) ...)
+      (if (member (car e) '(cadr caddr cadddr)) ; then (car e) == cadr
           (let ((a (sug (cadr e))))
             (cond
               ((eq? (car e) 'cadr)   `(car (cdr ,a)))
@@ -20,6 +21,7 @@
           (map sug e))
       e)))
 
+; Quoted s-expresion => to multi-level lang.
 (define trans
   (lambda (e env)
     (cond
@@ -71,12 +73,16 @@
 
 (define pink-fac '(lambda f n (if n (* n (f (- n 1))) 1)))
 
+; make cadr,caddr,cadddr available in pink source (through normalization done in "sug")
 (define pink-tie-src
   (sug `(lambda eval l (lambda _ e (((,pink-poly-src eval) l) e)))))
 
+; interpret pink code
 (define pink-eval-src
   `(,pink-tie-src (cons (lambda _ e e) 0)))
+;  `(,pink-poly-src (cons (lambda _ e e) 0)))
 
+; delay evaluation of pink code through "lift"
 (define pink-evalc-src
   `(,pink-tie-src (cons (lambda _ e (lift e)) 0)))
 

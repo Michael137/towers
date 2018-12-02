@@ -1,0 +1,261 @@
+((lambda (lambda
+          ((((lambda (lambda
+                      (lambda (lambda
+                               (if (number? (var 9))
+                                   ((car (var 7)) (var 9))
+                                   (if (symbol? (var 9))
+                                       ((var 11) (var 9))
+                                       (if (symbol? (car (var 9)))
+                                           (if (eq? + (car (var 9)))
+                                               (+ ((((var 5) (var 7))
+                                                     (car (cdr (var 9))))
+                                                    (var 11))
+                                                  ((((var 5) (var 7))
+                                                     (car (cdr (cdr (var 9)))))
+                                                    (var 11)))
+                                               (if (eq? - (car (var 9)))
+                                                   (- ((((var 5) (var 7))
+                                                         (car (cdr (var 9))))
+                                                        (var 11))
+                                                      ((((var 5) (var 7))
+                                                         (car (cdr (cdr (var 9)))))
+                                                        (var 11)))
+                                                   (if (eq? *
+                                                            (car (var 9)))
+                                                       (* ((((var 5)
+                                                              (var 7))
+                                                             (car (cdr (var 9))))
+                                                            (var 11))
+                                                          ((((var 5)
+                                                              (var 7))
+                                                             (car (cdr (cdr (var 9)))))
+                                                            (var 11)))
+                                                       (if (eq? eq?
+                                                                (car (var 9)))
+                                                           (eq? ((((var 5)
+                                                                    (var 7))
+                                                                   (car (cdr (var 9))))
+                                                                  (var 11))
+                                                                ((((var 5)
+                                                                    (var 7))
+                                                                   (car (cdr (cdr (var 9)))))
+                                                                  (var 11)))
+                                                           (if (eq? if
+                                                                    (car (var 9)))
+                                                               (if ((((var 5)
+                                                                       (var 7))
+                                                                      (car (cdr (var 9))))
+                                                                     (var 11))
+                                                                   ((((var 5)
+                                                                       (var 7))
+                                                                      (car (cdr (cdr (var 9)))))
+                                                                     (var 11))
+                                                                   ((((var 5)
+                                                                       (var 7))
+                                                                      (car (cdr (cdr (cdr (var 9))))))
+                                                                     (var 11)))
+                                                               (if (if (eq? lambda
+                                                                            (car (var 9)))
+                                                                       1
+                                                                       (if (eq? clambda
+                                                                                (car (var 9)))
+                                                                           (cdr (var 7))
+                                                                           0))
+                                                                   ((car (var 7))
+                                                                     (lambda ((((var 5)
+                                                                                 (var 7))
+                                                                                (car (cdr (cdr (cdr (var 9))))))
+                                                                              (lambda (if
+                                                                                       (eq? (var 15)
+                                                                                            (car (cdr (var 9))))
+                                                                                       (var 12)
+                                                                                       (if (eq? (var 15)
+                                                                                                (car (cdr (cdr (var 9)))))
+                                                                                           (var 13)
+                                                                                           ((var 11)
+                                                                                             (var 15))))))))
+                                                                   (if (eq? clambda
+                                                                            (car (var 9)))
+                                                                       (run 0
+                                                                            ((((var 5)
+                                                                                (cons
+                                                                                  (lambda (lift
+                                                                                           (var 13)))
+                                                                                  1))
+                                                                               (cons
+                                                                                 lambda
+                                                                                 (cdr (var 9))))
+                                                                              (lambda (lift-ref
+                                                                                       (var 13)
+                                                                                       ((var 11)
+                                                                                         (var 13))))))
+                                                                       (if (eq? let
+                                                                                (car (var 9)))
+                                                                           (let ([((var 5)
+                                                                                    (var 7)) (car (cdr (cdr (var 9))))]
+                                                                                 [var 11])
+                                                                             ((((var 5)
+                                                                                 (var 7))
+                                                                                (car (cdr (cdr (cdr (var 9))))))
+                                                                               (lambda (if
+                                                                                        (eq? (var 14)
+                                                                                             (car (cdr (var 9))))
+                                                                                        (var 12)
+                                                                                        ((var 11)
+                                                                                          (var 14))))))
+                                                                           (if (eq? lift
+                                                                                    (car (var 9)))
+                                                                               (lift
+                                                                                 ((((var 5)
+                                                                                     (var 7))
+                                                                                    (car (cdr (var 9))))
+                                                                                   (var 11)))
+                                                                               (if (eq? unlift
+                                                                                        (car (var 9)))
+                                                                                   ((((var 5)
+                                                                                       (cons
+                                                                                         (lambda (var
+                                                                                                  13))
+                                                                                         0))
+                                                                                      (car (cdr (var 9))))
+                                                                                     (var 11))
+                                                                                   (if (eq? lift-ref
+                                                                                            (car (var 9)))
+                                                                                       (lift-ref
+                                                                                         ((((var 5)
+                                                                                             (var 7))
+                                                                                            (car (cdr (var 9))))
+                                                                                           (var 11))
+                                                                                         ((((var 5)
+                                                                                             (var 7))
+                                                                                            (car (cdr (cdr (var 9)))))
+                                                                                           (var 11)))
+                                                                                       (if (eq? log
+                                                                                                (car (var 9)))
+                                                                                           (log ((((var 5)
+                                                                                                    (var 7))
+                                                                                                   (car (cdr (var 9))))
+                                                                                                  (var 11))
+                                                                                                ((((var 5)
+                                                                                                    (var 7))
+                                                                                                   (car (cdr (cdr (var 9)))))
+                                                                                                  (var 11)))
+                                                                                           (if (eq? number?
+                                                                                                    (car (var 9)))
+                                                                                               (number?
+                                                                                                 ((((var 5)
+                                                                                                     (var 7))
+                                                                                                    (car (cdr (var 9))))
+                                                                                                   (var 11)))
+                                                                                               (if (eq? symbol?
+                                                                                                        (car (var 9)))
+                                                                                                   (symbol?
+                                                                                                     ((((var 5)
+                                                                                                         (var 7))
+                                                                                                        (car (cdr (var 9))))
+                                                                                                       (var 11)))
+                                                                                                   (if (eq? null?
+                                                                                                            (car (var 9)))
+                                                                                                       (null?
+                                                                                                         ((((var 5)
+                                                                                                             (var 7))
+                                                                                                            (car (cdr (var 9))))
+                                                                                                           (var 11)))
+                                                                                                       (if (eq? pair?
+                                                                                                                (car (var 9)))
+                                                                                                           (pair?
+                                                                                                             ((((var 5)
+                                                                                                                 (var 7))
+                                                                                                                (car (cdr (var 9))))
+                                                                                                               (var 11)))
+                                                                                                           (if (eq? code?
+                                                                                                                    (car (var 9)))
+                                                                                                               (code?
+                                                                                                                 ((((var 5)
+                                                                                                                     (var 7))
+                                                                                                                    (car (cdr (var 9))))
+                                                                                                                   (var 11))
+                                                                                                                 ((((var 5)
+                                                                                                                     (var 7))
+                                                                                                                    (car (cdr (cdr (var 9)))))
+                                                                                                                   (var 11)))
+                                                                                                               (if (eq? car
+                                                                                                                        (car (var 9)))
+                                                                                                                   (car ((((var 5)
+                                                                                                                            (var 7))
+                                                                                                                           (car (cdr (var 9))))
+                                                                                                                          (var 11)))
+                                                                                                                   (if (eq? cdr
+                                                                                                                            (car (var 9)))
+                                                                                                                       (cdr ((((var 5)
+                                                                                                                                (var 7))
+                                                                                                                               (car (cdr (var 9))))
+                                                                                                                              (var 11)))
+                                                                                                                       (if (eq? cons
+                                                                                                                                (car (var 9)))
+                                                                                                                           ((car (var 7))
+                                                                                                                             (cons
+                                                                                                                               ((((var 5)
+                                                                                                                                   (var 7))
+                                                                                                                                  (car (cdr (var 9))))
+                                                                                                                                 (var 11))
+                                                                                                                               ((((var 5)
+                                                                                                                                   (var 7))
+                                                                                                                                  (car (cdr (cdr (var 9)))))
+                                                                                                                                 (var 11))))
+                                                                                                                           (if (eq? quote
+                                                                                                                                    (car (var 9)))
+                                                                                                                               ((car (var 7))
+                                                                                                                                 (car (cdr (var 9))))
+                                                                                                                               (if (eq? run
+                                                                                                                                        (car (var 9)))
+                                                                                                                                   (run ((((var 5)
+                                                                                                                                            (var 7))
+                                                                                                                                           (car (cdr (var 9))))
+                                                                                                                                          (var 11))
+                                                                                                                                        ((((var 5)
+                                                                                                                                            (var 7))
+                                                                                                                                           (car (cdr (cdr (var 9)))))
+                                                                                                                                          (var 11)))
+                                                                                                                                   (if (eq? delta
+                                                                                                                                            (car (var 9)))
+                                                                                                                                       (let ([((var 5)
+                                                                                                                                                (cons
+                                                                                                                                                  (lambda (var
+                                                                                                                                                           13))
+                                                                                                                                                  (cdr (var 7)))) (car (cdr (var 9)))]
+                                                                                                                                             [var 11])
+                                                                                                                                         ((((var 12)
+                                                                                                                                             (var 7))
+                                                                                                                                            (car (cdr (cdr (var 9)))))
+                                                                                                                                           (var 11)))
+                                                                                                                                       (if (eq? delta-eval
+                                                                                                                                                (car (var 9)))
+                                                                                                                                           (let ([((var 5)
+                                                                                                                                                    (cons
+                                                                                                                                                      (lambda (var
+                                                                                                                                                               13))
+                                                                                                                                                      (cdr (var 7)))) (car (cdr (var 9)))]
+                                                                                                                                                 [var 11])
+                                                                                                                                             ((((((var 12)
+                                                                                                                                                   (var 4))
+                                                                                                                                                  (var 5))
+                                                                                                                                                 (var 7))
+                                                                                                                                                (car (cdr (cdr (var 9)))))
+                                                                                                                                               (var 11)))
+                                                                                                                                           (((var 11)
+                                                                                                                                              (car (var 9)))
+                                                                                                                                             ((((var 5)
+                                                                                                                                                 (var 7))
+                                                                                                                                                (car (cdr (var 9))))
+                                                                                                                                               (var 11)))))))))))))))))))))))))))
+                                           (((((var 5) (var 7))
+                                               (car (var 9)))
+                                              (var 11))
+                                             ((((var 5) (var 7))
+                                                (car (cdr (var 9))))
+                                               (var 11))))))))))
+              (var 0))
+             (var 1))
+            (var 3))))
+  (cons (lambda (var 1)) 0))

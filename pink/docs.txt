@@ -1,0 +1,23 @@
+
+(   ; pink-tie-src
+    (lambda eval l (lambda _ e
+    ; snugged pink-poly-source
+    ((((lambda tie eval (lambda _ l (lambda _ exp (lambda _ env (...)))))
+        eval) l) e)))
+    (cons (lambda _ e e) 0)
+)
+
+pink-tie-src's eval, l, e ==passed to==> pink-poly-src
+
+l == binding-time parametric value (either returned by identity lambda or lifted)
+
+TODO:
+- document
+- add level
+- collapse haskell implementation
+- find towers in the wild
+-- JavaScript x86 emulator
+-- Python Lisp interpreter
+
+stack machine <-- pink <-- lambda <-- Scala
+python <-- VM <-- JavaScript

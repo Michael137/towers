@@ -1,3 +1,6 @@
+; multi-level core language
+;   built-in staging operator (lift, reflect)
+
 (define tagged? (lambda (t) (lambda (e) (and (pair? e) (eq? (car e) t)))))
 (define s (lambda (e)
   (cond
@@ -151,6 +154,8 @@
 (define lift-ref (lambda (e1 e2)
   `(code (proc ,e1 ,(lambda (ignore) (e2))))))
 
+; eval(Code) => Reflect
+; eval(Lift()) => Code()
 (define evalms
   (lambda (env e)
     (cond
@@ -169,7 +174,7 @@
       (((tagged? 'run) e)
        (let ((v1 (evalms env (cadr e)))
              (thunk (lambda () (evalms env (caddr e)))))
-         (if (code? v1)
+         (if (code? v1) ; Polymorphic over compilation vs interpretation
              (reflectc `(run ,(force-code v1) ,(reifyc thunk)))
              (reifyv (lambda () (evalms env (reifyc (lambda () (set! stFresh (length env)) (thunk)))))))))
       (((tagged? 'code?) e)

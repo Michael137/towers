@@ -124,6 +124,7 @@ object Lisp {
     // The present-stage variable `code` will be bound to 
     // expression Code(Var(0)). Whole-program evaluation
     // assembles all generated bindings into a nested let:
+    
     checkrun(s"""
       (let code (lift (lambda f x x))
         code)
@@ -195,12 +196,23 @@ object Lisp {
     // declare a (closed) piece of code, then evaluate it?
 
     // Simple, we just wrap it in a function:
-
+    
     checkrun(s"""
       (let code (lambda _ _ (lift (lambda f x x)))
         (run 0 (code 'dummy)))
-    ""","Clo(List(Clo(List(),Lift(Lam(Var(3))))),Var(2))")
+    ""","""Clo(List(Clo(List(),Lift(Lam(Var(3))))),Var(2))""")
 
+    /*
+      Clo(
+        List(
+          Clo(List(),
+              Lift(Lam(Var(3)))
+          )
+        ),
+        Var(2)
+      )
+    */
+    
     // Disregarding the embedded closure environment that 
     // includes the value of `code`, the result can be 
     // read more conveniently as:

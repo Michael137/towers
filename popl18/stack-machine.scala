@@ -43,25 +43,34 @@ import Pink._
 
 (define (stack-empty? stk)
     (<= (length stk) 1))
+
+Pink impl:
+  (let stack
+    (let stack_ '(stack)
+      (let exec (lambda exec op (
+                              (if (eq?  (maybe-lift 'PUSH) (car op)) (maybe-lift (cons stack_ (cadr op))) (maybe-lift stack_))
+                            )
+                )
+          exec
+      )
+    )
+  )
  */
  
 object Stack_Machine {
   val sm_poly_src = """
-  (let star_loop (lambda star_loop m (lambda _ c (maybe-lift (lambda inner_loop s
-  (if (eq?  (maybe-lift 'yes) (m s)) (maybe-lift 'yes)
-  (if (eq?  (maybe-lift 'done) (car s)) (maybe-lift 'no)
-  (if (eq?  '_ c) (inner_loop (cdr s))
-  (if (eq?  (maybe-lift c) (car s)) (inner_loop (cdr s)) (maybe-lift 'no)))))))))
-(let match_here (lambda match_here r (lambda _ s (if (eq?  'done (car r)) (maybe-lift 'yes)
-  (let m (lambda _ s
-      (if (eq?  '_ (car r)) (if (eq?  (maybe-lift 'done) (car s)) (maybe-lift 'no) ((match_here (cdr r)) (cdr s)))
-      (if (eq?  (maybe-lift 'done) (car s)) (maybe-lift 'no)
-      (if (eq?  (maybe-lift (car r)) (car s)) ((match_here (cdr r)) (cdr s)) (maybe-lift 'no)))))
-    (if (eq?  'done (car (cdr r))) (m s)
-    (if (eq?  '* (car (cdr r))) (((star_loop (match_here (cdr (cdr r)))) (car r)) s) (m s)))))))
-(let match (lambda match r
-  (if (eq?  'done (car r)) (maybe-lift (lambda _ s (maybe-lift 'yes))) (maybe-lift (match_here r))))
-match)))"""
+  (let star_loop (lambda star_loop m (lambda _ c (maybe-lift 'done)))
+      (let match_here (lambda match_here r (lambda _ s (maybe-lift 'done)))
+        (let stack (lambda stack r
+                        (if (eq?  'done (car r)) (maybe-lift (lambda _ s (maybe-lift 'yes))) (maybe-lift 'no))
+                    )
+            stack
+        )
+      )
+  )
+    """
+
+  // Example: ev(s"((($eval_src '$sm_src) '(done)) '(a done))")
 
   val sm_src = s"(let maybe-lift (lambda _  e e) $sm_poly_src)"
   val smc_src = s"(let maybe-lift (lambda _  e (lift e)) $sm_poly_src)"
@@ -76,6 +85,7 @@ match)))"""
 
     checkrun(s"(($sm_src '(_ * a _ * done)) '(b a done))", "Str(yes)")
     checkrun(s"(($sm_src '(_ * a _ * done)) '(b b done))", "Str(no)")
+    ev(s"((($eval_src '$sm_src) '(a b done)) '(a b done))")
 
     testDone()
   }

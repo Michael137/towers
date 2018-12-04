@@ -8,6 +8,7 @@ Current progress
   * Enables calling into other languages from Scala (very simple examples in test-main.scala)
   * requires Graal to be installed
   * Instructions on running this version is in ``Makefile''
+
 Next steps
 ----------
 * Extend stack machine

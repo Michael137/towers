@@ -1,12 +1,11 @@
  ; bottom (top?) element of stacks
 (define bottom '_/_)
 
-; Memory (TODO: currently operates just on global)
-(define static-stack (list bottom))
-(define local-stack (list bottom))
-(define arg-stack (list bottom))
-(define cst-stack (list bottom))
+; Memory
 (define global-stack (list bottom))
+(define code (list bottom))
+(define labels (list bottom))
+(define vm-stack (list code labels global-stack))
 
 ; CPS helpers
 (define (disp-k x) (display x))
@@ -16,16 +15,22 @@
 (define (stack-empty-k? stk)
     (eq? (cdr stk) '()))
 
-(define (get-stack label)
-    (if (eq? label 'static) static-stack
-    (if (eq? label 'local) local-stack
-    (if (eq? label 'arg) arg-stack
-    (if (eq? label 'cst) cst-stack    
-    (if (eq? label 'global) global-stack        
-    '(Error: wrong stack label)))))))
+(define (get-stack vm-stk label)
+    (if (eq? label 'code) (car vm-stack)
+    (if (eq? label 'labels) (cadr vm-stack)
+    (if (eq? label 'global) (caddr vm-stack)
+    '(Error: wrong stack label)))))
 
 (define (binop-k op stk k)
     (k (cons (op (car stk) (cadr stk)) (cddr stk))))
+
+(define (binop-k-rev op stk k)
+    (k (cons (op (cadr stk) (car stk)) (cddr stk))))
+
+(define (stack-reset stk k)
+    (begin
+        (map (lambda (x) (set-car! x bottom) stk)
+        stk)))
 
 ; Stack operations
 (define (push-k num stk k)
@@ -40,7 +45,7 @@
     (binop-k + stk k))
 
 (define (sub-k stk k)
-    (binop-k - stk k))
+    (binop-k-rev - stk k))
 
 (define (mul-k stk k)
     (binop-k - stk k))
@@ -63,6 +68,16 @@
 (define (not-k stk k)
     (k (cons (not (car stk)) (cdr stk))))
 
+(define (save-label-k lbl code stk k)
+    (begin
+        (set-car! (get-stack stk 'code) (append (get-stack stk 'code) code))
+        (k stk)))
+; label
+
+; call
+
+; if
+
 ; Top-level executor
 ;; stk: stack
 ;; ops: list of operations i.e. '((PUSH 10) . ((PUSH 20) . ((DONE)))
@@ -83,5 +98,29 @@
     (if (eq? 'AND (caar ops)) (and-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'OR (caar ops)) (or-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cdr (car ops)) stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'DONE (caar ops)) (disp-k stk)
-    `(Error: unknown operation ,(caar ops)))))))))))))))
+    `(Error: unknown operation ,(caar ops))))))))))))))))
+
+; if n == 0 1 else n * factorial (n-1)
+; <=>
+; PUSH 10
+; LABEL fac
+;   POPS arg local
+;   PUSH
+;   MUL
+;   POPS local arg
+;   POP local ; move multiplied value from stack to local
+;
+;   DEC arg
+;   JMP fac
+;   
+;
+; loop:
+; 	; If the counter is less or equal to 1, finish
+; 	cmp ecx, 1
+; 	jle end
+; 	
+; 	sub ecx, 1
+; 	mul ecx
+; 	jmp loop

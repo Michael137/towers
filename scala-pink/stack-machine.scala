@@ -1,4 +1,5 @@
 // User-level stack machine
+// Scheme implementation in scheme-pink/stack-vm.scm
 
 import Base._
 import Lisp._

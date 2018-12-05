@@ -24,6 +24,9 @@
     (if (eq? label 'global) global-stack        
     '(Error: wrong stack label)))))))
 
+(define (binop-k op stk k)
+    (k (cons (op (car stk) (cadr stk)) (cddr stk))))
+
 ; Stack operations
 (define (push-k num stk k)
     (k (cons stk num)))
@@ -34,11 +37,35 @@
         '(Error: stack underflow))))
 
 (define (add-k stk k)
-    (k (cons (+ (car stk) (cadr stk)) (cddr stk))))
+    (binop-k + stk k))
+
+(define (sub-k stk k)
+    (binop-k - stk k))
+
+(define (mul-k stk k)
+    (binop-k - stk k))
+
+(define (neg-k stk k)
+    (k (cons (* (car stk) -1) (cdr stk))))
+
+(define (lt-k stk k)
+    (binop-k < stk k))
+
+(define (gt-k stk k)
+    (binop-k > stk k))
+
+(define (and-k stk k)
+    (k (cons (and (car stk) (cadr stk)) (cddr stk))))
+
+(define (or-k stk k)
+    (k (cons (or (car stk) (cadr stk)) (cddr stk))))
+
+(define (not-k stk k)
+    (k (cons (not (car stk)) (cdr stk))))
 
 ; Top-level executor
-;; op: operation i.e. '(PUSH 10)
 ;; stk: stack
+;; ops: list of operations i.e. '((PUSH 10) . ((PUSH 20) . ((DONE)))
 ;;
 ;; Example:
 ;;  (machine global-stack '((PUSH 10) . ((PUSH 20) . ((DONE))))) ==> (20 10 _/_)
@@ -48,5 +75,13 @@
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'ADD (caar ops)) (add-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'SUB (caar ops)) (sub-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'MUL (caar ops)) (mul-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'NEG (caar ops)) (neg-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'LT (caar ops)) (lt-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'GT (caar ops)) (gt-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'AND (caar ops)) (and-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'OR (caar ops)) (or-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'DONE (caar ops)) (disp-k stk)
-    `(Error: unknown operation ,(caar ops)))))))
+    `(Error: unknown operation ,(caar ops)))))))))))))))

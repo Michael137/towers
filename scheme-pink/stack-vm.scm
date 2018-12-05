@@ -71,8 +71,8 @@
 (define (save-label-k lbl code stk k)
     (begin
         (set-car! (get-stack stk 'code) (append (get-stack stk 'code) code))
+        (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) lbl)) ; improve lookup of labels
         (k stk)))
-; label
 
 ; call
 
@@ -83,9 +83,10 @@
 ;; ops: list of operations i.e. '((PUSH 10) . ((PUSH 20) . ((DONE)))
 ;;
 ;; Example:
-;;  (machine global-stack '((PUSH 10) . ((PUSH 20) . ((DONE))))) ==> (20 10 _/_)
-;;  (machine global-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((DONE)))))) ==> (10 _/_)
-;;  (machine global-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((POP) . ((POP) . ((DONE)))))))) ==> Underflow
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((DONE))))) ==> (20 10 _/_)
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((DONE)))))) ==> (10 _/_)
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((POP) . ((POP) . ((DONE)))))))) ==> Underflow
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((DONE))))))))) ==> non-termination
 (define (machine stk ops)
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))
@@ -98,9 +99,10 @@
     (if (eq? 'AND (caar ops)) (and-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'OR (caar ops)) (or-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
-    (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cdr (car ops)) stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cddr (car ops)) stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'JMP (caar ops)) (jmp-k (cadr (car ops)) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'DONE (caar ops)) (disp-k stk)
-    `(Error: unknown operation ,(caar ops))))))))))))))))
+    `(Error: unknown operation ,(caar ops)))))))))))))))))
 
 ; if n == 0 1 else n * factorial (n-1)
 ; <=>

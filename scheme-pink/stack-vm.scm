@@ -74,8 +74,10 @@
         (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) lbl)) ; improve lookup of labels
         (k stk)))
 
+; TODO: implement
+(define (jmp-k lbl stk k)
+    (k stk))
 ; call
-
 ; if
 
 ; Top-level executor
@@ -100,9 +102,14 @@
     (if (eq? 'OR (caar ops)) (or-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cddr (car ops)) stk (lambda (s) (machine s (cdr ops))))
-    (if (eq? 'JMP (caar ops)) (jmp-k (cadr (car ops)) (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'JMP (caar ops)) (jmp-k (cadr (car ops)) stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'DONE (caar ops)) (disp-k stk)
     `(Error: unknown operation ,(caar ops)))))))))))))))))
+
+(define (run ops)
+    (begin
+        (machine 
+            (stack-reset vm-stack id-k) ops)))
 
 ; if n == 0 1 else n * factorial (n-1)
 ; <=>

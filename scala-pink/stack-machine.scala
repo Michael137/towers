@@ -10,7 +10,7 @@ object Stack_Machine {
   (let stack '()
     (let exec (lambda exec stk (lambda _ op
                                   (if (eq? (maybe-lift 'PUSH) (car op)) (exec (maybe-lift (cons stk (cadr op))))
-                                  (if (eq? (maybe-lift 'POP) (car op)) (exec (maybe-lift (cons (cdr stk) '())))
+                                  (if (eq? (maybe-lift 'POP) (car op)) (exec (maybe-lift (car stk)))
                                   (if (eq? (maybe-lift 'ADD) (car op)) (exec (maybe-lift (cons (cddr stk) (+ (car stk) 
                                                                                                              (car (cdr stk)))
                                                                                   )
@@ -36,8 +36,8 @@ object Stack_Machine {
   def test() = {
     println("// ------- Stack_Machine.test --------")
 
-    ev(s"((($eval_src '$sm_src) '(PUSH 10)) '(POP))")
     ev(s"(((($eval_src '$sm_src) '(PUSH 10)) '(POP)) '(PUSH 30))")
+    ev(s"(((((($sm_src '(PUSH 0)) '(PUSH 23)) '(PUSH 42)) '(POP)) '(PUSH 137)) '(DONE))")
 
     testDone()
   }

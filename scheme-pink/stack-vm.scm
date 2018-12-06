@@ -76,6 +76,9 @@
 (define (gt-k stk k)
     (binop-k > stk k))
 
+(define (gt-unary-k stk num k)
+    (k (cons (> (car stk) num) (cdr stk))))
+
 (define (and-k stk k)
     (k (cons (and (car stk) (cadr stk)) (cddr stk))))
 
@@ -114,17 +117,18 @@
         (if (eq? (car ops) 'DUP)
             (begin
                 (set-car! (get-stack stk 'locals) (append (get-stack stk 'locals) (cdr (car (get-stack stk 'locals)))))
-                (cdr stk))
+                stk)
         (if (eq? (car ops) 'SUB)
             (begin
-                (set-car! (get-stack stk 'locals) (append (get-stack stk 'locals) (- (cdr (caar (get-stack stk 'locals))) ; TODO: pop elements properly
-                                                                                     (cdr (car (get-stack stk 'locals))))))
-                (cdr stk))
+                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (- (cdr (caar (get-stack stk 'locals))) ; TODO: pop elements properly
+                                                                                           (cdr (car (get-stack stk 'locals))))))
+                stk)
         (if (eq? (car ops) 'MUL)
             (begin
-                (set-car! (get-stack stk 'locals) (append (get-stack stk 'locals) (* (cdr (car (get-stack stk 'locals))) ; TODO: pop elements properly
-                                                                                     (cdr (caar (get-stack stk 'locals))))))
-        `(Error: operation ,(car ops) on local segment not supported))))))))
+                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (* (cdr (car (get-stack stk 'locals))) ; TODO: pop elements properly
+                                                                                           (cdr (caar (get-stack stk 'locals))))))
+                stk)
+        `(Error: operation ,(car ops) on local segment not supported)))))))
 
 ; Top-level executor
 ;; stk: stack
@@ -145,6 +149,7 @@
 ;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . RET)) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAR) . ((PUSH 20) .
 ;;      ((OR) . ((JE 10 FOO) . ((PRINT))))))))))))))) ==> non-termination
 (define (machine stk ops)
+    (begin (display ops) (display (filter (lambda (x) (not (list? x))) stk)) (display (format "~%"))
     ; Primitives
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))
@@ -153,7 +158,7 @@
     (if (eq? 'MUL (caar ops)) (mul-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'NEG (caar ops)) (neg-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'LT (caar ops)) (lt-k stk (lambda (s) (machine s (cdr ops))))
-    (if (eq? 'GT (caar ops)) (gt-k stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'GT (caar ops)) (gt-unary-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'AND (caar ops)) (and-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'OR (caar ops)) (or-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
@@ -174,8 +179,6 @@
     (if (eq? 'PRINT (caar ops)) (disp-k (filter (lambda (x) (not (list? x))) stk))
     (if (eq? 'SEGMENT (caar ops)) (disp-k (get-stack stk (cadr (car ops))))
     (if (eq? 'RET (caar ops)) stk
-    (begin
-    (display ops)
     `(Error: unknown operation ,(caar ops))))))))))))))))))))))))
 
 (define (run ops)
@@ -183,25 +186,8 @@
         (machine 
             (stack-reset vm-stack id-k) ops)))
 
-(define (factorial n)
-    (run `(
-                (PUSH ,n) .
-                ((LABEL fac 
-                    ((DUP) .
-                    ((LOCAL POP) .
-                    ((LOCAL DUP) .
-                    ((PUSH 1) .
-                    ((LOCAL POP) .
-                    ((LOCAL SUB) .
-                    ((LOCAL MUL) .
-                    ((PUSH 1) .
-                    ((SUB) .
-                    ((GT 1) .
-                    ((JE #t fac))))))))))))) .
-                ((JMP fac) .
-                ((PRINT)))
-            ))))
-
+; Recursive factorial:
+;
 ; if n < 1 then 1 else n * fac(n - 1)
 ;
 ; <=>
@@ -228,3 +214,24 @@
 ;
 ; ; fac(n)
 ; JMP fac
+(define (factorial n)
+    (run `(
+                (PUSH ,n) .
+                ((DUP) .
+                ((LOCAL POP ,n) .
+                ((LABEL fac 
+                    ((DUP) .
+                    ((LOCAL POP) .
+                    ((PUSH 1) .
+                    ((LOCAL POP) .
+                    ((LOCAL SUB) .
+                    ((LOCAL MUL) .
+                    ((PUSH 1) .
+                    ((SUB) .
+                    ((DUP) .
+                    ((GT 1) .
+                    ((JE #t fac) .
+                    ((RET)))))))))))))) .
+                ((JMP fac) .
+                ((SEGMENT locals)))
+            ))))))

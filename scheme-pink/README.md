@@ -7,11 +7,14 @@
 * __[`mk.scm`](mk.scm)__ defines a µKanren as an example on top of Pink.
 * __[`stack-vm.scm`](stack-vm.scm)__ is an initial implementation of a stack-machine later to be ported to Pink
 
-## Current main body of work:
+## Current main body of work:results 
   - [ ] Implement the stack-based VM (in-progress)
+    - [x] jmp
+    - [ ] ret
+    - [ ] branch
   - [ ] Be able to run fibonacci/factorial testsuite
   - [ ] Add the stack-machine as a user-level in Pink (most likely Scala)
-  - [ ] Stage stack and compare results to non-staged version
+  - [ ] Stage stack and compare to non-staged version
   - [ ] Experiment with arbitrary levels of stacks
     * Use CESK machine to implement eval? (as suggested by @namin)
 

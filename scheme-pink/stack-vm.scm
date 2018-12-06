@@ -33,9 +33,21 @@
         (map (lambda (x) (set-car! x bottom) stk)
         stk)))
 
-(define (index a b)
-    (let [(tail (member a (reverse b)))]
-        (and tail (length (cdr tail)))))
+(define (nested-idx_ lst elem aux)
+    (if (eq? (cadr lst) elem)
+        aux
+        (nested-idx_ (car lst) elem (+ aux 1))))
+
+(define (index lst elem)
+    (nested-idx_ lst elem 0))
+
+(define (repeat-cdr_ lst idx aux)
+    (if (eq? idx aux)
+        (cdr lst)
+        (repeat-cdr_ (car lst) idx (+ aux 1))))
+
+(define (get-by-idx lst idx)
+    (repeat-cdr_ lst idx 0))
 
 ; Stack operations
 (define (push-k num stk k)
@@ -85,11 +97,11 @@
         ; execute code
         (machine stk
             ; find code i.e. ops using label index
-            (list (list-ref 
-                (get-stack stk 'code)
+            (list (get-by-idx
+                (car (get-stack stk 'code))
 
                 ; find label in labels
-                (- (index lbl (car (get-stack stk 'labels))) 1)) 'DONE))
+                (index (car (get-stack stk 'labels)) lbl)) 'DONE))
         ; resume with updated stack to current continuation
         ))
 
@@ -102,6 +114,8 @@
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((DONE)))))) ==> (10 _/_)
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((POP) . ((POP) . ((DONE)))))))) ==> Underflow
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((DONE))))))))) ==> non-termination
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((DONE))))))))) ==> non-termination
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR JMP FOO) . ((JMP BAR) . ((DONE))))))))) ==> non-termination
 (define (machine stk ops)
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))

@@ -8,10 +8,10 @@
 * __[`stack-vm.scm`](stack-vm.scm)__ is an initial implementation of a stack-machine later to be ported to Pink
 
 ## Current main body of work:results 
-  - [ ] Implement the stack-based VM (in-progress)
+  - [x] Implement the stack-based VM (in-progress)
     - [x] jmp
     - [x] ret
-    - [ ] branch
+    - [x] branch
   - [ ] Be able to run fibonacci/factorial testsuite
   - [ ] Add the stack-machine as a user-level in Pink (most likely Scala)
   - [ ] Stage stack and compare to non-staged version

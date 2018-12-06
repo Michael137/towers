@@ -187,33 +187,8 @@
             (stack-reset vm-stack id-k) ops)))
 
 ; Recursive factorial:
-;
 ; if n < 1 then 1 else n * fac(n - 1)
 ;
-; <=>
-;
-; ; n = 10
-; PUSH 10
-; LABEL fac:
-;
-;     ; n * n - 1
-;     DUP
-;     LOCAL POP
-;     PUSH 1
-;     LOCAL POP
-;     LOCAL SUB
-;     LOCAL MUL
-;
-;     ; n += 1
-;     PUSH 1
-;     SUB
-;
-;     ; if n <= 1 then return
-;     GT 1
-;     JE #t fac
-;
-; ; fac(n)
-; JMP fac
 (define (factorial n)
     (run `(
                 (PUSH ,n) .

@@ -1,5 +1,6 @@
  ; bottom (top?) element of stacks
 (define bottom '_/_)
+(define nop bottom)
 
 ; Memory
 (define global-stack (list bottom))
@@ -31,6 +32,10 @@
     (begin
         (map (lambda (x) (set-car! x bottom) stk)
         stk)))
+
+(define (index a b)
+    (let [(tail (member a (reverse b)))]
+        (and tail (length (cdr tail)))))
 
 ; Stack operations
 (define (push-k num stk k)
@@ -71,14 +76,22 @@
 (define (save-label-k lbl code stk k)
     (begin
         (set-car! (get-stack stk 'code) (append (get-stack stk 'code) code))
-        (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) lbl)) ; improve lookup of labels
+        (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) (list lbl))) ; improve lookup of labels
         (k stk)))
 
-; TODO: implement
+; make lookup less fragile
 (define (jmp-k lbl stk k)
-    (k stk))
-; call
-; if
+    (k
+        ; execute code
+        (machine stk
+            ; find code i.e. ops using label index
+            (list (list-ref 
+                (get-stack stk 'code)
+
+                ; find label in labels
+                (- (index lbl (car (get-stack stk 'labels))) 1)) 'DONE))
+        ; resume with updated stack to current continuation
+        ))
 
 ; Top-level executor
 ;; stk: stack
@@ -103,33 +116,11 @@
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cddr (car ops)) stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'JMP (caar ops)) (jmp-k (cadr (car ops)) stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? nop (caar ops)) (machine stk (remove (lambda (x) (eq? x nop)) ops)) ; nop
     (if (eq? 'DONE (caar ops)) (disp-k stk)
-    `(Error: unknown operation ,(caar ops)))))))))))))))))
+    `(Error: unknown operation ,(caar ops))))))))))))))))))
 
 (define (run ops)
     (begin
         (machine 
             (stack-reset vm-stack id-k) ops)))
-
-; if n == 0 1 else n * factorial (n-1)
-; <=>
-; PUSH 10
-; LABEL fac
-;   POPS arg local
-;   PUSH
-;   MUL
-;   POPS local arg
-;   POP local ; move multiplied value from stack to local
-;
-;   DEC arg
-;   JMP fac
-;   
-;
-; loop:
-; 	; If the counter is less or equal to 1, finish
-; 	cmp ecx, 1
-; 	jle end
-; 	
-; 	sub ecx, 1
-; 	mul ecx
-; 	jmp loop

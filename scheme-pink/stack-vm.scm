@@ -101,7 +101,7 @@
                 (car (get-stack stk 'code))
 
                 ; find label in labels
-                (index (car (get-stack stk 'labels)) lbl)) 'DONE))
+                (index (car (get-stack stk 'labels)) lbl)) '(DONE)))
         ; resume with updated stack to current continuation
         ))
 
@@ -115,8 +115,10 @@
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((POP) . ((POP) . ((DONE)))))))) ==> Underflow
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((DONE))))))))) ==> non-termination
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((DONE))))))))) ==> non-termination
-;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR JMP FOO) . ((JMP BAR) . ((DONE))))))))) ==> non-termination
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR JMP FOO) . ((JMP BAR) . ((DONE)))))))))) ==> non-termination
+;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR PUSH 10) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAZ) . ((DONE)))))))))))) ==> non-termination
 (define (machine stk ops)
+    ; Primitives
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'ADD (caar ops)) (add-k stk (lambda (s) (machine s (cdr ops))))
@@ -130,9 +132,12 @@
     (if (eq? 'NOT (caar ops)) (not-k stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'LABEL (caar ops)) (save-label-k (cadr (car ops)) (cddr (car ops)) stk (lambda (s) (machine s (cdr ops))))
     (if (eq? 'JMP (caar ops)) (jmp-k (cadr (car ops)) stk (lambda (s) (machine s (cdr ops))))
+    (if (eq? 'RET (caar ops)) (id-k stk)
+
+    ; Sentinels
     (if (eq? nop (caar ops)) (machine stk (remove (lambda (x) (eq? x nop)) ops)) ; nop
     (if (eq? 'DONE (caar ops)) (disp-k stk)
-    `(Error: unknown operation ,(caar ops))))))))))))))))))
+    `(Error: unknown operation ,(caar ops)))))))))))))))))))
 
 (define (run ops)
     (begin

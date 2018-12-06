@@ -10,7 +10,7 @@
 ## Current main body of work:results 
   - [ ] Implement the stack-based VM (in-progress)
     - [x] jmp
-    - [ ] ret
+    - [x] ret
     - [ ] branch
   - [ ] Be able to run fibonacci/factorial testsuite
   - [ ] Add the stack-machine as a user-level in Pink (most likely Scala)

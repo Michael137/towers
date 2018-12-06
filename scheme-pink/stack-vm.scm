@@ -149,7 +149,7 @@
 ;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . RET)) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAR) . ((PUSH 20) .
 ;;      ((OR) . ((JE 10 FOO) . ((PRINT))))))))))))))) ==> non-termination
 (define (machine stk ops)
-    (begin (display ops) (display (filter (lambda (x) (not (list? x))) stk)) (display (format "~%"))
+    ;(begin (display ops) (display (filter (lambda (x) (not (list? x))) stk)) (display (format "~%"))
     ; Primitives
     (if (eq? 'PUSH (caar ops)) (push-k stk (car (cdr (car ops))) (lambda (s) (machine s (cdr ops))))
     (if (eq? 'POP (caar ops)) (pop-k stk (lambda (s) (machine s (cdr ops))))
@@ -179,7 +179,7 @@
     (if (eq? 'PRINT (caar ops)) (disp-k (filter (lambda (x) (not (list? x))) stk))
     (if (eq? 'SEGMENT (caar ops)) (disp-k (get-stack stk (cadr (car ops))))
     (if (eq? 'RET (caar ops)) stk
-    `(Error: unknown operation ,(caar ops))))))))))))))))))))))))
+    `(Error: unknown operation ,(caar ops)))))))))))))))))))))))
 
 (define (run ops)
     (begin

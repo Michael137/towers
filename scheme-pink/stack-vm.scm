@@ -14,7 +14,7 @@
 
 ; Stack helpers
 (define (stack-empty-k? stk)
-    (eq? (cdr stk) '()))
+    (eq? (filter (lambda (x) (not (list? x))) stk) '()))
 
 (define (get-stack vm-stk label)
     (if (eq? label 'code) (car vm-stack)
@@ -131,23 +131,15 @@
         `(Error: operation ,(car ops) on local segment not supported)))))))
 
 ; Top-level executor
-;; stk: stack
-;; ops: list of operations i.e. '((PUSH 10) . ((PUSH 20) . ((PRINT)))
-;;
 ;; Example:
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((PRINT))))) ==> (20 10 _/_)
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((PRINT)))))) ==> (10 _/_)
 ;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((POP) . ((POP) . ((POP) . ((PRINT)))))))) ==> Underflow
-;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((PRINT))))))))) ==> non-termination
-;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((JMP FOO) . ((PRINT))))))))) ==> non-termination
-;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR JMP FOO) . ((JMP BAR) . ((PRINT)))))))))) ==> non-termination
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO ((JMP FOO))) . ((JMP FOO) . ((PRINT))))))))) ==> non-termination
+;;  (machine vm-stack '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO ((JMP FOO))) . ((LABEL BAR ((JMP FOO))) . ((JMP BAR) . ((PRINT)))))))))) ==> non-termination
 ;;
-;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . RET)) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAZ) . ((PRINT)))))))))))) ==> non-termination
-;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . RET)) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAR) . ((PUSH 20) .
-;;      ((OR) . ((SEGMENT code)))))))))))))) ==> all code associated with labels
-;;
-;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . RET)) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAR) . ((PUSH 20) .
-;;      ((OR) . ((JE 10 FOO) . ((PRINT))))))))))))))) ==> non-termination
+;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO ((JMP FOO))) . ((LABEL BAR ((PUSH 10) . ((RET)))) . ((LABEL BAZ ((JMP FOO))) . ((JMP BAR) . ((JMP BAZ) . ((PRINT)))))))))))) ==> non-termination
+;;  (run '((PUSH 10) . ((PUSH 20) . ((MUL) . ((PUSH #f) . ((LABEL FOO JMP FOO) . ((LABEL BAR ((PUSH 10) . ((RET)))) . ((LABEL BAZ JMP FOO) . ((JMP BAR) . ((JMP BAR) . ((PUSH 20) . ((OR) . ((SEGMENT code)))))))))))))) ==> all code associated with labels
 (define (machine stk ops)
     ;(begin (display ops) (display (filter (lambda (x) (not (list? x))) stk)) (display (format "~%"))
     ; Primitives

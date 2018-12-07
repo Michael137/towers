@@ -12,7 +12,7 @@
     - [x] jmp
     - [x] ret
     - [x] branch
-  - [ ] Be able to run fibonacci/factorial testsuite
+  - [X] Be able to run fibonacci/factorial testsuite
   - [ ] Add the stack-machine as a user-level in Pink (most likely Scala)
   - [ ] Stage stack and compare to non-staged version
   - [ ] Experiment with arbitrary levels of stacks

@@ -91,7 +91,7 @@
 (define (save-label-k lbl code stk k)
     (begin
         (set-car! (get-stack stk 'code) (append (get-stack stk 'code) code))
-        (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) (list lbl))) ; improve lookup of labels
+        (set-car! (get-stack stk 'labels) (append (get-stack stk 'labels) (list lbl)))
         (k stk)))
 
 (define (jmp-k lbl stk k)
@@ -120,12 +120,12 @@
                 stk)
         (if (eq? (car ops) 'SUB)
             (begin
-                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (- (cdr (caar (get-stack stk 'locals))) ; TODO: pop elements properly
+                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (- (cdr (caar (get-stack stk 'locals)))
                                                                                            (cdr (car (get-stack stk 'locals))))))
                 stk)
         (if (eq? (car ops) 'MUL)
             (begin
-                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (* (cdr (car (get-stack stk 'locals))) ; TODO: pop elements properly
+                (set-car! (get-stack stk 'locals) (cons (caaar (get-stack stk 'locals)) (* (cdr (car (get-stack stk 'locals)))
                                                                                            (cdr (caar (get-stack stk 'locals))))))
                 stk)
         `(Error: operation ,(car ops) on local segment not supported)))))))

@@ -65,7 +65,7 @@
     (binop-k-rev - stk k))
 
 (define (mul-k stk k)
-    (binop-k - stk k))
+    (binop-k * stk k))
 
 (define (neg-k stk k)
     (k (cons (* (car stk) -1) (cdr stk))))

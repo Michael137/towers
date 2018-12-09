@@ -12,12 +12,6 @@ import Pink._
  * E-register: env-list
  * C-register: op-list
  * D-register: call-stack
-    
-    (if (eq? 'SEL (car ops))
-    (if (eq? (car s) 0)
-      TODO:
-      (caddr ops)
-      (cadr ops)
  */
 object VM {
   val vm_poly_src = """
@@ -36,8 +30,19 @@ object VM {
                               (if (eq? 'LD (car ops)) (((((machine (cons ((locate (cadr ops)) e) s)) e) (cddr ops)) d) (cddr ops))
                               (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
                               (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                              (if (eq? 'MUL (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                              (if (eq? 'SEL (car ops))
+                                (let next
+                                  (if (eq? (car s) 0)
+                                    (caddr ops)
+                                    (cadr ops))
+                                (((((machine s) e) next) (cons (cdddr ops) d)) next))
+                              (if (eq? 'JOIN (car ops))
+                                (let rest
+                                  (car d)
+                                (((((machine s) e) rest) (cdr d)) rest))
                               (if (eq? 'DONE (car ops)) s
-                              (((((machine s) e) c) d) (cdr ops)))))))
+                              (((((machine s) e) c) d) (cdr ops))))))))))
                               )))))
             (let start (lambda start ops
                           (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -67,7 +72,11 @@ object VM {
     //val vm = App(Lam(Lift(vm_body)),Sym("ADD"))
     //val code = reifyc(evalms(Nil,vm))
 
-    println(ev(s"($vm_src '(LDC 10 LDC 20 ADD DONE))"))
+    println(ev(s"""($vm_src '(LDC -10
+                              LDC 10
+                              ADD
+                              SEL (LDC 20 JOIN) (LDC 30 JOIN)
+                              DONE))"""))
 
     //checkrun(s"((run 0 ($vm_src '(_ * a _ * done))) '(b a done))", "Str(yes)")
 

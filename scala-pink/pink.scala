@@ -15,7 +15,6 @@ object PinkBase {
 import PinkBase._
 
 object Pink {
-  // TODO: add support for comments
   val ev_poly_src = """
 (lambda _ maybe-lift (lambda tie eval (lambda _ exp (lambda _ env
   (if (num?                exp)    (maybe-lift exp)
@@ -37,6 +36,7 @@ object Pink {
     (if (eq?  'caar    (car exp))  (caar ((eval (cadr exp)) env))
     (if (eq?  'cdr    (car exp))   (cdr  ((eval (cadr exp)) env))
     (if (eq?  'cddr   (car exp))   (cddr ((eval (cadr exp)) env))
+    (if (eq?  'cdddr   (car exp))   (cdddr ((eval (cadr exp)) env))
     (if (eq?  'cadr   (car exp))   (cadr  ((eval (cadr exp)) env))
     (if (eq?  'caddr  (car exp))   (caddr  ((eval (cadr exp)) env))
     (if (eq?  'cadddr (car exp))   (cadddr  ((eval (cadr exp)) env))
@@ -45,7 +45,7 @@ object Pink {
     (if (eq?  'pair?  (car exp))   (pair? ((eval (cadr exp)) env))
     (if (eq?  'run    (car exp))   (run ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  'log    (car exp))   (log ((eval (cadr exp)) env) ((eval (caddr exp)) env))
-    ((env (car exp)) ((eval (cadr exp)) env))))))))))))))))))))))))
+    ((env (car exp)) ((eval (cadr exp)) env)))))))))))))))))))))))))
   (((eval (car exp)) env) ((eval (cadr exp)) env)))))))))
 """
   val eval_src = ev_nil(ev_nolift(ev_poly_src))

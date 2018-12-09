@@ -55,6 +55,7 @@ object Lisp {
     case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))
     case Tup(Str("cdr"),    Tup(a,N)) => Snd(trans(a,env))
     case Tup(Str("cddr"),   Tup(a,N)) => Snd(Snd(trans(a,env)))
+    case Tup(Str("cdddr"),  Tup(a,N)) => Snd(Snd(Snd(trans(a,env))))
     case Tup(Str("cadr"),   Tup(a,N)) => Fst(Snd(trans(a,env)))
     case Tup(Str("caddr"),  Tup(a,N)) => Fst(Snd(Snd(trans(a,env))))
     case Tup(Str("cadddr"), Tup(a,N)) => Fst(Snd(Snd(Snd(trans(a,env)))))

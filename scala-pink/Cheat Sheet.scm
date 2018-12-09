@@ -9,8 +9,25 @@ Loading file in sbt:
     3. :load stack-vm.scala
     (3a. import VM._)
     4. VM.test()
-Sym(.): usually indicate ignored lambda self-references i.e. the "_" in "(lambda _ x ...)"
+Sym(.): indicates empty list/nil
 To execute code in Pink:
     1. evalms(Nil,App(Lam(Lift(trans(parseExp(vm_src), Nil))), Sym("ABC")))
     (2. if match error occurs. Try running command again before debugging)
     (3. if reifyc(evalms ...) throws error try evalms(...) separately and then retry reifyc)
+
+    (if (eq? 'SEL (car ops))
+    (if (eq? (car s) 0)
+      TODO:
+      (caddr ops)
+      (cadr ops)
+
+Example non-terminating snippet:
+    val src = "(let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
+            (((((machine s) e) c) d) ops)
+            )))))
+    (let start (lambda start ops
+        (((((machine 1) 2) 3) 4) ops)
+    )
+    start
+    ))"
+    checkrun(s"($val 1)", "Str(yes)")

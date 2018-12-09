@@ -106,20 +106,33 @@ object VM {
   ))
     """))
 
-    // Factorial
-    /*println(ev(s"""($vm_src '(
-      NIL LDC 1 CONS LDC 3 CONS LDF
-        (DUM NIL LDF
-          (LDC 0 LD (1 1) EQ SEL
-              (LDC 1 JOIN)
-              (NIL LD (1 2) LD (1 1) MPY CONS
-                LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-              RTN)
-      CONS LDF
-        (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
-        RAP RTN)
-      AP STOP
-    ))"""))*/
+  println(ev(s"""
+    ($vm_src
+  '(NIL LDC 1 CONS LDC 2 CONS LDF  
+                   (NIL LDC 3 CONS LDC 4 CONS 
+                     LDF 
+                      (NIL LDC 5 CONS LDC 6 CONS 
+                       LDF (LD (3 1) LD (2 2) LD (1 1) SUB ADD RTN) AP RTN)
+                     AP 
+                    RTN) 
+                  AP STOP
+  ))
+    """))
+
+    //// Factorial
+    //println(ev(s"""($vm_src '(
+    //  NIL LDC 1 CONS LDC 3 CONS LDF
+    //    (DUM NIL LDF
+    //      (LDC 0 LD (1 1) EQ SEL
+    //          (LDC 1 JOIN)
+    //          (NIL LD (1 2) LD (1 1) MPY CONS
+    //            LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+    //          RTN)
+    //  CONS LDF
+    //    (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
+    //    RAP RTN)
+    //  AP STOP
+    //))"""))
 
     testDone()
   }

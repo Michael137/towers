@@ -34,6 +34,7 @@ object Pink {
     (if (eq?  'num?   (car exp))   (num? ((eval (cadr exp)) env))
     (if (eq?  'sym?   (car exp))   (sym? ((eval (cadr exp)) env))
     (if (eq?  'car    (car exp))   (car  ((eval (cadr exp)) env))
+    (if (eq?  'caar    (car exp))  (caar ((eval (cadr exp)) env))
     (if (eq?  'cdr    (car exp))   (cdr  ((eval (cadr exp)) env))
     (if (eq?  'cddr   (car exp))   (cddr ((eval (cadr exp)) env))
     (if (eq?  'cadr   (car exp))   (cadr  ((eval (cadr exp)) env))
@@ -44,7 +45,7 @@ object Pink {
     (if (eq?  'pair?  (car exp))   (pair? ((eval (cadr exp)) env))
     (if (eq?  'run    (car exp))   (run ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  'log    (car exp))   (log ((eval (cadr exp)) env) ((eval (caddr exp)) env))
-    ((env (car exp)) ((eval (cadr exp)) env)))))))))))))))))))))))
+    ((env (car exp)) ((eval (cadr exp)) env))))))))))))))))))))))))
   (((eval (car exp)) env) ((eval (cadr exp)) env)))))))))
 """
   val eval_src = ev_nil(ev_nolift(ev_poly_src))

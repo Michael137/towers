@@ -12,7 +12,15 @@ import Pink._
  * E-register: env-list
  * C-register: op-list
  * D-register: call-stack
-
+    
+    (if (eq? 'SEL (car ops))
+    (if (eq? (car s) 0)
+      TODO:
+      (caddr ops)
+      (cadr ops)
+ */
+object VM {
+  val vm_poly_src = """
      (let vm-stack '()
       (let env-list '()
         (let op-list '()
@@ -24,11 +32,12 @@ import Pink._
                               ((loc (cdr idx)) ((loc (car idx)) env)))
                         ))
             (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                              (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'LD (car ops)) (((((machine (cons ((locate (cadr ops)) e) s)) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (caar s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (caar s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                              (((((machine s) e) c) d) (cdr ops))))))
+                              (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) (cddr ops)) d) (cddr ops))
+                              (if (eq? 'LD (car ops)) (((((machine (cons ((locate (cadr ops)) e) s)) e) (cddr ops)) d) (cddr ops))
+                              (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                              (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                              (if (eq? 'DONE (car ops)) s
+                              (((((machine s) e) c) d) (cdr ops)))))))
                               )))))
             (let start (lambda start ops
                           (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -36,18 +45,6 @@ import Pink._
                         start
             )))
     ))))
- */
-object VM {
-  val vm_poly_src = """
-
-          (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                            (((((machine s) e) c) d) ops)
-                            )))))
-          (let start (lambda start ops
-                        (((((machine 1) 2) 3) 4) ops)
-                      )
-                      start
-          ))
     """
 
   // Example: ev(s"((($eval_src '$vm_src) '(PUSH 10)) '(POP))")
@@ -70,7 +67,7 @@ object VM {
     //val vm = App(Lam(Lift(vm_body)),Sym("ADD"))
     //val code = reifyc(evalms(Nil,vm))
 
-    checkrun(s"($vm_src 1)", "Str(yes)")
+    println(ev(s"($vm_src '(LDC 10 LDC 20 ADD DONE))"))
 
     //checkrun(s"((run 0 ($vm_src '(_ * a _ * done))) '(b a done))", "Str(yes)")
 

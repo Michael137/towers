@@ -15,12 +15,6 @@ To execute code in Pink:
     (2. if match error occurs. Try running command again before debugging)
     (3. if reifyc(evalms ...) throws error try evalms(...) separately and then retry reifyc)
 
-    (if (eq? 'SEL (car ops))
-    (if (eq? (car s) 0)
-      TODO:
-      (caddr ops)
-      (cadr ops)
-
 Example non-terminating snippet:
     val src = "(let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
             (((((machine s) e) c) d) ops)
@@ -30,4 +24,16 @@ Example non-terminating snippet:
     )
     start
     ))"
-    checkrun(s"($val 1)", "Str(yes)")
+    checkrun(s"($src 1)", "Str(yes)")
+
+Example terminating snippet:
+    val src = "(let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
+        (if (eq? (car ops) 2) 'Yes
+        (((((machine s) e) c) d) (cdr ops)))
+        )))))
+    (let start (lambda start ops
+    (((((machine 1) 2) 3) 4) ops)
+    )
+    start
+    ))"
+    checkrun(s"($src '(1 2))", "Str(Yes)")

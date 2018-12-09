@@ -37,13 +37,3 @@ Example terminating snippet:
     start
     ))"
     checkrun(s"($src '(1 2))", "Str(Yes)")
-
-s: '()
-e: replaca((cdr car s), cadr s)
-c: (caar s)
-d: (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))
-ops: caar s
-
-(((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
-
-(((((machine (cons (cons (cadr ops) e) s)) e) (cdr ops)) d) (cdr ops))

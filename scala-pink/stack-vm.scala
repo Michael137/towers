@@ -50,11 +50,15 @@ object VM {
                                  (((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'RTN (car ops))
                                   (let resume (caddr d)
-                                    (((((machine (cons (car s) (car d))) (cadr d)) resume) (cddr d)) resume))
+                                    (((((machine (cons (car s) (car d))) (cadr d)) resume) (cdddr d)) resume))
                                 (if (eq? 'DUM (car ops)) (((((machine s) (cons '() e)) (cdr ops)) d) (cdr ops))
                                 (if (eq? 'RAP (car ops)) (((((machine '()) (cons (cddr (car s)) (cadr s))) (caar s)) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'STOP (car ops)) s
-                                (((((machine s) e) c) d) (cdr ops)))))))))))))))))
+
+                                (if (eq? 'DBG (car ops))
+                                  (caddr d)
+                                  
+                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -80,20 +84,25 @@ object VM {
     // val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
     // println(prettycode(vm_anf))
 
-    // println(ev(s"""($vm_src '(LDC -10
-    //                           LDC 10
-    //                           ADD
-    //                           SEL (LDC 20 JOIN) (LDC 30 JOIN)
-    //                           NIL LDC 136 CONS LDC 1 CONS
-    //                           LDF (LD (1 2) LD (1 1) ADD RTN)
-    //                           AP
-    //                           LDC 137
-    //                           STOP))"""))
+    println(ev(s"""($vm_src '(LDC -10
+                              LDC 10
+                              ADD
+                              SEL (LDC 20 JOIN) (LDC 30 JOIN)
+                              NIL LDC 136 CONS LDC 1 CONS
+                              LDF (LD (1 2) LD (1 1) ADD RTN)
+                              AP
+                              LDC 137
+                              STOP))"""))
 
     println(ev(s"""
     ($vm_src
-'(LDC 6 LDF (LDF (LDC 10 RTN) AP
-                      RTN) AP STOP
+  '(NIL LDC 6 CONS LDF  
+                   (NIL LDC 5 CONS LDC 3 CONS 
+                     LDF 
+                      (LD (2 1) LD (1 2) LD (1 1) SUB ADD RTN) 
+                     AP 
+                    RTN) 
+                  AP STOP
   ))
     """))
 

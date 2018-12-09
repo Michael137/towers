@@ -15,41 +15,50 @@ import Pink._
  */
 object VM {
   val vm_poly_src = """
-     (let vm-stack '()
-      (let env-list '()
-        (let op-list '()
-          (let call-stack '()
-            (let locate (lambda locate idx (lambda _ env
-                              (let loc (lambda loc y (lambda _ lst
-                                        (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))
-                                      ))
-                              ((loc (cdr idx)) ((loc (car idx)) env)))
-                        ))
-            (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                              (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) (cddr ops)) d) (cddr ops))
-                              (if (eq? 'LD (car ops)) (((((machine (cons ((locate (cadr ops)) e) s)) e) (cddr ops)) d) (cddr ops))
-                              (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'MUL (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                              (if (eq? 'SEL (car ops))
-                                (let next
-                                  (if (eq? (car s) 0)
-                                    (caddr ops)
-                                    (cadr ops))
-                                (((((machine s) e) next) (cons (cdddr ops) d)) next))
-                              (if (eq? 'JOIN (car ops))
-                                (let rest
-                                  (car d)
-                                (((((machine s) e) rest) (cdr d)) rest))
-                              (if (eq? 'DONE (car ops)) s
-                              (((((machine s) e) c) d) (cdr ops))))))))))
-                              )))))
-            (let start (lambda start ops
-                          (((((machine vm-stack) env-list) op-list) call-stack) ops)
-                        )
-                        start
-            )))
-    ))))
+      (let vm-stack '()
+        (let env-list '()
+          (let op-list '()
+            (let call-stack '()
+              (let locate (lambda locate i (lambda _ j (lambda _ env
+                            (let loc (lambda loc y (lambda _ lst
+                                      (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))
+                                    ))
+                            ((loc j) ((loc i) env)))
+                          )))
+              (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
+                                (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) (cddr ops)) d) (cddr ops))
+                                (if (eq? 'LD (car ops))
+                                  (let pt (cadr ops)
+                                    (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) (cddr ops)) d) (cddr ops)))
+                                (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'MUL (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'CONS (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'NIL (car ops)) (((((machine (cons '() s)) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'SEL (car ops))
+                                  (let next
+                                    (if (eq? (car s) 0)
+                                      (caddr ops)
+                                      (cadr ops))
+                                  (((((machine s) e) next) (cons (cdddr ops) d)) next))
+                                (if (eq? 'JOIN (car ops))
+                                  (let rest
+                                    (car d)
+                                  (((((machine s) e) rest) (cdr d)) rest))
+                                (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'AP (car ops)) (((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                (if (eq? 'RTN (car ops))
+                                (let resume (caddr d)
+                                  (((((machine (cons (car s) (car d))) (cadr d)) resume) (cddr d)) resume))                                  
+                                (if (eq? 'DONE (car ops)) s
+                                (((((machine s) e) c) d) (cdr ops)))))))))))))))
+                                )))))
+              (let start (lambda start ops
+                            (((((machine vm-stack) env-list) op-list) call-stack) ops)
+                          )
+                          start
+              )))
+      ))))
     """
 
   // Example: ev(s"((($eval_src '$vm_src) '(PUSH 10)) '(POP))")
@@ -76,6 +85,10 @@ object VM {
                               LDC 10
                               ADD
                               SEL (LDC 20 JOIN) (LDC 30 JOIN)
+                              NIL LDC 136 CONS LDC 1 CONS
+                              LDF (LD (1 2) LD (1 1) ADD RTN)
+                              AP
+                              LDC 137
                               DONE))"""))
 
     //checkrun(s"((run 0 ($vm_src '(_ * a _ * done))) '(b a done))", "Str(yes)")

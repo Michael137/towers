@@ -37,3 +37,52 @@ Example terminating snippet:
     start
     ))"
     checkrun(s"($src '(1 2))", "Str(Yes)")
+
+
+    Tup(
+        Tup(
+            Tup(
+                Tup(
+                    Str(LD),
+                    Tup(
+                        Tup(Cst(1),Tup(Str(.),Tup(Cst(2),Str(.)))),
+                        Tup(Str(LD),Tup(Tup(Cst(1),Tup(Str(.),Tup(Cst(1),Str(.)))),Tup(Str(ADD),Tup(Str(RTN),Str(.)))))
+                        )
+                    ),
+                    Str(.)
+                ),
+                Tup(Cst(40),Tup(Cst(30),Tup(Cst(0),Str(.))))
+            ),
+            Tup(Str(.),
+                Tup(
+                    Tup(
+                        Tup(
+                            Str(LD),
+                            Tup(
+                                Tup(
+                                    Cst(1),
+                                    Tup(
+                                        Str(.),
+                                        Tup(Cst(2),Str(.)))
+                                    ),
+                                    Tup(
+                                        Str(LD),
+                                        Tup(
+                                            Tup(
+                                                Cst(1),
+                                                Tup(
+                                                    Str(.),
+                                                    Tup(
+                                                        Cst(1),Str(.)
+                                                        )
+                                                    )
+                                                ),
+                                                Tup(
+                                                    Str(ADD),
+                                                    Tup(Str(RTN),Str(.))
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),Tup(Str(AP),Tup(Str(DONE),Str(.)))),Str(.)))
+        )

@@ -32,7 +32,7 @@ object VM {
                                     (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) (cddr ops)) d) (cddr ops)))
                                 (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
                                 (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'MUL (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
                                 (if (eq? 'CONS (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
                                 (if (eq? 'NIL (car ops)) (((((machine (cons '() s)) e) (cdr ops)) d) (cdr ops))
                                 (if (eq? 'SEL (car ops))
@@ -46,12 +46,15 @@ object VM {
                                     (car d)
                                   (((((machine s) e) rest) (cdr d)) rest))
                                 (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'AP (car ops)) (((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                (if (eq? 'AP (car ops))
+                                 (((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'RTN (car ops))
-                                (let resume (caddr d)
-                                  (((((machine (cons (car s) (car d))) (cadr d)) resume) (cddr d)) resume))                                  
-                                (if (eq? 'DONE (car ops)) s
-                                (((((machine s) e) c) d) (cdr ops)))))))))))))))
+                                  (let resume (caddr d)
+                                    (((((machine (cons (car s) (car d))) (cadr d)) resume) (cddr d)) resume))
+                                (if (eq? 'DUM (car ops)) (((((machine s) (cons '() e)) (cdr ops)) d) (cdr ops))
+                                (if (eq? 'RAP (car ops)) (((((machine '()) (cons (cddr (car s)) (cadr s))) (caar s)) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
+                                (if (eq? 'STOP (car ops)) s
+                                (((((machine s) e) c) d) (cdr ops)))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -71,30 +74,43 @@ object VM {
   def test() = {
     println("// ------- VM.test --------")
 
-    val vm_exp = trans(parseExp(vm_src), Nil)
-    println( "base-lang AST: " + vm_exp)
-    println( "eval'ed base-lang AST: " + evalms(Nil, vm_exp))
-    val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
-    println(prettycode(vm_anf))
+    // val vm_exp = trans(parseExp(vm_src), Nil)
+    // println( "base-lang AST: " + vm_exp)
+    // println( "eval'ed base-lang AST: " + evalms(Nil, vm_exp))
+    // val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
+    // println(prettycode(vm_anf))
 
-    //val vm_body = trans(parseExp(vm_src), Nil)
-    //val vm = App(Lam(Lift(vm_body)),Sym("ADD"))
-    //val code = reifyc(evalms(Nil,vm))
+    // println(ev(s"""($vm_src '(LDC -10
+    //                           LDC 10
+    //                           ADD
+    //                           SEL (LDC 20 JOIN) (LDC 30 JOIN)
+    //                           NIL LDC 136 CONS LDC 1 CONS
+    //                           LDF (LD (1 2) LD (1 1) ADD RTN)
+    //                           AP
+    //                           LDC 137
+    //                           STOP))"""))
 
-    println(ev(s"""($vm_src '(LDC -10
-                              LDC 10
-                              ADD
-                              SEL (LDC 20 JOIN) (LDC 30 JOIN)
-                              NIL LDC 136 CONS LDC 1 CONS
-                              LDF (LD (1 2) LD (1 1) ADD RTN)
-                              AP
-                              LDC 137
-                              DONE))"""))
+    println(ev(s"""
+    ($vm_src
+'(LDC 6 LDF (LDF (LDC 10 RTN) AP
+                      RTN) AP STOP
+  ))
+    """))
 
-    //checkrun(s"((run 0 ($vm_src '(_ * a _ * done))) '(b a done))", "Str(yes)")
-
-    // ev(s"(((($eval_src '$vm_src) '(PUSH 10)) '(POP)) '(PUSH 30))")
-    // ev(s"(((((($vm_src '(PUSH 0)) '(PUSH 23)) '(PUSH 42)) '(POP)) '(PUSH 137)) '(DONE))")
+    // Factorial
+    /*println(ev(s"""($vm_src '(
+      NIL LDC 1 CONS LDC 3 CONS LDF
+        (DUM NIL LDF
+          (LDC 0 LD (1 1) EQ SEL
+              (LDC 1 JOIN)
+              (NIL LD (1 2) LD (1 1) MPY CONS
+                LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+              RTN)
+      CONS LDF
+        (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
+        RAP RTN)
+      AP STOP
+    ))"""))*/
 
     testDone()
   }

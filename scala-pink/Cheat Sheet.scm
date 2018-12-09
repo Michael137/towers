@@ -38,51 +38,12 @@ Example terminating snippet:
     ))"
     checkrun(s"($src '(1 2))", "Str(Yes)")
 
+s: '()
+e: replaca((cdr car s), cadr s)
+c: (caar s)
+d: (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))
+ops: caar s
 
-    Tup(
-        Tup(
-            Tup(
-                Tup(
-                    Str(LD),
-                    Tup(
-                        Tup(Cst(1),Tup(Str(.),Tup(Cst(2),Str(.)))),
-                        Tup(Str(LD),Tup(Tup(Cst(1),Tup(Str(.),Tup(Cst(1),Str(.)))),Tup(Str(ADD),Tup(Str(RTN),Str(.)))))
-                        )
-                    ),
-                    Str(.)
-                ),
-                Tup(Cst(40),Tup(Cst(30),Tup(Cst(0),Str(.))))
-            ),
-            Tup(Str(.),
-                Tup(
-                    Tup(
-                        Tup(
-                            Str(LD),
-                            Tup(
-                                Tup(
-                                    Cst(1),
-                                    Tup(
-                                        Str(.),
-                                        Tup(Cst(2),Str(.)))
-                                    ),
-                                    Tup(
-                                        Str(LD),
-                                        Tup(
-                                            Tup(
-                                                Cst(1),
-                                                Tup(
-                                                    Str(.),
-                                                    Tup(
-                                                        Cst(1),Str(.)
-                                                        )
-                                                    )
-                                                ),
-                                                Tup(
-                                                    Str(ADD),
-                                                    Tup(Str(RTN),Str(.))
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    ),Tup(Str(AP),Tup(Str(DONE),Str(.)))),Str(.)))
-        )
+(((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+
+(((((machine (cons (cons (cadr ops) e) s)) e) (cdr ops)) d) (cdr ops))

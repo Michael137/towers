@@ -6,11 +6,12 @@
     - [x] ret
     - [x] branch
   - [X] Be able to run fibonacci/factorial testsuite (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master/scheme-pink/stack-vm.scm))
-  - [ ] Add the stack-machine as a user-level in Pink
-    * IN PROGRESS: __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/stack-vm.scala)__
+  - [x] Add the stack-machine as a user-level in Pink
+    * __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/stack-vm.scala)__
+    * Followups: tracing stack, factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent AP and REP)
   - [ ] Stage stack and compare to non-staged version
   - [ ] Experiment with arbitrary levels of stacks
-    * Use CESK machine to implement eval? (as suggested by @namin)
+    * Use the stack machine (or alternative CESK, etc.) to implement eval? (as suggested by @namin)
 
 ## Run VM (from sbt console)
 * sbt compile

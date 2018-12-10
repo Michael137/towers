@@ -84,9 +84,6 @@ object VM {
   val vm_src = s"(let maybe-lift (lambda _  e e) $vm_poly_src)"
   val vmc_src = s"(let maybe-lift (lambda _  e (lift e)) $vm_poly_src)"
 
-  // TODO: tracing stack
-  // TODO: factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent LDF and REP)
-
   def test() = {
     println("// ------- VM.test --------")
 
@@ -150,7 +147,7 @@ object VM {
   // Factorial
   // ? Should use RAP instead
   println(ev(s"""($vm_src '(
-      NIL LDC 26 CONS
+      NIL LDC 25 CONS ; Maximum Scala int can handle is n = 25
       LDF
       (DUPENV
        LD (1 1)

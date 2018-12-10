@@ -12,6 +12,22 @@ import Pink._
  * E-register: env-list
  * C-register: op-list
  * D-register: call-stack
+ *
+ * Instructions:
+ *  Core instructions based on original Landin SECD machine
+ * 
+ * Extensions:
+ *  DUP: duplicate top element on stack; (x.s) -> x.(x.s)
+ *  NEG: negate top element of stack; (x.s) -> (mul x -1).s
+ *  REP: repeat most recent LDF function (called from within body of function)
+ *  PUSHENV: push operand onto env-list
+ *  SUBENV: SUB but on env-list instead of stack
+ *  NEGENV: NEG but on env-list instead of stack
+ *  DUPENV: DUP but on env-list instead of stack
+ *  PAP: persistent AP; same as AP but keeps stack intact
+ *  DBG: change definition as needed;
+ *       useful in debugging E.g. change def to "(car s)" will 
+ *       stop evluation at DBG point and print front top of current stack
  */
 object VM {
   val vm_poly_src = """
@@ -55,6 +71,7 @@ object VM {
                                     (((((machine (cons (car s) (car d))) (cadr d)) c) (cdddr d)) resume))
                                 (if (eq? 'DUM (car ops)) (((((machine s) (cons '() e)) c) d) (cdr ops))
                                 (if (eq? 'RAP (car ops)) (((((machine '()) (cons (cddr (car s)) (cadr s))) c) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
+                                (if (eq? 'WRITEC (car ops)) (car s)
                                 (if (eq? 'STOP (car ops)) s
 
                                 (if (eq? 'DUP (car ops)) (((((machine (cons (car s) s)) e) c) d) (cdr ops))
@@ -71,7 +88,7 @@ object VM {
                                 (if (eq? 'DBG (car ops))
                                   e
                                   
-                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))
+                                (((((machine s) e) c) d) (cdr ops)))))))))))))))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -84,15 +101,7 @@ object VM {
   val vm_src = s"(let maybe-lift (lambda _  e e) $vm_poly_src)"
   val vmc_src = s"(let maybe-lift (lambda _  e (lift e)) $vm_poly_src)"
 
-  def test() = {
-    println("// ------- VM.test --------")
-
-    // val vm_exp = trans(parseExp(vm_src), Nil)
-    // println( "base-lang AST: " + vm_exp)
-    // println( "eval'ed base-lang AST: " + evalms(Nil, vm_exp))
-    // val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
-    // println(prettycode(vm_anf))
-
+  def testInstructions() = {
     println(ev(s"""($vm_src '(LDC -10 ; Comments work fine
                               LDC 10 ; As in Lisp
                               ADD
@@ -105,29 +114,29 @@ object VM {
 
     // ((λx.λyz.(y-z)+x) 6) 3 5) = 3 - 5 + 6
     println(ev(s"""
-    ($vm_src
-  '(NIL LDC 6 CONS LDF  
-                   (NIL LDC 5 CONS LDC 3 CONS 
-                     LDF 
-                      (LD (2 1) LD (1 2) LD (1 1) SUB ADD RTN) 
-                     AP 
-                    RTN) 
-                  AP STOP
-  ))
+      ($vm_src
+      '(NIL LDC 6 CONS LDF  
+                      (NIL LDC 5 CONS LDC 3 CONS 
+                        LDF 
+                          (LD (2 1) LD (1 2) LD (1 1) SUB ADD RTN) 
+                        AP 
+                        RTN) 
+                      AP STOP
+      ))
     """))
 
-  // ((λuv.λwx.λyz.(y-x)+u) 2 1) 4 3) 6 5 = 6 - 3 + 2
-  println(ev(s"""
-    ($vm_src
-  '(NIL LDC 1 CONS LDC 2 CONS LDF  
-                   (NIL LDC 3 CONS LDC 4 CONS 
-                     LDF 
-                      (NIL LDC 5 CONS LDC 6 CONS 
-                       LDF (LD (3 1) LD (2 2) LD (1 1) SUB ADD RTN) AP RTN)
-                     AP 
-                    RTN) 
-                  AP STOP
-  ))
+    // ((λuv.λwx.λyz.(y-x)+u) 2 1) 4 3) 6 5 = 6 - 3 + 2
+    println(ev(s"""
+      ($vm_src
+      '(NIL LDC 1 CONS LDC 2 CONS LDF  
+                      (NIL LDC 3 CONS LDC 4 CONS 
+                        LDF 
+                          (NIL LDC 5 CONS LDC 6 CONS 
+                          LDF (LD (3 1) LD (2 2) LD (1 1) SUB ADD RTN) AP RTN)
+                        AP 
+                        RTN) 
+                      AP STOP
+      ))
     """))
 
     println(ev(s"""($vm_src '(NIL ; Equivalent to calling f() without arguments
@@ -143,29 +152,45 @@ object VM {
         (DUM NIL LDF (LDC 1 RTN) AP RTN)
       AP STOP
     ))"""))
+  }
 
-  // Factorial
-  // ? Should use RAP instead
-  println(ev(s"""($vm_src '(
-      NIL LDC 25 CONS ; Maximum Scala int can handle is n = 25
-      LDF
-      (DUPENV
-       LD (1 1)
-       LDC 1
-       SUB
-       NEG
-       MPY
+  def testFactorial() = {
+    // Factorial
+    // ? Should use RAP instead
+    val factorial_src = """'(
+        NIL LDC 25 CONS ; Maximum Scala int can handle is n = 25
+        LDF
+        (DUPENV
+        LD (1 1)
+        LDC 1
+        SUB
+        NEG
+        MPY
 
-       PUSHENV 1
-       SUBENV
-       NEGENV
+        PUSHENV 1
+        SUBENV
+        NEGENV
 
-       LD (1 1)
-       GT 1
-       SEL (REP) (STOP)
-       RTN) PAP
-      STOP
-    ))"""))
+        LD (1 1)
+        GT 1
+        SEL (REP) (WRITEC)
+        RTN) PAP
+      )"""
+
+    checkrun(s"""($vm_src $factorial_src)""", "Cst(2076180480)")
+    checkrun(s"((run 0 ($vmc_src)) $factorial_src)", "Cst(2076180480)")
+  }
+
+  def pretty() = {
+    val vm_exp = trans(parseExp(vm_src), Nil)
+    val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
+    println(prettycode(vm_anf))
+  }
+
+  def test() = {
+    println("// ------- VM.test --------")
+    testFactorial()
+    testInstructions()
 
     testDone()
   }

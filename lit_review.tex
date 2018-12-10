@@ -1,0 +1,61 @@
+\documentclass{article}
+\title{Background Literature and Designs}
+\author{Michael Buch}
+\date{\today}
+
+\usepackage[inline]{enumitem} % inline numbered lists
+\usepackage[left=2cm,right=2cm]{geometry}
+\usepackage{verbatim} % for comments
+
+\begin{document}
+\maketitle
+\frenchspacing
+
+\newcommand{\mslang}{$\lambda\uparrow\downarrow$}
+
+\section{About this document}
+This is a collection of references and summaries to research in the field of meta-programming/supercompilation/partial evaluation
+
+\section{Examples}
+Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
+\begin{itemize}
+	\item Regular expression matcher <- Evaluator <- Virtual Machine
+	\begin{itemize}
+		\item Generate low-level VM code for a matcher specialized to one regex (through arbitrary number of intermediate interpreters)
+	\end{itemize}
+	\item Modified evaluator <- Evaluator <- Virtual Machine
+	\begin{itemize}
+		\item Modified for tracing/counting calls/be in CPS
+		\item Under modified semantics "interpreters become program transformers". E.g. CPS interpreter becomes CPS transformer
+	\end{itemize}
+\end{itemize}
+
+\section{Methodologies}
+\begin{itemize}
+	\item Stage polymorphism \cite{ofenbeck2017staging}: ``abstract over staging decisions'' i.e. single program generator can produce code that is specialized in many different ways (instance of the Fourth Futamura Projection? \cite{gluck2009there}) 
+	\item Multi-level base evaluator written in \mslang: supports staging operators (\textbf{polymorphic Lift})
+	\item Modify other interpreters: make them \textbf{stage polymorphic}, i.e. commands either evaluate code (like an interpreter) or generate code (like a translator)
+	\item Stage only user-most interpreter: \textit{wire tower} such that the \textbf{staging commands in $L_{n}$ are interpreted directly in terms of staging commands in $L_{0}$} i.e. staging commands pass through all other layers handing down commands to layers below without performing any staging commands
+	\item Non-reflective method: meta-circular evaluator \textbf{Pink} => collapse arbitrary levels of ``self-interpretation''
+	\item \mslang features:
+	\begin{itemize}
+		\item \textit{run residual code}
+		\item binding-time/stage polymorphism \cite{henglein1994polymorphic}
+		\item preserves execution order of future-stage expressions
+		\item does not require type system or static analysis
+		\begin{itemize}
+			\item TDPE \cite{danvy1999type}: \textbf{polymorphic Lift} operator turns static values into dynamic (future-stage) expressions
+		\end{itemize}
+	\end{itemize}
+\end{itemize}
+
+\subsection{Towers of Interpreters Project Overview}
+\subsubsection{Scala}
+\begin{itemize}
+	\item base.scala: implements definitional interpreter for \mslang
+\end{itemize}
+	
+\bibliographystyle{IEEEtran}
+\bibliography{lit_review}
+
+\end{document}

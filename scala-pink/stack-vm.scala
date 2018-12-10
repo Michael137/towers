@@ -26,39 +26,52 @@ object VM {
                             ((loc j) ((loc i) env)))
                           )))
               (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                                (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) (cddr ops)) d) (cddr ops))
+                                (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) c) d) (cddr ops))
                                 (if (eq? 'LD (car ops))
                                   (let pt (cadr ops)
-                                    (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) (cddr ops)) d) (cddr ops)))
-                                (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'CONS (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'NIL (car ops)) (((((machine (cons '() s)) e) (cdr ops)) d) (cdr ops))
+                                    (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) c) d) (cddr ops)))
+                                (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? 'EQ (car ops)) (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? 'GT (car ops)) (((((machine (cons (> (car s) (cadr ops)) (cdr s))) e) c) d) (cddr ops))
+                                (if (eq? 'CONS (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? 'NIL (car ops)) (((((machine (cons '() s)) e) c) d) (cdr ops))
                                 (if (eq? 'SEL (car ops))
                                   (let next
                                     (if (eq? (car s) 0)
                                       (caddr ops)
                                       (cadr ops))
-                                  (((((machine s) e) next) (cons (cdddr ops) d)) next))
+                                  (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) next))
                                 (if (eq? 'JOIN (car ops))
                                   (let rest
                                     (car d)
-                                  (((((machine s) e) rest) (cdr d)) rest))
-                                (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cdr ops)) d) (cdr ops))
+                                  (((((machine s) e) c) (cdr d)) rest))
+                                (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cons (cadr ops) c)) d) (cdr ops))
                                 (if (eq? 'AP (car ops))
-                                 (((((machine '()) (cons (cadr s) (cdr (car s)))) (caar s)) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                 (((((machine '()) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'RTN (car ops))
                                   (let resume (caddr d)
-                                    (((((machine (cons (car s) (car d))) (cadr d)) resume) (cdddr d)) resume))
-                                (if (eq? 'DUM (car ops)) (((((machine s) (cons '() e)) (cdr ops)) d) (cdr ops))
-                                (if (eq? 'RAP (car ops)) (((((machine '()) (cons (cddr (car s)) (cadr s))) (caar s)) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
+                                    (((((machine (cons (car s) (car d))) (cadr d)) c) (cdddr d)) resume))
+                                (if (eq? 'DUM (car ops)) (((((machine s) (cons '() e)) c) d) (cdr ops))
+                                (if (eq? 'RAP (car ops)) (((((machine '()) (cons (cddr (car s)) (cadr s))) c) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'STOP (car ops)) s
 
+                                (if (eq? 'DUP (car ops)) (((((machine (cons (car s) s)) e) c) d) (cdr ops))
+                                (if (eq? 'REP (car ops)) (((((machine s) e) c) d) (car c))
+                                (if (eq? 'NEG (car ops)) (((((machine (cons (* (car s) -1) (cdr s))) e) c) d) (cdr ops))
+                                (if (eq? 'PUSHENV (car ops)) (((((machine s) (cons (cons (cadr ops) (car e)) (cdr e))) c) d) (cddr ops))
+                                (if (eq? 'SUBENV (car ops)) (((((machine s) (cons (cons (- (caar e) (cadr (car e))) (cddr (car e)))
+                                                                                  (cdr e))) c) d) (cdr ops))
+                                (if (eq? 'NEGENV (car ops)) (((((machine s) (cons (cons (* (caar e) -1) (cdr (car e)))
+                                                                                  (cdr e))) c) d) (cdr ops))
+                                (if (eq? 'DUPENV (car ops)) (((((machine s) (cons (cons (caar e) (car e)) (cdr e))) c) d) (cdr ops))
+                                (if (eq? 'PAP (car ops))
+                                 (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'DBG (car ops))
-                                  (caddr d)
+                                  e
                                   
-                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))
+                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -68,12 +81,11 @@ object VM {
       ))))
     """
 
-  // Example: ev(s"((($eval_src '$vm_src) '(PUSH 10)) '(POP))")
-
   val vm_src = s"(let maybe-lift (lambda _  e e) $vm_poly_src)"
   val vmc_src = s"(let maybe-lift (lambda _  e (lift e)) $vm_poly_src)"
 
   // TODO: tracing stack
+  // TODO: factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent LDF and REP)
 
   def test() = {
     println("// ------- VM.test --------")
@@ -84,8 +96,8 @@ object VM {
     // val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
     // println(prettycode(vm_anf))
 
-    println(ev(s"""($vm_src '(LDC -10
-                              LDC 10
+    println(ev(s"""($vm_src '(LDC -10 ; Comments work fine
+                              LDC 10 ; As in Lisp
                               ADD
                               SEL (LDC 20 JOIN) (LDC 30 JOIN)
                               NIL LDC 136 CONS LDC 1 CONS
@@ -94,6 +106,7 @@ object VM {
                               LDC 137
                               STOP))"""))
 
+    // ((λx.λyz.(y-z)+x) 6) 3 5) = 3 - 5 + 6
     println(ev(s"""
     ($vm_src
   '(NIL LDC 6 CONS LDF  
@@ -106,6 +119,7 @@ object VM {
   ))
     """))
 
+  // ((λuv.λwx.λyz.(y-x)+u) 2 1) 4 3) 6 5 = 6 - 3 + 2
   println(ev(s"""
     ($vm_src
   '(NIL LDC 1 CONS LDC 2 CONS LDF  
@@ -119,20 +133,42 @@ object VM {
   ))
     """))
 
-    //// Factorial
-    //println(ev(s"""($vm_src '(
-    //  NIL LDC 1 CONS LDC 3 CONS LDF
-    //    (DUM NIL LDF
-    //      (LDC 0 LD (1 1) EQ SEL
-    //          (LDC 1 JOIN)
-    //          (NIL LD (1 2) LD (1 1) MPY CONS
-    //            LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-    //          RTN)
-    //  CONS LDF
-    //    (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
-    //    RAP RTN)
-    //  AP STOP
-    //))"""))
+    println(ev(s"""($vm_src '(NIL ; Equivalent to calling f() without arguments
+                                  ; Have to place '() onto stack
+                              LDF (LDC 136 RTN)
+                              AP
+                              LDC 1
+                              ADD
+                              STOP))"""))
+
+    println(ev(s"""($vm_src '(
+      NIL LDC 1 CONS LDC 10 CONS LDF
+        (DUM NIL LDF (LDC 1 RTN) AP RTN)
+      AP STOP
+    ))"""))
+
+  // Factorial
+  // ? Should use RAP instead
+  println(ev(s"""($vm_src '(
+      NIL LDC 26 CONS
+      LDF
+      (DUPENV
+       LD (1 1)
+       LDC 1
+       SUB
+       NEG
+       MPY
+
+       PUSHENV 1
+       SUBENV
+       NEGENV
+
+       LD (1 1)
+       GT 1
+       SEL (REP) (STOP)
+       RTN) PAP
+      STOP
+    ))"""))
 
     testDone()
   }

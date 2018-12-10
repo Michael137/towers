@@ -24,6 +24,7 @@ object Pink {
     (if (eq?  '-      (car exp))   (-   ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  '*      (car exp))   (*   ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  'eq?    (car exp))   (eq? ((eval (cadr exp)) env) ((eval (caddr exp)) env))
+    (if (eq?  '>    (car exp))   (> ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  'if     (car exp))   (if  ((eval (cadr exp)) env) ((eval (caddr exp)) env) ((eval (cadddr exp)) env))
     (if (eq?  'lambda (car exp))   (maybe-lift (lambda f x ((eval (cadddr exp)) 
       (lambda _ y (if (eq? y (cadr exp)) f (if (eq? y (caddr exp)) x (env y)))))))
@@ -45,7 +46,7 @@ object Pink {
     (if (eq?  'pair?  (car exp))   (pair? ((eval (cadr exp)) env))
     (if (eq?  'run    (car exp))   (run ((eval (cadr exp)) env) ((eval (caddr exp)) env))
     (if (eq?  'log    (car exp))   (log ((eval (cadr exp)) env) ((eval (caddr exp)) env))
-    ((env (car exp)) ((eval (cadr exp)) env)))))))))))))))))))))))))
+    ((env (car exp)) ((eval (cadr exp)) env))))))))))))))))))))))))))
   (((eval (car exp)) env) ((eval (cadr exp)) env)))))))))
 """
   val eval_src = ev_nil(ev_nolift(ev_poly_src))

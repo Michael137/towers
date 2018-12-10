@@ -37,3 +37,14 @@ Example terminating snippet:
     start
     ))"
     checkrun(s"($src '(1 2))", "Str(Yes)")
+
+Interpretation: println(trans(parseExp(s"(($matcher_src '(_ * a _ * done)) '(b a done))"),Nil))
+Compilation: println(trans(parseExp(s"((run 0 ($matcherc_src '(_ * a _ * done))) '(b a done))"), Nil))
+
+val instr_poly_src = Pink.ev_poly_src.replace("(env exp)", "(if (eq? 's exp) (log (maybe-lift2 0) (env exp)) (env exp))")
+val instr_src = ev_nil(ev_nolift(s"(let maybe-lift2 (lambda _ x x) $instr_poly_src)"))
+val instr2_src = ev_nil(ev_nolift(s"(let maybe-lift2 (lambda _ x (lift x)) $instr_poly_src)"))
+val instrc_src = ev_nil(ev_lift(s"(let maybe-lift2 (lambda _ x (lift (lift x))) $instr_poly_src)"))
+ev(s"((($instr_src '$matcher_src) '(a b done)) '(a b done))")
+
+pink.scala examples: testCorrectnessOptimality()

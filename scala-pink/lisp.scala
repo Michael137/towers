@@ -34,7 +34,6 @@ object Lisp {
 
   // ********************* convert exp encoded as val --> proper exp  *********************
 
-  // TODO: add support for cddr
   def trans(e: Val, env: List[String]): Exp = e match {
     case Cst(n) => Lit(n)
     case Str(s) => val i = env.lastIndexOf(s); assert(i>=0, s + " not in " + env); Var(i)
@@ -62,9 +61,15 @@ object Lisp {
     case Tup(Str("lift"),   Tup(a,N)) => Lift(trans(a,env))
     case Tup(Str("nolift"), Tup(a,N)) => trans(a,env)
     case Tup(Str("eq?"),    Tup(a,Tup(b,N))) => Equ(trans(a,env),trans(b,env))
+    case Tup(Str(">"),    Tup(a,Tup(b,N))) => Gt(trans(a,env),trans(b,env))
     case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
     case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
+
+    // TODO: implement mutators
+    case Tup(Str("set!"),   Tup(a,N)) => Special(benv => a)
+    case Tup(Str("set-car!"),  Tup(a,N)) => Special(benv => a)
+
     case Tup(Str("trans"),  Tup(a,N)) =>
       Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
     case Tup(Str("lift-ref"),Tup(a,N)) =>

@@ -12,6 +12,7 @@
   - [ ] Stage stack and compare to non-staged version
   - [ ] Experiment with arbitrary levels of stacks
     * Use the stack machine (or alternative CESK, etc.) to implement eval? (as suggested by @namin)
+    * Perhaps MultiLISP machine?
 
 ## Run VM (from sbt console)
 * sbt compile

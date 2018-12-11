@@ -42,18 +42,18 @@ object VM {
                             ((loc j) ((loc i) env)))
                           )))
               (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                                (if (eq? 'LDC (car ops)) (((((machine (cons (cadr ops) s)) e) c) d) (cddr ops))
-                                (if (eq? 'LD (car ops))
+                                (if (eq? (maybe-lift 'LDC) (car ops)) (((((machine (cons (cadr ops) s)) e) c) d) (cddr ops))
+                                (if (eq? (maybe-lift 'LD) (car ops))
                                   (let pt (cadr ops)
                                     (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) c) d) (cddr ops)))
-                                (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'EQ (car ops)) (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'GT (car ops)) (((((machine (cons (> (car s) (cadr ops)) (cdr s))) e) c) d) (cddr ops))
-                                (if (eq? 'CONS (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'NIL (car ops)) (((((machine (cons '() s)) e) c) d) (cdr ops))
-                                (if (eq? 'SEL (car ops))
+                                (if (eq? (maybe-lift 'ADD) (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'SUB) (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'MPY) (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'EQ) (car ops)) (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'GT) (car ops)) (((((machine (cons (> (car s) (cadr ops)) (cdr s))) e) c) d) (cddr ops))
+                                (if (eq? (maybe-lift 'CONS) (car ops)) (((((machine (cons (cons (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'NIL) (car ops)) (((((machine (cons '() s)) e) c) d) (cdr ops))
+                                (if (eq? (maybe-lift 'SEL) (car ops))
                                   (let next
                                     (if (eq? (car s) 0)
                                       (caddr ops)
@@ -177,7 +177,6 @@ object VM {
         RTN) PAP
     """
   }
-    
 
   def testFactorial() = {
     checkrun(s"""($vm_src '(${getFacSource(25)}))""", "Cst(2076180480)")
@@ -185,39 +184,21 @@ object VM {
 
     // interpretation
     checkrun(s"""
-    (let vm          $vm_src
-    (let fac_src       '(${getFacSource(4)})
-
-    (vm fac_src)))""",
-    "Cst(24)")
-
-    /*
-    // double interpretation
-    checkrun(s"""
-    (let vm          $vm_src
-    (let fac_src       '(${getFacSource(4)})
-    (let vm_src      '($vm_src)
-
-    (((vm vm_src) fac_src) 4))))""",
-    "Cst(24)")
-
-    // triple interpretation
-    checkrun(s"""
-    (let eval          $eval_src
-    (let fac_src       (quote $fac_src)
-    (let eval_src      (quote $eval_src)
-
-    ((((eval eval_src) eval_src) fac_src) 4))))""",
-    "Cst(24)")
+    (let vm $vm_src
+      (let fac_src '(${getFacSource(4)})
+        (vm fac_src)))""", "Cst(24)")
 
     // compilation
+    val factorial_val = parseExp(s"""'(${getFacSource(4)})""")
+    val factorial_exp = trans(fac_val,List("arg"))
+    val factorial_exp_anf = reify { anf(List(Sym("XX")),factorial_exp) }
     checkcode(s"""
-    (let evalc         $evalc_src
-    (let fac_src       (quote $fac_src)
-
-    (evalc fac_src)))""",
+    (let vm_compiled $vmc_src
+      (let fac_src '(${getFacSource(4)})
+        (vm_compiled fac_src)))""",
     prettycode(fac_exp_anf))
 
+    /*
     checkrun(s"""
     (let evalc         $evalc_src
     (let fac_src       (quote $fac_src)

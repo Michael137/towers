@@ -102,7 +102,7 @@ object VM {
   val vmc_src = s"(let maybe-lift (lambda _  e (lift e)) $vm_poly_src)"
 
   def testInstructions() = {
-    println(ev(s"""($vm_src '(LDC -10 ; Comments work fine
+    checkrun(s"""($vm_src '(LDC -10 ; Comments work fine
                               LDC 10 ; As in Lisp
                               ADD
                               SEL (LDC 20 JOIN) (LDC 30 JOIN)
@@ -110,10 +110,10 @@ object VM {
                               LDF (LD (1 2) LD (1 1) ADD RTN)
                               AP
                               LDC 137
-                              STOP))"""))
+                              STOP))""", "Tup(Cst(137),Tup(Cst(137),Tup(Cst(30),Str(.))))")
 
     // ((λx.λyz.(y-z)+x) 6) 3 5) = 3 - 5 + 6
-    println(ev(s"""
+    checkrun(s"""
       ($vm_src
       '(NIL LDC 6 CONS LDF  
                       (NIL LDC 5 CONS LDC 3 CONS 
@@ -123,10 +123,10 @@ object VM {
                         RTN) 
                       AP STOP
       ))
-    """))
+    """, "Tup(Cst(4),Str(.))")
 
     // ((λuv.λwx.λyz.(y-x)+u) 2 1) 4 3) 6 5 = 6 - 3 + 2
-    println(ev(s"""
+    checkrun(s"""
       ($vm_src
       '(NIL LDC 1 CONS LDC 2 CONS LDF  
                       (NIL LDC 3 CONS LDC 4 CONS 
@@ -137,28 +137,28 @@ object VM {
                         RTN) 
                       AP STOP
       ))
-    """))
+    """, "Tup(Cst(5),Str(.))")
 
-    println(ev(s"""($vm_src '(NIL ; Equivalent to calling f() without arguments
+    checkrun(s"""($vm_src '(NIL ; Equivalent to calling f() without arguments
                                   ; Have to place '() onto stack
                               LDF (LDC 136 RTN)
                               AP
                               LDC 1
                               ADD
-                              STOP))"""))
+                              STOP))""", "Tup(Cst(137),Str(.))")
 
-    println(ev(s"""($vm_src '(
+    checkrun(s"""($vm_src '(
       NIL LDC 1 CONS LDC 10 CONS LDF
         (DUM NIL LDF (LDC 1 RTN) AP RTN)
       AP STOP
-    ))"""))
+    ))""", "Tup(Cst(1),Str(.))")
   }
 
-  def testFactorial() = {
+  def getFacSource(n: Int) = {
     // Factorial
     // ? Should use RAP instead
-    val factorial_src = """'(
-        NIL LDC 25 CONS ; Maximum Scala int can handle is n = 25
+    s"""
+        NIL LDC $n CONS ; Maximum Scala int can handle is n = 25
         LDF
         (DUPENV
         LD (1 1)
@@ -175,10 +175,89 @@ object VM {
         GT 1
         SEL (REP) (WRITEC)
         RTN) PAP
-      )"""
+    """
+  }
+    
 
-    checkrun(s"""($vm_src $factorial_src)""", "Cst(2076180480)")
-    checkrun(s"((run 0 ($vmc_src)) $factorial_src)", "Cst(2076180480)")
+  def testFactorial() = {
+    checkrun(s"""($vm_src '(${getFacSource(25)}))""", "Cst(2076180480)")
+    //checkrun(s"((run 0 ($vmc_src)) $fac_src)", "Cst(2076180480)")
+
+    // interpretation
+    checkrun(s"""
+    (let vm          $vm_src
+    (let fac_src       '(${getFacSource(4)})
+
+    (vm fac_src)))""",
+    "Cst(24)")
+
+    /*
+    // double interpretation
+    checkrun(s"""
+    (let vm          $vm_src
+    (let fac_src       '(${getFacSource(4)})
+    (let vm_src      '($vm_src)
+
+    (((vm vm_src) fac_src) 4))))""",
+    "Cst(24)")
+
+    // triple interpretation
+    checkrun(s"""
+    (let eval          $eval_src
+    (let fac_src       (quote $fac_src)
+    (let eval_src      (quote $eval_src)
+
+    ((((eval eval_src) eval_src) fac_src) 4))))""",
+    "Cst(24)")
+
+    // compilation
+    checkcode(s"""
+    (let evalc         $evalc_src
+    (let fac_src       (quote $fac_src)
+
+    (evalc fac_src)))""",
+    prettycode(fac_exp_anf))
+
+    checkrun(s"""
+    (let evalc         $evalc_src
+    (let fac_src       (quote $fac_src)
+
+    ((run 0 (evalc fac_src)) 4)))""",
+    "Cst(24)")
+
+    // optimality: verify collapse
+    checkcode(s"""
+    (let eval          $eval_src
+    (let evalc_src     (quote $evalc_src)
+    (let fac_src       (quote $fac_src)
+
+    ((eval evalc_src) fac_src))))""",
+    prettycode(fac_exp_anf))
+
+    checkcode(s"""
+    (let eval          $eval_src
+    (let evalc_src     (quote $evalc_src)
+    (let eval_src      (quote $eval_src)
+
+    ((eval evalc_src) eval_src))))""",
+    prettycode(eval_exp_anf))
+
+    checkcode(s"""
+    (let eval          $eval_src
+    (let evalc_src     (quote $evalc_src)
+
+    ((eval evalc_src) evalc_src)))""",
+    prettycode(evalc_exp_anf))
+
+    // further tower
+    checkcode(s"""
+    (let eval          $eval_src
+    (let eval_src      (quote $eval_src)
+    (let evalc_src     (quote $evalc_src)
+    (let fac_src       (quote $fac_src)
+
+    (((eval eval_src) evalc_src) fac_src)))))""",
+    prettycode(fac_exp_anf))*/
   }
 
   def pretty() = {

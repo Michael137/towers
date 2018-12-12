@@ -10,6 +10,7 @@
     * __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/stack-vm.scala)__
     * Followups: tracing stack, factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent AP and REP)
   - [ ] Stage stack and compare to non-staged version
+    * Ops left: SEL, JOIN, LDF, AP, RTN, SECD extensions
   - [ ] Experiment with arbitrary levels of stacks
     * Use the stack machine (or alternative CESK, etc.) to implement eval? (as suggested by @namin)
     * Perhaps MultiLISP machine?

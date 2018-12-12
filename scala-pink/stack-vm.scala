@@ -55,15 +55,11 @@ object VM {
                                 (if (eq? 'CONS (car ops)) (((((machine (cons (maybe-lift (cons (car s) (cadr s))) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'NIL (car ops)) (((((machine (cons (maybe-lift '()) (maybe-lift s))) e) c) d) (cdr ops))
                                 (if (eq? 'SEL (car ops))
-                                  (let next
-                                    (if (eq? (car s) (maybe-lift 0))
-                                      (caddr ops)
-                                      (cadr ops))
-                                  (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) next))
+                                  (if (eq? (car s) (maybe-lift 0))
+                                      (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) (caddr ops))
+                                      (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) (cadr ops)))
                                 (if (eq? 'JOIN (car ops))
-                                  (let rest
-                                    (car d)
-                                  (((((machine s) e) c) (cdr d)) rest))
+                                  (((((machine s) e) c) (cdr d)) (car d))
                                 (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cons (cadr ops) c)) d) (cdr ops))
                                 (if (eq? 'AP (car ops))
                                  (((((machine '()) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
@@ -86,7 +82,7 @@ object VM {
                                 (if (eq? 'PAP (car ops))
                                  (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'DBG (car ops))
-                                  (maybe-lift (car ops))
+                                  (maybe-lift 'yes)
                                   
                                 (((((machine s) e) c) d) (cdr ops)))))))))))))))))))))))))))))
                                 )))))

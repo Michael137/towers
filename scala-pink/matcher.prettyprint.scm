@@ -26,3 +26,9 @@
             match)
     )
 )
+
+(let next
+    (if (eq? (car s) (maybe-lift 0))
+      (caddr ops)
+      (cadr ops))
+  (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) next))

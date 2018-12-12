@@ -113,7 +113,11 @@ object Base {
   }
 
 
-  def reifyc(f: => Val) = reify { val Code(e) = f; e }
+  def reifyc(f: => Val) = reify {
+    // println(s"DEBUGGING reifyc: $f")
+    val Code(e) = f;
+    e
+  }
   def reflectc(s: Exp) = Code(reflect(s))
 
   def reifyv(f: => Val) = run {
@@ -203,6 +207,7 @@ object Base {
       }
 
     case If(c,a,b) =>
+      //println(s"DEBUGGING $c $a $b");
       evalms(env,c) match {
         case Cst(n) => 
           if (n != 0) evalms(env,a) else evalms(env,b)

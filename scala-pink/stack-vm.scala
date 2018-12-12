@@ -243,35 +243,6 @@ object VM {
     println(prettycode(vm_anf))
   }
 
-  def stubTest() = {
-    val stub_src_poly = s"""
-      (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (maybe-lift (lambda _ ops
-                        (maybe-lift (car ops))
-                      ))))))
-                  (let start (lambda start ops
-                    (if (eq?  '1 (car ops)) (maybe-lift (lambda _ s (maybe-lift 'yes))) (maybe-lift (((((machine 1) 2) 3) 4) ops)))
-                  )
-                  start
-      ))
-      """
-
-    val stub_src = s"(let maybe-lift (lambda _  e e) $stub_src_poly)"
-    val stubc_src = s"(let maybe-lift (lambda _  e (lift e)) $stub_src_poly)"
-    //checkrun(s"(run 0 ($stubc_src '(1 2)))", "Str(Yes)")
-    println(evalms(Nil, trans(parseExp(s"""($stubc_src '(1 (2 (done))))"""), Nil)))
-    val Code(res) = ev(s"""($stubc_src '(1 (2 (done))))""")
-    println(prettycode(res))
-
-    /*val v = parseExp(s"""'(1 2)""")
-    val exp = trans(v,List("arg"))
-    val exp_anf = reify { anf(List(Sym("XX")),exp) }
-    checkcode(s"""
-    (let compiled $stubc_src
-      (let src '(1 2)
-        (compiled src)))""",
-    prettycode(exp_anf))*/
-  }
-
   def testCompilation() = {
     val test_src = s"""($vm_src '(LDC -10 ; Comments work fine
                               LDC 10 ; As in Lisp
@@ -285,9 +256,11 @@ object VM {
 
     // Simple interpretation
     checkrun(s"($vm_src '(LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ STOP))", "Tup(Cst(0),Str(.))")
+    ev(s"($vm_src '(LDC 100 LDC 100 LDC 200 LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ SEL (LDC 50 JOIN) (LDC 50JOIN) ADD STOP))")
 
     // Simple compilation
     checkrun(s"(run 0 ($vmc_src '(LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ STOP)))", "Tup(Cst(0),Str(.))")
+    ev(s"(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 200 LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ SEL (LDC 50 JOIN) (LDC 50JOIN) ADD STOP)))")
 
     /*val v = parseExp(s"""'(1 2)""")
     val exp = trans(v,List("arg"))
@@ -303,7 +276,6 @@ object VM {
     println("// ------- VM.test --------")
     // testFactorial()
     // testInstructions()
-    // stubTest()
     testCompilation()
 
     testDone()

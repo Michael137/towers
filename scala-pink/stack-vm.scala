@@ -42,7 +42,7 @@ object VM {
                             ((loc j) ((loc i) env)))
                           )))
               (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                                (if (eq? 'STOP (car ops)) (maybe-lift s)
+                                (if (eq? 'STOP (car ops)) s
                                 (if (eq? 'LDC (car ops)) (((((machine (cons (maybe-lift (cadr ops)) (maybe-lift s))) e) c) d) (cddr ops))
                                 (if (eq? 'LD (car ops))
                                   (let pt (cadr ops)
@@ -51,7 +51,7 @@ object VM {
                                 (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'EQ (car ops)) (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
-                                (if (eq? 'GT (car ops)) (((((machine (cons (> (car s) (cadr ops)) (cdr s))) e) c) d) (cddr ops))
+                                (if (eq? 'GT (car ops)) (((((machine (cons (> (car s) (maybe-lift (cadr ops))) (cdr s))) e) c) d) (cddr ops))
                                 (if (eq? 'CONS (car ops)) (((((machine (cons (maybe-lift (cons (car s) (cadr s))) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'NIL (car ops)) (((((machine (cons (maybe-lift '()) (maybe-lift s))) e) c) d) (cdr ops))
                                 (if (eq? 'SEL (car ops))

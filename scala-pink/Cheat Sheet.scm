@@ -48,3 +48,29 @@ val instrc_src = ev_nil(ev_lift(s"(let maybe-lift2 (lambda _ x (lift (lift x))) 
 ev(s"((($instr_src '$matcher_src) '(a b done)) '(a b done))")
 
 pink.scala examples: testCorrectnessOptimality()
+
+
+Compiles:
+      (let vm-stack '()
+        (let env-list '()
+          (let op-list '()
+            (let call-stack '()
+              (let locate (lambda locate i (lambda _ j (lambda _ env
+                            (let loc (lambda loc y (lambda _ lst
+                                      (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))
+                                    ))
+                            ((loc j) ((loc i) env)))
+                          )))
+              (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
+                                (if (eq? 'STOP (car ops)) (maybe-lift s)
+                                (if (eq? 'DBG (car ops))
+                                  (maybe-lift (car ops))
+                                  
+                                (((((machine s) e) c) d) (cdr ops))))
+                                )))))
+              (let start (lambda start ops
+                            (((((machine vm-stack) env-list) op-list) call-stack) ops)
+                          )
+                          start
+              )))
+      ))))

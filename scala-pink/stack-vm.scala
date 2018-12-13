@@ -42,11 +42,10 @@ object VM {
                             ((loc j) ((loc i) env)))
                           )))
               (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
-                                (if (eq? 'STOP (car ops)) s
+                                (if (eq? 'STOP (car ops)) (maybe-lift s)
                                 (if (eq? 'LDC (car ops)) (((((machine (cons (maybe-lift (cadr ops)) (maybe-lift s))) e) c) d) (cddr ops))
                                 (if (eq? 'LD (car ops))
-                                  (let pt (cadr ops)
-                                    (((((machine (cons (((locate (car pt)) (cadr pt)) e) s)) e) c) d) (cddr ops)))
+                                    (((((machine (cons (((locate (car (cadr ops))) (cadr (cadr ops))) e) s)) e) c) d) (cddr ops))
                                 (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'SUB (car ops)) (((((machine (cons (- (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
                                 (if (eq? 'MPY (car ops)) (((((machine (cons (* (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
@@ -62,7 +61,7 @@ object VM {
                                   (((((machine s) e) c) (cdr d)) (car d))
                                 (if (eq? 'LDF (car ops)) (((((machine (cons (cons (cadr ops) e) s)) e) (cons (cadr ops) c)) d) (cdr ops))
                                 (if (eq? 'AP (car ops))
-                                 (((((machine '()) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                (((((machine '()) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'RTN (car ops))
                                   (let resume (caddr d)
                                     (((((machine (cons (car s) (car d))) (cadr d)) c) (cdddr d)) resume))
@@ -72,15 +71,15 @@ object VM {
 
                                 (if (eq? 'DUP (car ops)) (((((machine (cons (car s) s)) e) c) d) (cdr ops))
                                 (if (eq? 'REP (car ops)) (((((machine s) e) c) d) (car c))
-                                (if (eq? 'NEG (car ops)) (((((machine (cons (* (car s) -1) (cdr s))) e) c) d) (cdr ops))
-                                (if (eq? 'PUSHENV (car ops)) (((((machine s) (cons (cons (cadr ops) (car e)) (cdr e))) c) d) (cddr ops))
+                                (if (eq? 'NEG (car ops)) (((((machine (cons (* (car s) (maybe-lift -1)) (cdr s))) e) c) d) (cdr ops))
+                                (if (eq? 'PUSHENV (car ops)) (((((machine s) (cons (cons (maybe-lift (cadr ops)) (car e)) (cdr e))) c) d) (cddr ops))
                                 (if (eq? 'SUBENV (car ops)) (((((machine s) (cons (cons (- (caar e) (cadr (car e))) (cddr (car e)))
                                                                                   (cdr e))) c) d) (cdr ops))
-                                (if (eq? 'NEGENV (car ops)) (((((machine s) (cons (cons (* (caar e) -1) (cdr (car e)))
+                                (if (eq? 'NEGENV (car ops)) (((((machine s) (cons (cons (* (caar e) (maybe-lift -1)) (cdr (car e)))
                                                                                   (cdr e))) c) d) (cdr ops))
                                 (if (eq? 'DUPENV (car ops)) (((((machine s) (cons (cons (caar e) (car e)) (cdr e))) c) d) (cdr ops))
                                 (if (eq? 'PAP (car ops))
-                                 (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'DBG (car ops))
                                   (maybe-lift 'yes)
                                   
@@ -91,7 +90,7 @@ object VM {
                           )
                           start
               )))
-      ))))
+        ))))
     """
 
   val vm_src = s"(let maybe-lift (lambda _  e e) $vm_poly_src)"
@@ -193,54 +192,12 @@ object VM {
       (let fac_src '(${getFacSource(4)})
         (vm_compiled fac_src)))""",
     prettycode(fac_exp_anf))
-
-    /*
-    checkrun(s"""
-    (let evalc         $evalc_src
-    (let fac_src       (quote $fac_src)
-
-    ((run 0 (evalc fac_src)) 4)))""",
-    "Cst(24)")
-
-    // optimality: verify collapse
-    checkcode(s"""
-    (let eval          $eval_src
-    (let evalc_src     (quote $evalc_src)
-    (let fac_src       (quote $fac_src)
-
-    ((eval evalc_src) fac_src))))""",
-    prettycode(fac_exp_anf))
-
-    checkcode(s"""
-    (let eval          $eval_src
-    (let evalc_src     (quote $evalc_src)
-    (let eval_src      (quote $eval_src)
-
-    ((eval evalc_src) eval_src))))""",
-    prettycode(eval_exp_anf))
-
-    checkcode(s"""
-    (let eval          $eval_src
-    (let evalc_src     (quote $evalc_src)
-
-    ((eval evalc_src) evalc_src)))""",
-    prettycode(evalc_exp_anf))
-
-    // further tower
-    checkcode(s"""
-    (let eval          $eval_src
-    (let eval_src      (quote $eval_src)
-    (let evalc_src     (quote $evalc_src)
-    (let fac_src       (quote $fac_src)
-
-    (((eval eval_src) evalc_src) fac_src)))))""",
-    prettycode(fac_exp_anf))*/
   }
 
-  def pretty() = {
-    val vm_exp = trans(parseExp(vm_src), Nil)
-    val vm_anf = reify { anf(List(Sym("XX")),vm_exp) }
-    println(prettycode(vm_anf))
+  def pretty(src: String, inAnfForm: Boolean) = {
+    val vm_exp = trans(parseExp(src), Nil)
+    val ir = if(inAnfForm) reify { anf(List(Sym("XX")),vm_exp) } else vm_exp
+    println(prettycode(ir))
   }
 
   def testCompilation() = {
@@ -256,20 +213,29 @@ object VM {
 
     // Simple interpretation
     checkrun(s"($vm_src '(LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ STOP))", "Tup(Cst(0),Str(.))")
-    ev(s"($vm_src '(LDC 100 LDC 100 LDC 200 LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ SEL (LDC 50 JOIN) (LDC 50JOIN) ADD STOP))")
+    checkrun(s"($vm_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB STOP))",
+              "Tup(Cst(50),Str(.))")
+    checkrun(s"""($vm_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB
+                          NIL LDF (LDC 137 RTN) AP STOP))""",
+              "Tup(Cst(137),Tup(Cst(50),Str(.)))")
 
     // Simple compilation
     checkrun(s"(run 0 ($vmc_src '(LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ STOP)))", "Tup(Cst(0),Str(.))")
-    ev(s"(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 200 LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ SEL (LDC 50 JOIN) (LDC 50JOIN) ADD STOP)))")
+    checkrun(s"(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB STOP)))",
+              "Tup(Cst(50),Str(.))")
 
-    /*val v = parseExp(s"""'(1 2)""")
-    val exp = trans(v,List("arg"))
-    val exp_anf = reify { anf(List(Sym("XX")),exp) }
-    checkcode(s"""
-    (let compiled $stubc_src
-      (let src '(1 2)
-        (compiled src)))""",
-    prettycode(exp_anf))*/
+    // Function call compilation
+    checkrun(s"""(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB
+                            NIL LDF (LDC 137 RTN) AP STOP)))""",
+              "Tup(Cst(137),Tup(Cst(50),Str(.)))")
+
+    checkrun(s"""(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB
+                            NIL LDC 1 CONS LDF (LDC 135 LD (1 1) ADD RTN) AP LDC 1 ADD STOP)))""",
+              "Tup(Cst(137),Tup(Cst(50),Str(.)))")
+
+    // Factorial Compilation
+    pretty(s"(run 0 ($vmc_src '(${getFacSource(4)})))", false)
+    ev(s"(run 0 ($vmc_src '(${getFacSource(4)})))")
   }
 
   def test() = {

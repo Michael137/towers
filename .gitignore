@@ -1,3 +1,4 @@
 target/
 project/
 scala-pink/stack-vm.scala.CEK
+scala-pink/trace.log

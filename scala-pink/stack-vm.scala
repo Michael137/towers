@@ -31,7 +31,7 @@ import Pink._
  */
 object VM {
   val vm_poly_src = """
-      (let vm-stack '()
+      (let vm-stack (maybe-lift '())
         (let env-list '()
           (let op-list '()
             (let call-stack '()
@@ -43,7 +43,7 @@ object VM {
                           )))
               (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d (lambda _ ops
                                 (if (eq? 'STOP (car ops)) (maybe-lift s)
-                                (if (eq? 'LDC (car ops)) (((((machine (cons (maybe-lift (cadr ops)) (maybe-lift s))) e) c) d) (cddr ops))
+                                (if (eq? 'LDC (car ops)) (((((machine (cons (maybe-lift (cadr ops)) s)) e) c) d) (cddr ops))
                                 (if (eq? 'LD (car ops))
                                     (((((machine (cons (((locate (car (cadr ops))) (cadr (cadr ops))) e) s)) e) c) d) (cddr ops))
                                 (if (eq? 'ADD (car ops)) (((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) c) d) (cdr ops))
@@ -72,6 +72,7 @@ object VM {
                                 (if (eq? 'DUP (car ops)) (((((machine (cons (car s) s)) e) c) d) (cdr ops))
                                 (if (eq? 'REP (car ops)) (((((machine s) e) c) d) (car c))
                                 (if (eq? 'NEG (car ops)) (((((machine (cons (* (car s) (maybe-lift -1)) (cdr s))) e) c) d) (cdr ops))
+                                (if (eq? 'DEC (car ops)) (((((machine (cons (+ (car s) (maybe-lift -1)) (cdr s))) e) c) d) (cdr ops))
                                 (if (eq? 'PUSHENV (car ops)) (((((machine s) (cons (cons (maybe-lift (cadr ops)) (car e)) (cdr e))) c) d) (cddr ops))
                                 (if (eq? 'SUBENV (car ops)) (((((machine s) (cons (cons (- (caar e) (cadr (car e))) (cddr (car e)))
                                                                                   (cdr e))) c) d) (cdr ops))
@@ -81,9 +82,9 @@ object VM {
                                 (if (eq? 'PAP (car ops))
                                 (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
                                 (if (eq? 'DBG (car ops))
-                                  (maybe-lift 'yes)
+                                  (maybe-lift 'Yes)
                                   
-                                (((((machine s) e) c) d) (cdr ops)))))))))))))))))))))))))))))
+                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -234,8 +235,8 @@ object VM {
               "Tup(Cst(137),Tup(Cst(50),Str(.)))")
 
     // Factorial Compilation
-    pretty(s"(run 0 ($vmc_src '(${getFacSource(4)})))", false)
-    ev(s"(run 0 ($vmc_src '(${getFacSource(4)})))")
+    // pretty(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)
+    // ev(s"(run 0 ($vmc_src '(${getFacSource(2)})))")
   }
 
   def test() = {

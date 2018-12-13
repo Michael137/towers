@@ -2,3 +2,10 @@ target/
 project/
 scala-pink/stack-vm.scala.CEK
 scala-pink/trace.log
+*.iml
+*.xml
+*.bbl
+*.blg
+*.log
+*.error
+*.aux

@@ -201,7 +201,7 @@ object Base {
         case (Clo(env3,e3), v2) => 
           evalms(env3:+Clo(env3,e3):+v2,e3)
         case (Code(s1), Code(s2)) =>
-          Code(reflect(App(s1,s2)))
+          reflectc(App(s1,s2))
         case (r1, r2) =>
           val r2s = r2 match {
             case Clo(_, _) => r2.getClass.toString
@@ -263,26 +263,26 @@ object Base {
         case (Tup(a,b)) => 
           a
         case (Code(s1)) =>
-          Code(reflect(Fst(s1)))
+          reflectc(Fst(s1))
       }
     case Snd(e1) =>
       (evalms(env,e1)) match {
         case (Tup(a,b)) => 
           b
         case (Code(s1)) =>
-          Code(reflect(Snd(s1)))
+          reflectc(Snd(s1))
       }
     case IsNum(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          Code(reflect(IsNum(s1)))
+          reflectc(IsNum(s1))
         case v => 
           Cst(if (v.isInstanceOf[Cst]) 1 else 0)
       }
     case IsStr(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          Code(reflect(IsStr(s1)))
+          reflectc(IsStr(s1))
         case v => 
           Cst(if (v.isInstanceOf[Str]) 1 else 0)
       }
@@ -290,7 +290,7 @@ object Base {
     case IsCons(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          Code(reflect(IsCons(s1)))
+          reflectc(IsCons(s1))
         case v => 
           Cst(if (v.isInstanceOf[Tup]) 1 else 0)
       }

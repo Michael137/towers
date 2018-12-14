@@ -14,6 +14,9 @@
   - [ ] Experiment with arbitrary levels of stacks
     * Use the stack machine (or alternative CESK, etc.) to implement eval? (as suggested by @namin)
     * Perhaps MultiLISP machine?
+    * New types of stage-polymorphic VMs? E.g. integrate into GraalVM
+    * Alternative IR/collapsing methodology? Different normalization process?
+    * Mixed code vs. non-code operations? E.g. Plus(Lit(0), Lift(Lit(5))) and support for Tup(Code(Var(0)), Tup(Code(Var(1)), Code(Var(2))))
 
 ## Run VM (from sbt console)
 * sbt compile

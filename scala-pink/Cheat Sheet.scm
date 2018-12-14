@@ -74,3 +74,9 @@ Compiles:
                           start
               )))
       ))))
+
+Let-insertion example:
+    reflect(reifyc(evalms(Nil,If(Lift(Lit(0)),Lift(Sym("hi")),Lift(Sym("universe"))))))
+    reflect(reifyc(evalms(Nil,If(Lift(Lit(0)),Lift(Sym("hello")),Lift(Sym("world"))))))
+    val Code(e) = evalms(Nil,If(Lift(Lit(0)),Lift(Sym("good")),Lift(Sym("bye"))))
+    (stBlock foldRight e)(Let)

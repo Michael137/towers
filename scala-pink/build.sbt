@@ -13,3 +13,5 @@ testFrameworks += new TestFramework(
 logBuffered := false
 
 parallelExecution in Test := false
+
+// fork in run := false

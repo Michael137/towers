@@ -10,3 +10,4 @@ scala-pink/trace.log
 *.error
 *.aux
 lit_review.pdf
+*.tex.bak

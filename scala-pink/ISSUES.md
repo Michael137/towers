@@ -77,3 +77,26 @@ Interestingely when replacing the last argument (i.e. the next instructions to e
 
 
 ## evalms Match error
+Another error that can occur is:
+```
+scala> ev(s"($vmc_src '(LDC 10 LDC 20 LDC 30 STOP))")
+        scala.MatchError: (Code(Lit(30)),Tup(Code(Lit(20)),Tup(Code(Lit(10)),Code(Sym(.))))) (of class scala.Tuple2)
+        at Base$.lift(base.scala:150)
+        at Base$.evalms(base.scala:176)
+        ...
+```
+This is a Scala pattern match error in the [base.scala](base.scala) `lift()` function. Here we try to reflect a tuple of code instead of a pair of code expressions. The `lift()` only supports strictly code expressions. I.e. all parts of the expression have to be wrapped in a `Code()` constructor. For tuples this would be `Tup(Code(Var(0)), Code(Var(1)))`. Since we are trying to lift a stack, we are matching on `Tup(Code(Var(0)), Tup(Code(Var(1)), Tup(Code(Var(2))), Code(Var(3))))`. This obviously fails to stage while the interpretation works as expected:
+
+```
+scala> ev(s"($vm_src '($src_match_error))")
+res2: Base.Val = Tup(Cst(30),Tup(Cst(20),Tup(Cst(10),Str(.))))
+```
+
+A workaround is to use the `WRITEC` SECD instruction instead of `STOP`. Here we simply output the top element of the stack:
+
+```
+scala> ev(s"($vmc_src '(LDC 10 LDC 20 LDC 30 WRITEC))")
+res4: Base.Val = Code(Lit(30))
+```
+
+As explained in the paper, support for mixed code and non-code values has not been implemented. It could be a useful extension since staging a stack (i.e. linked list) of code expressions is otherwise not possible.

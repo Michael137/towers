@@ -19,6 +19,7 @@ import Pink._
  * Extensions:
  *  DUP: duplicate top element on stack; (x.s) -> x.(x.s)
  *  NEG: negate top element of stack; (x.s) -> (mul x -1).s
+ *  DEC: decrement top element of stack; (x.s) -> (sub x -1).s
  *  REP: repeat most recent LDF function (called from within body of function)
  *  PUSHENV: push operand onto env-list
  *  SUBENV: SUB but on env-list instead of stack
@@ -185,14 +186,6 @@ object VM {
         (vm fac_src)))""", "Cst(24)")
 
     // compilation
-    val factorial_val = parseExp(s"""'(${getFacSource(4)})""")
-    val factorial_exp = trans(fac_val,List("arg"))
-    val factorial_exp_anf = reify { anf(List(Sym("XX")),factorial_exp) }
-    checkcode(s"""
-    (let vm_compiled $vmc_src
-      (let fac_src '(${getFacSource(4)})
-        (vm_compiled fac_src)))""",
-    prettycode(fac_exp_anf))
   }
 
   def pretty(src: String, inAnfForm: Boolean) = {
@@ -202,16 +195,6 @@ object VM {
   }
 
   def testCompilation() = {
-    val test_src = s"""($vm_src '(LDC -10 ; Comments work fine
-                              LDC 10 ; As in Lisp
-                              ADD
-                              SEL (LDC 20 JOIN) (LDC 30 JOIN)
-                              NIL LDC 136 CONS LDC 1 CONS
-                              LDF (LD (1 2) LD (1 1) ADD RTN)
-                              AP
-                              LDC 137
-                              STOP))"""
-
     // Simple interpretation
     checkrun(s"($vm_src '(LDC 10 LDC 20 ADD LDC 50 SUB LDC 100 MPY LDC 5 EQ STOP))", "Tup(Cst(0),Str(.))")
     checkrun(s"($vm_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB STOP))",
@@ -239,11 +222,53 @@ object VM {
     // ev(s"(run 0 ($vmc_src '(${getFacSource(2)})))")
   }
 
+  def testCrash() = {
+    // Causes stack overflow in reify()<->run() from base.scala
+    // Simulates a repeated function call using the REP instruction
+    // This function decrements from 10 down while the counter
+    // is > 1
+    val src_so = s"""
+            NIL LDC 10 CONS
+            LDF (
+              DUPENV
+              LD (1 1)
+              PUSHENV 1
+              SUBENV
+              NEGENV
+              LD (1 1)
+              GT 1
+              SEL (JOIN) (WRITEC)
+              REP
+              RTN
+            ) PAP
+            """
+
+    // Causes match error due to stack being Tup(Code(...), Tup(Code(...), Code(...)))
+    // lift() in base.scala only matches on code pairs and not lists
+    // Workaround is to use WRITEC instead of STOP to output result
+    val src_match_error = s"""LDC 10 LDC 20 LDC 30 STOP"""
+
+    // Change argument to $vmc_src below to cause one of the two errors
+    // and output the stacktrace to trace.error and the stdout log
+    // to trace.log
+
+    import java.io._
+    val err_file = new File("trace.error");
+    var ps = new PrintStream(err_file);
+
+    val out_file = new FileOutputStream(new File("trace.log"))
+    scala.Console.withOut(out_file) {
+      // Interpretation, i.e. changing vmc_src to vm_src works fine
+      try{ ev(s"($vmc_src '($src_match_error))") } catch { case e: Throwable => e.printStackTrace(ps) }
+    }
+  }
+
   def test() = {
     println("// ------- VM.test --------")
     // testFactorial()
     // testInstructions()
-    testCompilation()
+    // testCompilation()
+    testCrash()
 
     testDone()
   }

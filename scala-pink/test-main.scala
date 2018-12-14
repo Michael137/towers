@@ -6,7 +6,6 @@ object TestMain {
     //Pink_CPS.test()
     //Pink_clambda.test()
     //Matcher.test()
-    Stack_Machine.test()
     VM.test()
     //Bench.test()
     println("DONE")

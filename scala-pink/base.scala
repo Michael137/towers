@@ -51,17 +51,20 @@ object Base {
     val sF = stFresh
     val sB = stBlock
     val sN = stFun
-    try f finally { stFresh = sF; stBlock = sB; stFun = sN }
+    println(s"DEBUGGING f arg in run")
+    try { println("DEBUGGING calling f in run"); val ret = f; println(s"DEBUGGING finished calling f in run: $ret"); ret } finally { stFresh = sF; stBlock = sB; stFun = sN }
   }
 
   def fresh() = {
     stFresh += 1; Var(stFresh-1)
   }
-  def reify(f: => Exp) = run {
+  def reify(f: => Exp) = { println("REIFY CALLED");run {
     stBlock = Nil
+    println(s"DEBUGGING f arg in reify")
     val last = f
+    println(s"DEBUGGING last in reify")
     (stBlock foldRight last)(Let)
-  }
+  }}
   def reflect(s:Exp) = {
     stBlock :+= s
     fresh()
@@ -114,8 +117,9 @@ object Base {
 
 
   def reifyc(f: => Val) = reify {
-    // println(s"DEBUGGING reifyc: $f")
+    println(s"DEBUGGING reifyc pre-code")
     val Code(e) = f;
+    println(s"DEBUGGING reifyc post-code")
     e
   }
   def reflectc(s: Exp) = Code(reflect(s))
@@ -212,7 +216,7 @@ object Base {
         case Cst(n) => 
           if (n != 0) evalms(env,a) else evalms(env,b)
         case (Code(c1)) =>
-          reflectc(If(c1, reifyc(evalms(env,a)), reifyc(evalms(env,b))))
+          println(s"DEBUGGING if: $c $a $b");reflectc(If(c1, reifyc(evalms(env,a)), reifyc(evalms(env,b))))
       }
 
     case Plus(e1,e2) =>

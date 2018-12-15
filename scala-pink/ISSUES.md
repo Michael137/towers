@@ -77,8 +77,9 @@ Interestingely when replacing the last argument (i.e. the next instructions to e
 
 Attempted solutions:
 * Refactoring the SEL and introducing extra instructions such as WRITECIF or REPIF: still overflows stack
-* Increase stack size: same stack overflow eventually
-* Explicit (nolift ...) within SEL branches: same stack overflow
+* Increase stack size (add -Xss256m to sbt startup VM params): same stack overflow eventually
+* Explicit (nolift ...) within SEL branches and condition: same stack overflow
+* Decreasing number of instructions supported i.e. less branches in main loop: same stack overflow
 
 ## evalms Match error
 Another error that can occur is:

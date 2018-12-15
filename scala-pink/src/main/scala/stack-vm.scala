@@ -260,7 +260,7 @@ object VM {
     scala.Console.withOut(out_file) {
       // Interpretation, i.e. changing vmc_src to vm_src works fine
       try{
-        ev(s"($vmc_src '($src_so))")
+        val res = ev(s"($vmc_src '($src_so))")
       } catch { case e: Throwable => e.printStackTrace(ps) }
     }
   }

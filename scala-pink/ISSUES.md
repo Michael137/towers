@@ -75,6 +75,10 @@ Comparing these base-lang tags to the Pink implementation of the stack-machine w
 
 Interestingely when replacing the last argument (i.e. the next instructions to execute) to (machine ...) with a quoted list of instructions such as ```'(ADD (STOP ()))```, compilation succeeds.
 
+Attempted solutions:
+* Refactoring the SEL and introducing extra instructions such as WRITECIF or REPIF: still overflows stack
+* Increase stack size: same stack overflow eventually
+* Explicit (nolift ...) within SEL branches: same stack overflow
 
 ## evalms Match error
 Another error that can occur is:

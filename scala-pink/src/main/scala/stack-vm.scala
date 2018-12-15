@@ -259,7 +259,9 @@ object VM {
     val out_file = new FileOutputStream(new File("trace.log"))
     scala.Console.withOut(out_file) {
       // Interpretation, i.e. changing vmc_src to vm_src works fine
-      try{ ev(s"($vmc_src '($src_so))") } catch { case e: Throwable => e.printStackTrace(ps) }
+      try{
+        ev(s"($vmc_src '($src_so))")
+      } catch { case e: Throwable => e.printStackTrace(ps) }
     }
   }
 

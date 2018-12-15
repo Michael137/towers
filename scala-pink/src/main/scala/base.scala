@@ -163,6 +163,8 @@ object Base {
   }
 
   // multi-stage evaluation
+  // import scala.annotation.tailrec
+  // @tailrec
   def evalms(env: Env, e: Exp): Val = e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
@@ -216,7 +218,10 @@ object Base {
         case Cst(n) => 
           if (n != 0) evalms(env,a) else evalms(env,b)
         case (Code(c1)) =>
-          println(s"DEBUGGING if: $c $a $b");reflectc(If(c1, reifyc(evalms(env,a)), reifyc(evalms(env,b))))
+          println(s"DEBUGGING if: $c $a $b");
+          reflectc(If(c1,
+            reifyc(evalms(env,a)),
+            reifyc(evalms(env,b))))
       }
 
     case Plus(e1,e2) =>

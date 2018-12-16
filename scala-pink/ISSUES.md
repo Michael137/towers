@@ -1,5 +1,5 @@
 # Issue Log
-## evalms Stack overflow
+## evalms Stack overflow (RESOLVED)
 This refers to a stack overflow when staging the stack machine in [stack-vm.scala](stack-vm.scala) w.r.t. a set of instructions that repeatedly call a function based on some break condition.
 
 Example (from testCrash() in [stack-vm.scala](stack-vm.scala)):
@@ -81,6 +81,14 @@ Attempted solutions:
 * Explicit (nolift ...) within SEL branches and condition: same stack overflow
 * Decreasing number of instructions supported i.e. less branches in main loop: same stack overflow
 
+### Final Solution:
+* Since there is no way during staging time to know what the outcome of the SEL condition is, our base evaluator has to evaluate both branches, causing a non-terminating infinite loop during `evalms()`. The solution is to use a non-code conditional i.e. we introduce two new instrucions REPGT and PAPGT that are while-loop and while-loop application respectively.
+
+### Followup
+* Find recursive solution ala SECD's RAP
+* Possibility to unlift a value? I.e. turn code-conditional into non-code conditional. Or create a termination condition some other way
+* Possible to make use of `trans` quotation semantics to refer to non-code values from generated code
+
 ## evalms Match error
 Another error that can occur is:
 ```
@@ -105,3 +113,10 @@ res4: Base.Val = Code(Lit(30))
 ```
 
 As explained in the paper, support for mixed code and non-code values has not been implemented. It could be a useful extension since staging a stack (i.e. linked list) of code expressions is otherwise not possible.
+
+# Pink Test Errors
+Following tests also don't terminate before the JVM memory is exhausted. Though not a SO:
+
+* Pink.test()
+* Pink_CPS.test()
+* Pink_clambda.test()

@@ -82,10 +82,16 @@ object VM {
                                 (if (eq? 'DUPENV (car ops)) (((((machine s) (cons (cons (caar e) (car e)) (cdr e))) c) d) (cdr ops))
                                 (if (eq? 'PAP (car ops))
                                 (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cddr s) (cons e (cons (cdr ops) d)))) (caar s))
+                                (if (eq? 'PAPGT (car ops))
+                                  (((((machine (cadr s)) (cons (cadr s) (cdr (car s)))) c) (cons (cadr ops) (cons (cddr s) (cons e (cons (cddr ops) d))))) (caar s))
+                                (if (eq? 'REPGT (car ops))
+                                  (if (> (car d) (cadr ops))
+                                  (((((machine s) e) c) (cons (- (car d) 1) (cdr d))) (car c))
+                                  (((((machine s) e) c) (cdr d)) '(WRITEC)))
                                 (if (eq? 'DBG (car ops))
                                   (maybe-lift 'Yes)
                                   
-                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))))
+                                (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))))))
                                 )))))
               (let start (lambda start ops
                             (((((machine vm-stack) env-list) op-list) call-stack) ops)
@@ -153,25 +159,25 @@ object VM {
 
   def getFacSource(n: Int) = {
     // Factorial
-    // ? Should use RAP instead
+    // ? Should use recursive apply (RAP) instead
     s"""
-        NIL LDC $n CONS ; Maximum Scala int can handle is n = 25
+        NIL LDC ${n} CONS ; Maximum Scala int can handle is n = 25
         LDF
-        (DUPENV
-        LD (1 1)
-        LDC 1
-        SUB
-        NEG
-        MPY
+        (
+          DUPENV
+          LD (1 1)
+          LDC 1
+          SUB
+          NEG
+          MPY
 
-        PUSHENV 1
-        SUBENV
-        NEGENV
+          PUSHENV 1
+          SUBENV
+          NEGENV
 
-        LD (1 1)
-        GT 1
-        SEL (REP) (WRITEC)
-        RTN) PAP
+          REPGT 2
+          WRITEC
+        ) PAPGT ${n}
     """
   }
 
@@ -186,6 +192,13 @@ object VM {
         (vm fac_src)))""", "Cst(24)")
 
     // compilation
+    val staged_fac = evalms(Nil, trans(parseExp(s"($vmc_src '(${getFacSource(3)}))"), Nil))
+
+    // run compilation
+    pretty(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)
+    checkrun(s"(run 0 ($vmc_src '(${getFacSource(2)})))", "Cst(2)")
+    checkrun(s"(run 0 ($vmc_src '(${getFacSource(3)})))", "Cst(6)")
+    checkrun(s"(run 0 ($vmc_src '(${getFacSource(10)})))", "Cst(3628800)")
   }
 
   def pretty(src: String, inAnfForm: Boolean) = {
@@ -216,10 +229,6 @@ object VM {
     checkrun(s"""(run 0 ($vmc_src '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB
                             NIL LDC 1 CONS LDF (LDC 135 LD (1 1) ADD RTN) AP LDC 1 ADD STOP)))""",
               "Tup(Cst(137),Tup(Cst(50),Str(.)))")
-
-    // Factorial Compilation
-    // pretty(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)
-    // ev(s"(run 0 ($vmc_src '(${getFacSource(2)})))")
   }
 
   def testCrash() = {
@@ -261,16 +270,17 @@ object VM {
       // Interpretation, i.e. changing vmc_src to vm_src works fine
       try{
         val res = ev(s"($vmc_src '($src_so))")
+        println(res)
       } catch { case e: Throwable => e.printStackTrace(ps) }
     }
   }
 
   def test() = {
     println("// ------- VM.test --------")
-    // testFactorial()
-    // testInstructions()
-    // testCompilation()
-    testCrash()
+    testFactorial()
+    testInstructions()
+    testCompilation()
+    // testCrash() // For debugging crashes
 
     testDone()
   }

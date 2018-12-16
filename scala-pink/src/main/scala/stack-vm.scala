@@ -161,6 +161,9 @@ object VM {
     // Factorial
     // ? Should use recursive apply (RAP) instead
     s"""
+        LDC ${n}
+        GT 1
+        SEL (JOIN) (LDC 1 WRITEC)
         NIL LDC ${n} CONS ; Maximum Scala int can handle is n = 25
         LDF
         (

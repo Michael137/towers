@@ -27,3 +27,11 @@
 or to run full Pink testsuite
 
 * sbt test
+
+# Debugging
+## Intellij
+	* Configure remote debugging configuration (should be same as sbt startup port)
+	* start builtin sbt shell
+	* set breakpoints
+	* Run remote debugging configuration
+	* Run sbt test

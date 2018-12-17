@@ -185,8 +185,7 @@ object VM {
   }
 
   def testFactorial() = {
-    checkrun(s"""($vm_src '(${getFacSource(25)}))""", "Cst(2076180480)")
-    //checkrun(s"((run 0 ($vmc_src)) $fac_src)", "Cst(2076180480)")
+    checkrun(s"""($vm_src '(${getFacSource(12)}))""", "Cst(479001600)")
 
     // interpretation
     checkrun(s"""
@@ -278,12 +277,31 @@ object VM {
     }
   }
 
+  def testTranslators() = {
+    // deriving translators
+    import PinkBase._
+    val instr_poly_src = Pink.ev_poly_src.replace("(env exp)", "(if (eq? 's exp) (log (maybe-lift2 0) (env exp)) (env exp))")
+    val instr_src = ev_nil(ev_nolift(s"(let maybe-lift2 (lambda _ x x) $instr_poly_src)"))
+    val instr2_src = ev_nil(ev_nolift(s"(let maybe-lift2 (lambda _ x (lift x)) $instr_poly_src)"))
+    val instrc_src = ev_nil(ev_lift(s"(let maybe-lift2 (lambda _ x (lift (lift x))) $instr_poly_src)"))
+
+    // Instrumented interpretation
+    ev(s"(($instr_src '$vm_src) '(${getFacSource(2)}))")
+
+    // TODO: factorial throws match error
+    ev(s"(($instr2_src '$vmc_src) '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB WRITEC))")
+    ev(s"(run 0 (($instr2_src '$vmc_src) '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB WRITEC)))")
+    // ev(s"(run 0 ((run 0 ($instrc_src '$vmc_src)) '(${getFacSource(4)})))")
+    // ev(s"((run 0 ($instrc_src '$vmc_src)) '(${getFacSource(4)}))")
+  }
+
   def test() = {
     println("// ------- VM.test --------")
     testFactorial()
     testInstructions()
     testCompilation()
     // testCrash() // For debugging crashes
+    testTranslators() // Heterogeneous translators on top of Pink
 
     testDone()
   }

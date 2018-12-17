@@ -121,9 +121,10 @@ object Base {
 
   def reifyc(f: => Val) = reify {
     //println(s"DEBUGGING reifyc pre-code")
-    val Code(e) = f;
-    //println(s"DEBUGGING reifyc post-code")
-    e
+    f match {
+      case Code(e) => e
+      case Tup(Code(e1), Code(e2)) => Cons(e1, e2) // TODO: double check this behaviour is sound w.r.t reify semantics
+    }
   }
   def reflectc(s: Exp) = Code(reflect(s))
 

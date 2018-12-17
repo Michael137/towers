@@ -67,8 +67,8 @@ object Lisp {
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
 
     // TODO: implement mutators
-    case Tup(Str("set!"),   Tup(a,N)) => Special(benv => a)
-    case Tup(Str("set-car!"),  Tup(a,N)) => Special(benv => a)
+    // case Tup(Str("set!"),   Tup(a,N)) => Set(benv => a)
+    // case Tup(Str("set-car!"),  Tup(a,N)) => SetCar(benv => a)
 
     case Tup(Str("trans"),  Tup(a,N)) =>
       Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))

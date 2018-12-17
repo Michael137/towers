@@ -87,7 +87,7 @@ object VM {
                                 (if (eq? 'REPGT (car ops))
                                   (if (> (car d) (cadr ops))
                                   (((((machine s) e) c) (cons (- (car d) 1) (cdr d))) (car c))
-                                  (((((machine s) e) c) (cdr d)) '(WRITEC)))
+                                  (car s))
                                 (if (eq? 'DBG (car ops))
                                   (maybe-lift 'Yes)
                                   
@@ -197,16 +197,16 @@ object VM {
     val staged_fac = evalms(Nil, trans(parseExp(s"($vmc_src '(${getFacSource(3)}))"), Nil))
 
     // run compilation
-    pretty(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)
+    prettify(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)
     checkrun(s"(run 0 ($vmc_src '(${getFacSource(2)})))", "Cst(2)")
     checkrun(s"(run 0 ($vmc_src '(${getFacSource(3)})))", "Cst(6)")
     checkrun(s"(run 0 ($vmc_src '(${getFacSource(10)})))", "Cst(3628800)")
   }
 
-  def pretty(src: String, inAnfForm: Boolean) = {
+  def prettify(src: String, inAnfForm: Boolean) = {
     val vm_exp = trans(parseExp(src), Nil)
     val ir = if(inAnfForm) reify { anf(List(Sym("XX")),vm_exp) } else vm_exp
-    println(prettycode(ir))
+    prettycode(ir)
   }
 
   def testCompilation() = {
@@ -293,6 +293,25 @@ object VM {
     ev(s"(run 0 (($instr2_src '$vmc_src) '(LDC 100 LDC 100 LDC 100 LDC 100 ADD GT 1 SEL (SUB JOIN) (ADD JOIN) LDC 50 SUB WRITEC)))")
     // ev(s"(run 0 ((run 0 ($instrc_src '$vmc_src)) '(${getFacSource(4)})))")
     // ev(s"((run 0 ($instrc_src '$vmc_src)) '(${getFacSource(4)}))")
+
+    // Interpretation through Pink evaluator
+    ev(s"""
+      (let eval      $eval_src
+          (let vm_src    '$vm_src
+            (let fac_src    '(${getFacSource(10)})
+              ((eval vm_src) fac_src))))""")
+
+    // Compilation through compiled Pink evaluator
+    /*ev(s"""
+      (let eval      $eval_src
+        (let evalc_src '$evalc_src
+          (let vm_src    '$vm_src
+            (let fac_src    '(${getFacSource(4)})
+            (((eval evalc_src) vm_src) fac_src)))))""")*/
+
+    // Verify collapse
+    // checkcode(s"(($eval_src '$evalc_src) '$vmc_src)", prettify(vmc_src, true))
+    ev(s"(($eval_src '$evalc_src) '$vmc_src)")
   }
 
   def test() = {

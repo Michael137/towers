@@ -89,7 +89,7 @@ object VM {
                                   (((((machine s) e) c) (cons (- (car d) 1) (cdr d))) (car c))
                                   (car s))
                                 (if (eq? 'DBG (car ops))
-                                  (maybe-lift 'Yes)
+                                  (maybe-lift (cons e (cons 'D: (cons d (cons 'S: s)))))
                                   
                                 (((((machine s) e) c) d) (cdr ops))))))))))))))))))))))))))))))))
                                 )))))

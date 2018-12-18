@@ -80,3 +80,40 @@ Let-insertion example:
     reflect(reifyc(evalms(Nil,If(Lift(Lit(0)),Lift(Sym("hello")),Lift(Sym("world"))))))
     val Code(e) = evalms(Nil,If(Lift(Lit(0)),Lift(Sym("good")),Lift(Sym("bye"))))
     (stBlock foldRight e)(Let)
+
+
+    println(ev(s"""($vm_src '(
+        NIL LDC 1 CONS LDC 3 CONS LDF
+          (DUM NIL LDF
+            (LDC 0 LD (1 1) EQ SEL
+              (LDC 1 JOIN)
+              (NIL LD (1 2) LD (1 1) MPY CONS
+                LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+            RTN)
+  
+            CONS LDF
+              (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
+              RAP RTN)
+            AP DBG)
+                              )"""))
+
+
+                              (if (eq? (car s) (maybe-lift 0))
+                                      (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) (caddr ops))
+                                      (((((machine (cdr s)) e) c) (cons (cdddr ops) d)) (cadr ops)))
+
+                                      (((((machine '()) (cons (cddr (car s)) (cadr s))) c) (cons (cddr s) (cons (cdr e) (cons (cdr ops) d)))) (caar s))
+
+RAP factorial:
+println(ev(s"""($vm_src '(
+    NIL LDC 1 CONS LDC 3 CONS LDF
+      (DUM NIL LDF
+        (LDC 0 LD (1 1) EQ SEL
+          (LDC 1 JOIN)
+          (NIL LD (1 2) LD (1 1) MPY CONS
+              LD (3 2) LD (1 1) SUB CONS DBG LD (2 1) AP JOIN)
+        RTN)
+      CONS LDF
+        (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+      RTN) AP DBG
+                          ))"""))

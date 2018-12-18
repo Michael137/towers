@@ -66,9 +66,10 @@ object Lisp {
     case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
 
-    // TODO: implement mutators
-    // case Tup(Str("set!"),   Tup(a,N)) => Set(benv => a)
+    // TODO: implement mutators and global state
+    // case Tup(Str("set!"),   Tup(b,Tup(a,N))) => SetVar(trans(a,env), trans(b, env))
     // case Tup(Str("set-car!"),  Tup(a,N)) => SetCar(benv => a)
+    // case Tup(Str("define"),  Tup(a,N)) => SetCar(benv => a)
 
     case Tup(Str("trans"),  Tup(a,N)) =>
       Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))

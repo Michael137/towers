@@ -8,7 +8,6 @@ object TestMain {
     // Matcher.test()
     // VM.test()
     // Bench.test()
-    CESK.test()
     println("DONE")
   }
 }

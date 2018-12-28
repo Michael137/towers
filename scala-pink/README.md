@@ -7,7 +7,7 @@
     - [x] branch
   - [X] Be able to run fibonacci/factorial testsuite (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master/scheme-pink/stack-vm.scm))
   - [x] Add the stack-machine as a user-level in Pink
-    * __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/stack-vm.scala)__
+    * __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/src/main/scala/stack-vm.scala)__
     * Followups: tracing stack, factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent AP and REP)
   - [X] Stage stack and compare to non-staged version
   - [X] Stage SECD factorial

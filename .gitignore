@@ -9,5 +9,5 @@ scala-pink/trace.log
 *.log
 *.error
 *.aux
-lit_review.pdf
 *.tex.bak
+scala-pink/src/main/scala/cesk.scala

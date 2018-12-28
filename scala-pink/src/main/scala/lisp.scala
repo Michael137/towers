@@ -67,7 +67,11 @@ object Lisp {
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
 
     // TODO: implement mutators and global state
-    // case Tup(Str("set!"),   Tup(b,Tup(a,N))) => SetVar(trans(a,env), trans(b, env))
+    // case Tup(Str("set!"),   Tup(a,Tup(b,N))) => {
+    //   val i = env.lastIndexOf(a);
+    //   val new_env = env.updated(i, trans(b, env))
+    //   Var(i)
+    // }
     // case Tup(Str("set-car!"),  Tup(a,N)) => SetCar(benv => a)
     // case Tup(Str("define"),  Tup(a,N)) => SetCar(benv => a)
 

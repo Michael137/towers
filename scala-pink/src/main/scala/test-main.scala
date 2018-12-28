@@ -1,13 +1,15 @@
 object TestMain {
   def main(args: Array[String]) {
-    // Base.test()
+    Base.test()
     // Lisp.test()
     // Pink.test()
     // Pink_CPS.test()
     // Pink_clambda.test()
     // Matcher.test()
-    // VM.test()
+    VM.test()
     // Bench.test()
+    // CESK.test()
+    // EBase.test()
     println("DONE")
   }
 }

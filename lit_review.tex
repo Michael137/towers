@@ -6,12 +6,14 @@
 \usepackage[inline]{enumitem} % inline numbered lists
 \usepackage[left=2cm,right=2cm]{geometry}
 \usepackage{verbatim} % for comments
+\usepackage{graphicx}
 
 \begin{document}
 \maketitle
 \frenchspacing
 
 \newcommand{\mslang}{$\lambda\uparrow\downarrow$}
+\newcommand{\mslangStar}{$\lambda\uparrow\downarrow^*$}
 
 \section{About this document}
 This is a collection of references and summaries to research in the field of meta-programming/supercompilation/partial evaluation
@@ -59,6 +61,32 @@ Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
 \begin{itemize}
 	\item Able to achieve compilation of stack-machine on top the Pink evaluator (including tracing evaluator etc.)
 	\item Compilation i.e. collapsing through explicit staging annotations requires intricate knowledge of infrastructure and does not support all data structures e.g. stacks
+\end{itemize}
+
+\section{Problems}
+A useful analogy is the one presented in \cite{amin2017collapsing}: a Python interpreter running on a JavaScript emulator of a x86 CPU. What we envision (with reference to this hypothetical setting) is handling the two following cases:
+\begin{enumerate}
+	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
+	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
+	\begin{itemize}
+		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
+	\end{itemize}
+\end{enumerate}
+To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{secd_tower_arch}.
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[scale=0.75]{secd_arch.png}
+	\caption{``Effectively functional'' \mslangStar with SECD tower above it}\label{secd_tower_arch}
+\end{figure}
+
+\section{Contributions}
+\begin{itemize}
+	\item Extension of the core \mslang to support side effects, combining previous insights into multi-level $\lambda$ \cite{nielson1996multi} and work on side-effects in partial evaluators \cite{asai1997partial}.
+	\item Development a CESK-style abstract machine/ abstract interpreter for said extended \mslang
+	\item Form a basis for further work on towers by providing a stage polymorphic base evaluator capable of modelling functional or imperative languages
+	\item Mimick a practical tower through a SECD machine on top of the base evaluator and show compilation without staging commands throughout the tower
+	\item Theoretical proposal of how one might achieve collapsing in practice
 \end{itemize}
 	
 \bibliographystyle{IEEEtran}

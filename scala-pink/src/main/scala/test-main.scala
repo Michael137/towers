@@ -6,10 +6,10 @@ object TestMain {
     // Pink_CPS.test()
     // Pink_clambda.test()
     // Matcher.test()
-    VM.test()
+    // VM.test()
     // Bench.test()
     // CESK.test()
-    // EBase.test()
+    EBase.test()
     println("DONE")
   }
 }

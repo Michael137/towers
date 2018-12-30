@@ -33,10 +33,10 @@ object EBase {
   case class If(c:Exp,a:Exp,b:Exp) extends Exp
   case class SetVar(v: Var, e: Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
-  case class Tup(e1:Exp,e2:Exp) extends Exp
 
   // Auxiliary
   case class Let(v: Var, e: Exp, body: Exp) extends Exp
+  case class Letrec(p: List[(Var, Exp)], b: Exp) extends Exp
   case class App(f: Exp, arg: List[Exp]) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
@@ -57,6 +57,7 @@ object EBase {
   case class Str(s:String) extends Val
   case class Clo(f: Lam, env: Env) extends Val
   case class Code(e:Exp) extends Val
+  case class Tup(v1:Val,v2:Val) extends Val
   // Continuation types
   case class LetK(v: Var, c: Exp, e: Env, k: Cont) extends Val // ? var, v, is de Bruijn Level
   case class Halt() extends Val
@@ -83,7 +84,16 @@ object EBase {
             val proc = evalAtom(f, e, s)
             val args = es.map({x=>evalAtom(x,e,s)})
             applyProc(proc, args, s, k)
-          // case Letrec() =>
+
+          case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
+            val (vs, es) = exps.unzip
+            val addrs = vs.map({ x: Var => x.s.hashCode() })
+            val varNames = vs.map({x: Var => x.s})
+            val updatedEnv = updateMany(e, varNames, addrs)
+            val vals = es.map({ x => evalAtom(x, updatedEnv, s) })
+            val updatedStore = updateMany(s, addrs, vals)
+            State(body, updatedEnv, updatedStore, k)
+
           case SetVar(v, exp) =>
             val value = evalAtom(exp, e, s)
             val updated = update(s, e(v.s), value)
@@ -98,19 +108,36 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case Lit(_) | Sym(_) | Lam(_, _) | _: Primitive => true
+    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
       case Sym(str) => Str(str)
       case Var(str) => s(e(str))
       case Lit(num) => Cst(num)
+      case Cons(e1,e2) => Tup(evalAtom(e1, e, s), evalAtom(e2, e, s))
       case Lam(vs, body) => Clo(Lam(vs, body), e)
       case Plus(e1, e2) =>
         (evalAtom(e1, e, s), evalAtom(e2, e, s)) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
           case _ => Str(s"Cannot perform operation on expressions $e1 and $e2") // ? should be error instead
         }
+      case Minus(e1, e2) =>
+        (evalAtom(e1, e, s), evalAtom(e2, e, s)) match {
+          case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
+          case _ => Str(s"Cannot perform operation on expressions $e1 and $e2") // ? should be error instead
+        }
+      case Times(e1, e2) =>
+        (evalAtom(e1, e, s), evalAtom(e2, e, s)) match {
+          case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
+          case _ => Str(s"Cannot perform operation on expressions $e1 and $e2") // ? should be error instead
+        }
+      case Fst(e1) =>
+        val Tup(a, b) = evalAtom(e1, e, s)
+        a
+      case Snd(e1) =>
+        val Tup(a, b) = evalAtom(e1, e, s)
+        b
     }
 
   def update[A,B](store: StoreFun[A, B], a: A, b: B): StoreFun[A, B] = {
@@ -173,5 +200,14 @@ object EBase {
                                     Plus(Var("x"), Var("y"))),
                                 List(Var("x")))) // Args
     println(evalms(State(funExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
+
+    val letrecExp = Letrec(
+                          List((Var("x"), Lit(136)), (Var("y"), Lit(1))),
+                          Plus(Var("x"), Var("y"))
+                        )
+    println(evalms(State(letrecExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
+
+    val consExp = Let(Var("lst"), Cons(Lit(2), Cons(Lit(3), Lit(4))), Snd(Var("lst")))
+    println(evalms(State(consExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
   }
 }

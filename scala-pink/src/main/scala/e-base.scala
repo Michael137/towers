@@ -87,7 +87,8 @@ object EBase {
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
             val (vs, es) = exps.unzip
-            val addrs = vs.map({ x: Var => x.s.hashCode() })
+            // val addrs = vs.map({ x: Var => x.s.hashCode() })
+            val addrs = vs.map({ x: Var => varCtr += 1; varCtr })
             val varNames = vs.map({x: Var => x.s})
             val updatedEnv = updateMany(e, varNames, addrs)
             val vals = es.map({ x => evalAtom(x, updatedEnv, s) })
@@ -138,6 +139,11 @@ object EBase {
       case Snd(e1) =>
         val Tup(a, b) = evalAtom(e1, e, s)
         b
+      case Equ(e1, e2) =>
+        (evalAtom(e1, e, s), evalAtom(e2, e, s)) match {
+          case (Cst(n1), Cst(n2)) => if(n1 == n2) Cst(1) else Cst(0)
+          case _ => Str(s"Cannot perform == operation on expressions $e1 and $e2") // ? should be error instead
+        }
     }
 
   def update[A,B](store: StoreFun[A, B], a: A, b: B): StoreFun[A, B] = {
@@ -153,16 +159,20 @@ object EBase {
     case (Nil, Nil) | _ => store
   }
   
+  var varCtr = 0
   def applyCont(k: Cont, v: Val, s: Store): Val = k match {
     case Halt() => Answer(v, s) // Answer
     case LetK(Var(vr), c, e, k) =>
-      val addr = vr.hashCode()
+      // val addr = vr.hashCode()
+      varCtr += 1;
+      val addr = varCtr
       State(c, update(e, vr, addr), update(s, addr, v), k)
   }
 
   def applyProc(proc: Val, args: List[Val], s: Store, k: Cont) = proc match {
     case Clo(Lam(vs, body), env) =>
-      val addrs = vs.map({x: Var => x.s.hashCode()})
+      // val addrs = vs.map({x: Var => x.s.hashCode()})
+      val addrs = vs.map({x: Var => varCtr += 1; varCtr})
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
       val updatedStore = updateMany(s, addrs, args)
@@ -180,7 +190,7 @@ object EBase {
     val exp2 = Let(Var("x"), Lit(136), exp1)
     val exp3 = Let(Var("y"), Lit(1), exp2)
     val ret = evalms(State(exp3, initEnv, initStore, Halt())).asInstanceOf[Answer]
-    println(ret.s("x".hashCode()))
+    println(ret.s(varCtr))
 
     // x = 136; (\x -> x + y) x
     val funExp = Let(Var("x"), Lit(136), App(
@@ -202,24 +212,13 @@ object EBase {
     val setCarExp = Let(Var("lst"), Cons(Lit(1), Cons(Lit(2), Cons(Lit(3), Lit(4)))),
                         SetVar(Var("lst"), Cons(Lit(0), Snd(Var("lst")))))
     val res = evalms(State(setCarExp, initEnv, initStore, Halt())).asInstanceOf[Answer].s
-    println(res("lst".hashCode()))
+    println(res(varCtr))
 
     // set-cdr!
     val setCdrExp = Let(Var("lst"), Cons(Lit(1), Cons(Lit(2), Cons(Lit(3), Lit(4)))),
                         SetVar(Var("lst"), Cons(Fst(Var("lst")), Lit(0))))
     val res2 = evalms(State(setCdrExp, initEnv, initStore, Halt())).asInstanceOf[Answer].s
-    println(res2("lst".hashCode()))
-
-    // factorial
-    // val facExp = 
-    //   Letrec(List((Var("n"), Lit(6)),
-    //               (Var("f"), Lam(List(Var("x")),
-    //                                 If(Var("x"),
-    //                                   Times(Var("x"), App(Var("f"), List(Minus(Var("x"), Lit(1))))),
-    //                                   Lit(1))))),
-    //               App(Var("f"), List(Var("n"))))
-    // println(evalms(State(facExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
-
+    println(res2(varCtr))
 
     // Letrec: Simple usage
     val letrecTestExps1 = Letrec(List((Var("f"), Lam(List(Var("ctr")), If(Var("ctr"),
@@ -227,19 +226,20 @@ object EBase {
                                                                 Plus(Lit(-5), Lit(-5)))))),
                         App(Var("f"), List(Lit(1))))
     println(evalms(State(letrecTestExps1, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
-
     // Letrec: Recursive call
     val letrecTestExps2 = Letrec(List((Var("f"), Lam(List(Var("ctr")), If(Var("ctr"),
                                                             App(Var("f"), List(Minus(Var("ctr"), Lit(1)))),
                                                             Plus(Lit(-5), Lit(-5)))))),
                     App(Var("f"), List(Lit(10000))))
     println(evalms(State(letrecTestExps2, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
-
-    // ! Letrec: Recursive call within primitive operation
-    val letrecTestExps3 = Letrec(List((Var("f"), Lam(List(Var("ctr")), If(Var("ctr"),
-                                                            App(Var("f"), List(Minus(Var("ctr"), Lit(1)))),
-                                                            Plus(Lit(-5), Lit(-5)))))),
-                    App(Var("f"), List(Lit(10000))))
-    println(evalms(State(letrecTestExps3, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
+    
+    // factorial
+    val facExp = Letrec(List((Var("f"), Lam(List(Var("n")), If(Equ(Var("n"), Lit(1)),
+                                                                Lit(1),
+                                                                Let(Var("recF"), App(Var("f"), List(Minus(Var("n"), Lit(1)))),
+                                                                    Times(Var("n"), Var("recF"))),
+                                                                )))),
+                    App(Var("f"), List(Lit(4))))
+    println(evalms(State(facExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
   }
 }

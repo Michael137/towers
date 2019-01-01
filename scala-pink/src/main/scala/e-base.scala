@@ -92,7 +92,7 @@ object EBase {
     Var(gensym())
   }
 
-  /*def reifyc(f: => Val) = reify {
+  def reifyc(f: => Val) = reify {
     f match {
       case Code(e) => e
     }
@@ -106,11 +106,11 @@ object EBase {
       // if we are generating code at all,
       // the result must be code
       val Code(last) = res
-      Code((stBlock foldRight last)(Let))
+      Code(stBlock.foldRight(last)({ (e: Exp, b: Exp) => Let(Var(gensym()), e, b) }))
     } else {
       res
     }
-  }*/
+  }
 
   // NBE-style 'reify' operator (semantics -> syntax)
   // lifting is shallow, i.e. 
@@ -131,8 +131,14 @@ object EBase {
       case st @ State(c: Exp, e: Env, s: Store, k: Cont) => {
         val ret = c match {
           case If(cond, conseq, alt) =>
-            evalAtom(cond, e, s) match {
+            evalms(State(cond, e, s, Halt())).asInstanceOf[Answer].v match {
               case Cst(b) => if(b != 0) State(conseq, e, s, k) else State(alt, e, s, k)
+              case Code(c) =>
+                val ret1 = evalms(State(conseq, e, s, k)).asInstanceOf[Answer].v
+                val ret2 = evalms(State(alt, e, s, k)).asInstanceOf[Answer].v
+                applyCont(k, reflectc(If(c,
+                                  reifyc(ret1),
+                                  reifyc(ret2))), null, e)
             }
           case Let(v, exp, body) => State(exp, e, s, LetK(v, body, e, k))
 
@@ -172,7 +178,7 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | _: Primitive => true
+    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | Var(_) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
@@ -311,7 +317,7 @@ object EBase {
                     App(Var("f"), List(Lit(12))))
     println(evalms(State(facExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
 
-    // Staging
+    // Code expressions/Lift operations/Staging
     val liftExp = Lift(Plus(Lit(2), Lit(2)))
     println(evalms(State(liftExp, initEnv, initStore, Halt())))
 
@@ -327,8 +333,10 @@ object EBase {
     val liftExp5 = Lift(Lift(Cons(Lift(Lit(2)), Lift(Plus(Lit(2), Lit(2))))))
     println(evalms(State(liftExp5, initEnv, initStore, Halt())))
 
-    // val Code(lifted) = evalms(State(liftExp5, initEnv, initStore, Halt())).asInstanceOf[Answer].v
-    // println(stBlock)
-    // println(lifted)
+    val liftExp6 = If(Lift(Lit(0)),Lift(Sym("good")),Lift(Sym("bye")))
+    println(reifyc(evalms(State(liftExp6, initEnv, initStore, Halt())).asInstanceOf[Answer].v))
+
+    val liftExp7 = If(Lit(1),Sym("good"),Sym("bye"))
+    println(evalms(State(liftExp7, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
   }
 }

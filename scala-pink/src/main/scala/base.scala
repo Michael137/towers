@@ -64,7 +64,7 @@ object Base {
         stBlock = Nil
         //println(s"DEBUGGING f arg in reify")
         val last = f
-        //println(s"DEBUGGING last in reify")
+        println(s"DEBUGGING last in reify $last")
         (stBlock foldRight last)(Let)
       }
   }
@@ -122,7 +122,7 @@ object Base {
   def reifyc(f: => Val) = reify {
     //println(s"DEBUGGING reifyc pre-code")
     f match {
-      case Code(e) => e
+      case Code(e) => println(s"DEBUGGING reifyc: $e"); e
       case Tup(Code(e1), Code(e2)) => Cons(e1, e2) // TODO: double check this behaviour is sound w.r.t reify semantics
     }
   }

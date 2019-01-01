@@ -56,17 +56,74 @@ object EBase {
   case class Cst(n:Int) extends Val
   case class Str(s:String) extends Val
   case class Clo(f: Lam, env: Env) extends Val
-  case class Code(e:Exp) extends Val
   case class Tup(v1:Val,v2:Val) extends Val
   // Continuation types
   case class LetK(v: Var, c: Exp, e: Env, k: Cont) extends Val // ? var, v, is de Bruijn Level
   case class Halt() extends Val
 
-  case class Answer(v: Val, s: Store) extends Val
+  case class Answer(v: Val, s: Store, e: Env) extends Val
   case class State(c: Exp, e: Env, s: Store, k: Cont) extends Val
 
-  val initEnv = {arg: String => -1}
-  val initStore = {arg: Int => Str("Error: using init store")}
+  case class Code(e:Exp) extends Val
+
+  // Staging operations
+  var stBlock: List[Exp] = Nil
+  def run[A](f: => A): A = {
+    val sF = stFresh
+    val sB = stBlock
+    try { f } finally { stFresh = sF; stBlock = sB }
+  }
+
+  var stFresh = 0
+  def fresh() = {
+    stFresh += 1; stFresh
+  }
+  def gensym() = { s"x${fresh()}" }
+
+  def reify(f: => Exp) = {
+      run {
+        stBlock = Nil
+        val last = f
+        stBlock.foldRight(last)({ (e: Exp, b: Exp) => Let(Var(gensym()), e, b) })
+      }
+  }
+  def reflect(s:Exp) = {
+    stBlock :+= s
+    Var(gensym())
+  }
+
+  /*def reifyc(f: => Val) = reify {
+    f match {
+      case Code(e) => e
+    }
+  }
+  def reflectc(s: Exp) = Code(reflect(s))
+
+  def reifyv(f: => Val) = run {
+    stBlock = Nil
+    val res = f
+    if (stBlock != Nil) {
+      // if we are generating code at all,
+      // the result must be code
+      val Code(last) = res
+      Code((stBlock foldRight last)(Let))
+    } else {
+      res
+    }
+  }*/
+
+  // NBE-style 'reify' operator (semantics -> syntax)
+  // lifting is shallow, i.e. 
+  //   Rep[A]=>Rep[B]  ==> Rep[A=>B]
+  //   (Rep[A],Rep[B]) ==> Rep[(A,B)]
+  def lift(v: Val): Exp = v match {
+    case Cst(n) => Lit(n)
+    case Str(s) => Sym(s)
+    case Tup(a,b) =>
+      val (Code(u),Code(v)) = (a,b)
+      reflect(Cons(u,v)) // Add to Cons to stBlock and return Var(stFresh)
+    case Code(e) => reflect(Lift(e))
+  }
 
   // multi-stage evaluation
   def evalms(arg: Val): Val = {
@@ -88,7 +145,7 @@ object EBase {
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
             val (vs, es) = exps.unzip
             // val addrs = vs.map({ x: Var => x.s.hashCode() })
-            val addrs = vs.map({ x: Var => varCtr += 1; varCtr })
+            val addrs = vs.map({ _ => fresh() })
             val varNames = vs.map({x: Var => x.s})
             val updatedEnv = updateMany(e, varNames, addrs)
             val vals = es.map({ x => evalAtom(x, updatedEnv, s) })
@@ -98,12 +155,18 @@ object EBase {
           case SetVar(v, exp) =>
             val value = evalAtom(exp, e, s)
             val updated = update(s, e(v.s), value)
-            applyCont(k, null, updated)
-          case _ if(isAtom(c)) => applyCont(k, evalAtom(c, e, s), s)
+            applyCont(k, null, updated, e)
+
+          case Lift(exp) =>
+            val trans = State(exp, e, s, k)
+            val lifted = lift(evalms(trans).asInstanceOf[Answer].v)
+            applyCont(k, Code(lifted), null, e)
+
+          case _ if(isAtom(c)) => applyCont(k, evalAtom(c, e, s), s, e)
         }
         evalms(ret)
       }
-      case Answer(_, _) => arg
+      case Answer(_, _, _) => arg
     }
   }
 
@@ -116,7 +179,10 @@ object EBase {
       case Sym(str) => Str(str)
       case Var(str) => s(e(str))
       case Lit(num) => Cst(num)
-      case Cons(e1,e2) => Tup(evalAtom(e1, e, s), evalAtom(e2, e, s))
+      case Cons(e1,e2) => 
+        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer]
+        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer]
+        Tup(ret1.v, ret2.v)
       case Lam(vs, body) => Clo(Lam(vs, body), e)
       case Plus(e1, e2) =>
         (evalAtom(e1, e, s), evalAtom(e2, e, s)) match {
@@ -158,30 +224,33 @@ object EBase {
     case (a::tla, b::tlb) => updateMany(update(store, a, b), tla, tlb)
     case (Nil, Nil) | _ => store
   }
-  
-  var varCtr = 0
-  def applyCont(k: Cont, v: Val, s: Store): Val = k match {
-    case Halt() => Answer(v, s) // Answer
+
+  def applyCont(k: Cont, v: Val, s: Store, e: Env): Val = k match {
+    case Halt() => Answer(v, s, e) // Answer
     case LetK(Var(vr), c, e, k) =>
       // val addr = vr.hashCode()
-      varCtr += 1;
-      val addr = varCtr
+      val addr = fresh()
       State(c, update(e, vr, addr), update(s, addr, v), k)
   }
 
   def applyProc(proc: Val, args: List[Val], s: Store, k: Cont) = proc match {
     case Clo(Lam(vs, body), env) =>
       // val addrs = vs.map({x: Var => x.s.hashCode()})
-      val addrs = vs.map({x: Var => varCtr += 1; varCtr})
+      val addrs = vs.map({_ => fresh()})
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
       val updatedStore = updateMany(s, addrs, args)
       State(body, updatedEnv, updatedStore, k)
   }
 
+  // TODO: should be more robust
+  val initEnv = {arg: String => -1}
+  val initStore = {arg: Int => Str("Error: using init store")}
+
   // basic test cases
   def test() = {
     println("// ------- EBase.test --------")
+    // TODO: turn into proper ScalaTest
 
     val exp = Plus(Lit(2), Lit(2))
     println(evalms(State(exp, initEnv, initStore, Halt())))
@@ -190,7 +259,7 @@ object EBase {
     val exp2 = Let(Var("x"), Lit(136), exp1)
     val exp3 = Let(Var("y"), Lit(1), exp2)
     val ret = evalms(State(exp3, initEnv, initStore, Halt())).asInstanceOf[Answer]
-    println(ret.s(varCtr))
+    println(ret.s(ret.e("x")))
 
     // x = 136; (\x -> x + y) x
     val funExp = Let(Var("x"), Lit(136), App(
@@ -211,14 +280,14 @@ object EBase {
     // set-car!
     val setCarExp = Let(Var("lst"), Cons(Lit(1), Cons(Lit(2), Cons(Lit(3), Lit(4)))),
                         SetVar(Var("lst"), Cons(Lit(0), Snd(Var("lst")))))
-    val res = evalms(State(setCarExp, initEnv, initStore, Halt())).asInstanceOf[Answer].s
-    println(res(varCtr))
+    val res = evalms(State(setCarExp, initEnv, initStore, Halt())).asInstanceOf[Answer]
+    println(res.s(res.e("lst")))
 
     // set-cdr!
     val setCdrExp = Let(Var("lst"), Cons(Lit(1), Cons(Lit(2), Cons(Lit(3), Lit(4)))),
                         SetVar(Var("lst"), Cons(Fst(Var("lst")), Lit(0))))
-    val res2 = evalms(State(setCdrExp, initEnv, initStore, Halt())).asInstanceOf[Answer].s
-    println(res2(varCtr))
+    val res2 = evalms(State(setCdrExp, initEnv, initStore, Halt())).asInstanceOf[Answer]
+    println(res2.s(res2.e("lst")))
 
     // Letrec: Simple usage
     val letrecTestExps1 = Letrec(List((Var("f"), Lam(List(Var("ctr")), If(Var("ctr"),
@@ -239,7 +308,27 @@ object EBase {
                                                                 Let(Var("recF"), App(Var("f"), List(Minus(Var("n"), Lit(1)))),
                                                                     Times(Var("n"), Var("recF"))),
                                                                 )))),
-                    App(Var("f"), List(Lit(4))))
+                    App(Var("f"), List(Lit(12))))
     println(evalms(State(facExp, initEnv, initStore, Halt())).asInstanceOf[Answer].v)
+
+    // Staging
+    val liftExp = Lift(Plus(Lit(2), Lit(2)))
+    println(evalms(State(liftExp, initEnv, initStore, Halt())))
+
+    val liftExp2 = Cons(Lift(Lit(2)), Lift(Lit(2)))
+    println(evalms(State(liftExp2, initEnv, initStore, Halt())))
+
+    val liftExp3 = Lift(Cons(Lift(Lit(2)), Lift(Lit(2))))
+    println(evalms(State(liftExp3, initEnv, initStore, Halt())))
+
+    val liftExp4 = Lift(Cons(Lift(Lit(2)), Lift(Plus(Lit(2), Lit(2)))))
+    println(evalms(State(liftExp4, initEnv, initStore, Halt())))
+
+    val liftExp5 = Lift(Lift(Cons(Lift(Lit(2)), Lift(Plus(Lit(2), Lit(2))))))
+    println(evalms(State(liftExp5, initEnv, initStore, Halt())))
+
+    // val Code(lifted) = evalms(State(liftExp5, initEnv, initStore, Halt())).asInstanceOf[Answer].v
+    // println(stBlock)
+    // println(lifted)
   }
 }

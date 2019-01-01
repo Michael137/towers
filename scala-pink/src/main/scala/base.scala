@@ -172,14 +172,14 @@ object Base {
   def evalms(env: Env, e: Exp): Val = e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
-    case Var(n) => env(n)
+    case Var(n) => println(env);env(n)
     case Lam(e) => Clo(env,e)
     case Let(e1,e2) => 
       val v1 = evalms(env,e1)
       evalms(env:+v1,e2)
 
     case Lift(e) => 
-      Code(lift(evalms(env,e)))
+      print(env);Code(lift(evalms(env,e)))
 
     case Run(b,e) =>
       // first argument decides whether to generate

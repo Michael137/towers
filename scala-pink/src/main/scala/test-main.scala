@@ -1,6 +1,6 @@
 object TestMain {
   def main(args: Array[String]) {
-    Base.test()
+    // Base.test()
     // Lisp.test()
     // Pink.test()
     // Pink_CPS.test()
@@ -9,7 +9,9 @@ object TestMain {
     // VM.test()
     // Bench.test()
     // CESK.test()
+
     EBase.test()
-    println("DONE")
+    ELisp.test()
+    println("// ###### Full testsuite done ######")
   }
 }

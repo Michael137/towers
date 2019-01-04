@@ -32,20 +32,53 @@ object ELisp {
         v
     }
 
+    // Helpers
+    import scala.collection.mutable.ListBuffer
+    def tupToList(t: Val) = {
+        var ret = ListBuffer[String]()
+        var tmp = t
+
+        var i = 0
+        while(i == 0) {
+            tmp match {
+                case Tup(a: Str, N) => ret += a.s; i = -1
+                case Tup(a: Str, Tup(b, c)) => ret += a.s; tmp = Tup(b, c)
+            }
+        }
+        ret.toList
+    }
+
+    def tupToTupList(t: Val) = { // TODO: DRY and cleanup
+        var ret = ListBuffer[Val]()
+        var tmp = t
+
+        var i = 0
+        while(i == 0) {
+            tmp match {
+                case Tup(a, N) => ret += a; i = -1
+                case Tup(a, Tup(b, c)) => ret += a; tmp = Tup(b, c)
+            }
+        }
+        ret.toList
+    }
+
     def trans(e: Val, env: List[String]): Exp = e match {
         case Cst(n) => Lit(n)
-        // case Str(s) => val i = env.lastIndexOf(s); assert(i>=0, s + " not in " + env); Var(i)
+        case Str(s) => val i = env.lastIndexOf(s); assert(i>=0, s + " not in " + env); Var(s)
         case Tup(Str("quote"),  Tup(Str(s),N))   => Sym(s)
         case Tup(Str("+"),      Tup(a,Tup(b,N))) => Plus(trans(a,env),trans(b,env))
         case Tup(Str("-"),      Tup(a,Tup(b,N))) => Minus(trans(a,env),trans(b,env))
         case Tup(Str("*"),      Tup(a,Tup(b,N))) => Times(trans(a,env),trans(b,env))
         
         // (let x a b)
-        // case Tup(Str("let"),    Tup(Str(x),Tup(a,Tup(b,N)))) => Let(trans(a,env),trans(b,env:+x))
+        case Tup(Str("let"),    Tup(Str(x),Tup(a,Tup(b,N)))) => Let(Var(x), trans(a,env), trans(b,env:+x))
         
-        // (lambda f x e)
-        // case Tup(Str("lambda"), Tup(Str(f),Tup(Str(x),Tup(e,N)))) => Lam(trans(e,env:+f:+x))
-        
+        // (lambda (xs...) e)
+        case Tup(Str("lambda"), Tup(a, Tup(e,N))) =>
+            val varnames = tupToList(a)
+            val vars = varnames.map({ x: String => Var(x) })
+            Lam(vars, trans(e,env:::varnames))
+
         case Tup(Str("if"),     Tup(c,Tup(a,Tup(b,N)))) => If(trans(c,env),trans(a,env),trans(b,env))
         // case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
         // case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
@@ -63,6 +96,7 @@ object ELisp {
         // case Tup(Str("nolift"), Tup(a,N)) => trans(a,env)
         case Tup(Str("eq?"),    Tup(a,Tup(b,N))) => Equ(trans(a,env),trans(b,env))
         case Tup(Str(">"),      Tup(a,Tup(b,N))) => Gt(trans(a,env),trans(b,env))
+        case Tup(Str("set!"),   Tup(a,Tup(b,N))) => SetVar(trans(a,env),trans(b,env))
         // case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
         // case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
         // case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
@@ -70,7 +104,9 @@ object ELisp {
         //  Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
         // case Tup(Str("lift-ref"),Tup(a,N)) =>
         //  Special(benv => Code(Special(b2 => evalms(benv,trans(a,env)))))
-        // case Tup(a,Tup(b,N)) => App(trans(a,env),trans(b,env))
+        case Tup(a, b) =>
+            val exps = tupToTupList(b)
+            App(trans(a, env), exps.map({ e => trans(e, env) }))
     }
 
     /*****************
@@ -82,7 +118,10 @@ object ELisp {
 
         checkrun("(cadr (cons 1 (cons 2 (+ 5 5))))", "Cst(2)")
         checkrun("(lift (cadr (cons 1 (cons 2 (+ 5 5)))))", "Code(Lit(2))")
-
+        checkrun("(let x (let y 2 (+ y 1)) (let x 2 (+ x x)))", "Cst(4)")
+        checkrun("(let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1)))", "Cst(137)")
+        checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
+        
         testDone()
     }
 }

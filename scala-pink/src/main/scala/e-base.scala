@@ -31,7 +31,7 @@ object EBase {
   // Complex exp
   case class Cons(a:Exp,b:Exp) extends Exp
   case class If(c:Exp,a:Exp,b:Exp) extends Exp
-  case class SetVar(v: Var, e: Exp) extends Exp
+  case class SetVar(v: Exp, e: Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
 
   // Auxiliary
@@ -162,8 +162,8 @@ object EBase {
             val updatedStore = updateMany(s, addrs, vals)
             State(body, updatedEnv, updatedStore, k)
 
-          case SetVar(v, exp) =>
-            val value = evalms(State(exp, e, s, k)).asInstanceOf[Answer].v
+          case SetVar(v: Var, exp) =>
+            val value = evalms(State(exp, e, s, Halt())).asInstanceOf[Answer].v
             val updated = update(s, e(v.s), value)
             val ret = applyCont(k, null, updated, e)
             ret

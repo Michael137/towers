@@ -69,6 +69,7 @@ A useful analogy is the one presented in \cite{amin2017collapsing}: a Python int
 	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
 	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
 	\begin{itemize}
+		\item Here a dynamically changing environment also implies side-effects that are capable of changing the semantics of interpreters within the tower at runtime
 		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
 	\end{itemize}
 \end{enumerate}

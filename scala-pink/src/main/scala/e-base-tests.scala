@@ -97,6 +97,12 @@ object EBaseTests {
                                                             Plus(Lit(-5), Lit(-5)))))),
                     App(Var("f"), List(Lit(10000))))
     checkrunExp(letrecTestExps3, "Cst(-10)")
+
+    // val letrecTestExps4 = Letrec(
+    //                   List((Var("x"), Lit(136)), (Var("y"), Var("x"))),
+    //                   Plus(Var("x"), Var("y"))
+    //                 )
+    // checkrunExp(letrecTestExps4, "Cst(137)")
   }
 
   def factorialTests() = {

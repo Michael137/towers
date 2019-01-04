@@ -146,7 +146,7 @@ object EBase {
           // Function application
           case App(f, es) =>
             // NB: staging decision done in ``applyProc''
-            val proc = evalAtom(f, e, s)
+            val proc = evalAtom(f, e, s) // TODO: should be evalms
             val args = es.map({ x =>
                                 evalms(State(x, e, s, Halt())).asInstanceOf[Answer].v
                               })
@@ -165,7 +165,8 @@ object EBase {
           case SetVar(v: Var, exp) =>
             val value = evalms(State(exp, e, s, Halt())).asInstanceOf[Answer].v
             val updated = update(s, e(v.s), value)
-            val ret = applyCont(k, null, updated, e)
+            val ret = applyCont(k, value, updated, e)
+            // val ret = applyCont(k, null, updated, e)
             ret
 
           case Lift(exp) =>
@@ -188,6 +189,8 @@ object EBase {
                           reifyv(evalms(State(code, e, s, Halt())).asInstanceOf[Answer].v),
                           s, e)
             }
+
+          case Special(f) => applyCont(k, f(e), s, e)
 
           case _ if(isAtom(c)) => applyCont(k, evalAtom(c, e, s), s, e)
         }
@@ -236,18 +239,30 @@ object EBase {
           case _ => Str(s"Cannot perform * operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Fst(e1) =>
-        val Tup(a, b) = evalAtom(e1, e, s)
+        val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         a
       case Snd(e1) =>
-        val Tup(a, b) = evalAtom(e1, e, s)
+        val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         b
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        
         (ret1, ret2) match {
-          case (Cst(n1), Cst(n2)) => if(n1 == n2) Cst(1) else Cst(0)
+          case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
           case _ => Str(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
+        }
+
+      case Gt(e1,e2) =>
+        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
+        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        (ret1, ret2) match {
+          case (Cst(n1), Cst(n2)) =>
+            Cst(if (n1 > n2) 1 else 0)
+          case (Code(s1),Code(s2)) =>
+            reflectc(Gt(s1,s2))
+          case _ => Str(s"Cannot perform > operation on expressions $ret1 and $ret2") // ? should be error instead
         }
     }
 

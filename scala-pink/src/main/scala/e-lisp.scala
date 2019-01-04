@@ -72,6 +72,20 @@ object ELisp {
         
         // (let x a b)
         case Tup(Str("let"),    Tup(Str(x),Tup(a,Tup(b,N)))) => Let(Var(x), trans(a,env), trans(b,env:+x))
+
+        case Tup(Str("letrec"), Tup(a, Tup(b, N)))  =>
+            val tups = tupToTupList(a)
+            val vars = tups.map({ x => 
+                val Tup(Str(v), _) = x
+                v
+            })
+            var params = tups.map(
+                { x =>
+                    val Tup(Str(a), Tup(b, N)) = x
+                    (Var(a), trans(b, env:::vars))
+                }
+            )
+            Letrec(params, trans(b, env:::vars))
         
         // (lambda (xs...) e)
         case Tup(Str("lambda"), Tup(a, Tup(e,N))) =>
@@ -96,10 +110,12 @@ object ELisp {
         // case Tup(Str("nolift"), Tup(a,N)) => trans(a,env)
         case Tup(Str("eq?"),    Tup(a,Tup(b,N))) => Equ(trans(a,env),trans(b,env))
         case Tup(Str(">"),      Tup(a,Tup(b,N))) => Gt(trans(a,env),trans(b,env))
-        case Tup(Str("set!"),   Tup(a,Tup(b,N))) => SetVar(trans(a,env),trans(b,env))
+        case Tup(Str("set!"),       Tup(a,Tup(b,N))) => SetVar(trans(a,env),trans(b,env))
+        case Tup(Str("set-car!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(trans(b, env), Snd(lst)))
+        case Tup(Str("set-cdr!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(Fst(lst), trans(b, env)))
         // case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
         // case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
-        // case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
+        case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
         // case Tup(Str("trans"),  Tup(a,N)) =>
         //  Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
         // case Tup(Str("lift-ref"),Tup(a,N)) =>
@@ -121,7 +137,14 @@ object ELisp {
         checkrun("(let x (let y 2 (+ y 1)) (let x 2 (+ x x)))", "Cst(4)")
         checkrun("(let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1)))", "Cst(137)")
         checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
-        
+        checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
+        checkrun("(letrec ((x 2) (y 3) (z -2)) (+ z x))", "Cst(0)")
+        // checkrun("(letrec ((x 2) (y 3) (z (+ x 2))) (+ z x))", "Cst(0)")
+        checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-car! lst 2) (car lst)))", "Cst(2)")
+        checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-cdr! lst 2) lst))", "Tup(Cst(1),Cst(2))")
+        checkrun("(car '(1 2))", "Cst(1)")
+        checkrun("(car '(1 2))", "Cst(1)")
+
         testDone()
     }
 }

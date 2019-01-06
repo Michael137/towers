@@ -164,4 +164,40 @@ object EBaseTests {
     val runExp2 = Run(Lit(0), Plus(Lift(Lit(136)), Lift(Lit(1))))
     checkrunExp(runExp2, "Cst(137)")
   }
+
+  def runCellTests() = {
+    val cellExp1 = Cons_(Lit(1), Cons_(Lit(2), Lit(3)))
+    println(inject(cellExp1))
+
+    val cellExp2 = Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3))))
+    println(inject(cellExp2))
+
+    val cellExp3 = Fst_(Cons_(Lit(1), Cons_(Lit(2), Lit(3))))
+    println(inject(cellExp3))
+
+    val cellExp4 = Snd_(Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3)))))
+    println(inject(cellExp4))
+
+    val cellExp5 = Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3)))))
+    println(inject(cellExp5))
+
+    val cellExp6 = Fst_(Fst_(Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))))))) // Note the semantics
+    println(inject(cellExp6))
+
+    val cellExp7 = Let(Var("x"),
+                       Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))),
+                       Plus(Fst_(Fst_(Var("x"))), Snd_(Fst_(Var("x"))))) // -2 + -3
+    println(inject(cellExp7))
+
+    val cellExp8 = Let(Var("x"),
+                       Cons_(Lit(1), Cons_(Lit(2), Lit(3))),
+                       Let(Var("y"),
+                           Fst_(Snd_(Var("x"))),
+                           Let(Var("_"),
+                               SetCar(Var("y"), Lit(4)), // Should change list pointed to by "x"
+                               Var("x"))))
+    println(inject(cellExp8))
+
+    println(cells)
+  }
 }

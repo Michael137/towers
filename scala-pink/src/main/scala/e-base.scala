@@ -32,6 +32,7 @@ object EBase {
   case class Cons(a:Exp,b:Exp) extends Exp
   case class If(c:Exp,a:Exp,b:Exp) extends Exp
   case class SetVar(v: Exp, e: Exp) extends Exp
+  case class SetCar(v: Exp, e: Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
 
   // Auxiliary
@@ -40,6 +41,18 @@ object EBase {
   case class App(f: Exp, arg: List[Exp]) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
+
+  // For mutation
+  var cells = HashMap[String, List[Val]]()
+  case class Cell(key: String, ptr: Int) extends Val
+  case class Tup_(a: Val, b: Val) extends Val
+  case class Cons_(a:Exp, b:Exp) extends Exp
+  case class Fst_(a:Exp) extends Primitive
+  case class Snd_(a:Exp) extends Primitive
+  def deref(v: Val): Val = v match {
+    case Cell(k, idx) => deref(cells(k)(idx))
+    case _ => v
+  }
 
   // for custom extensions to AST
   case class Special(f:Env => Val) extends Exp {
@@ -79,6 +92,7 @@ object EBase {
     stFresh += 1; stFresh
   }
   def gensym() = { s"x${fresh()}" }
+  def gensym(v: String) = { s"$v${fresh()}" }
 
   def reify(f: => Exp) = {
       run {
@@ -169,6 +183,14 @@ object EBase {
             // val ret = applyCont(k, null, updated, e)
             ret
 
+          case SetCar(v: Var, exp) =>
+            val value = inject(exp, e, s, false)
+            inject(v, e, s, false) match {
+              case Cell(k, idx) => cells(k) = List(value, cells(k)(1))
+            }
+            val ret = applyCont(k, value, s, e)
+            ret
+
           case Lift(exp) =>
             val trans = State(exp, e, s, Halt())
             val lifted = lift(evalms(trans).asInstanceOf[Answer].v)
@@ -202,7 +224,7 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | Var(_) | _: Primitive => true
+    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
@@ -213,10 +235,16 @@ object EBase {
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
         Tup(ret1, ret2)
+      case Cons_(e1,e2) => 
+        val ret1 = inject(e1, e, s, false)
+        val ret2 = inject(e2, e, s, false)
+        val key = gensym("cell")
+        cells += (key -> List(ret1, ret2))
+        Cell(key, 0)
       case Lam(vs, body) => Clo(Lam(vs, body), e)
       case Plus(e1, e2) =>
-        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
           case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
@@ -244,6 +272,18 @@ object EBase {
       case Snd(e1) =>
         val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         b
+      case Fst_(e1) =>
+        val Cell(k, idx) = inject(e1, e, s, false)
+        cells(k)(idx) match {
+          case Cell(k2, idx2) => Cell(k2, 0)
+          case _ => Cell(k, 0)
+        }
+      case Snd_(e1) =>
+        val Cell(k, idx) = inject(e1, e, s, false)
+        cells(k)(scala.math.min(1, idx + 1)) match {
+          case Cell(k2, idx2) => Cell(k2, 0)
+          case _ => Cell(k, scala.math.min(1, idx + 1))
+        }
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
@@ -308,11 +348,14 @@ object EBase {
   val initEnv = {arg: String => -1}
   val initStore = {arg: Int => Str("Error: using init store")}
 
-  def inject(e: Exp) = {
-    stFresh = 0
-    stBlock = Nil
+  def inject(e: Exp, env: Env = initEnv, store: Store = initStore, reset: Boolean = true) = {
+    if(reset) {
+      stFresh = 0
+      stBlock = Nil
+      cells = HashMap[String, List[Val]]()
+    }
 
-    evalms(State(e, initEnv, initStore, Halt())).asInstanceOf[Answer].v
+    evalms(State(e, env, store, Halt())).asInstanceOf[Answer].v
   }
 
   /*****************
@@ -323,11 +366,12 @@ object EBase {
 
     println("// ------- EBase.test --------")
 
-    expressionTests()
-    letrecTests()
-    factorialTests()
-    liftTests()
-    runExpTests()
+    // expressionTests()
+    // letrecTests()
+    // factorialTests()
+    // liftTests()
+    // runExpTests()
+    runCellTests()
 
     TestHelpers.testDone()
   }

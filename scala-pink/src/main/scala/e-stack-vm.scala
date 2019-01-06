@@ -47,7 +47,12 @@ object EVM {
                             (let start (lambda (ops) (machine vm-stack env-list op-list call-stack ops))
                                         (start 
                                         '(
-                                            NIL LDC 1 CONS LDC 3 CONS LDF
+                                            STOP
+                                        ))
+        )))))))
+    """
+/*
+NIL LDC 1 CONS LDC 3 CONS LDF
                                             (DUM NIL LDF
                                                 (DBG LDC 0 LD (1 1) EQ SEL
                                                 (LDC 1 JOIN)
@@ -57,10 +62,7 @@ object EVM {
                                             CONS LDF
                                                 (DBG NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
                                             RTN) AP
-                                        ))
-        )))))))
-    """
-
+                                            */
   val vm_src = s"(let maybe-lift (lambda (e) e) $vm_poly_src)"
   val vmc_src = s"(let maybe-lift (lambda (e) (lift e)) $vm_poly_src)"
 

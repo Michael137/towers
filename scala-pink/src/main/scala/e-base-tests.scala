@@ -198,6 +198,28 @@ object EBaseTests {
                                Var("x"))))
     println(inject(cellExp8))
 
+    // Mutable global list through recursive function calls.
+    // Simulates while loop:
+    // while(x[0] < 100)
+    //  x[0] -= 1;
+    // return x[0] - 10;
+    val cellExp9 = 
+              Let(Var("x"), Cons_(Lit(1), Cons_(Lit(2), Cons_(Lit(3), Lit(4)))),
+                Letrec(List((Var("f"), Lam(List(Var("ctr")), If(Lt(Fst_(Var("x")), Lit(1000)),
+                                                                App(Var("f"), List(SetCar(Var("x"), Plus(Var("ctr"), Lit(1))))),
+                                                                Plus(Lit(-10), Var("x")))))),
+                  App(Var("f"), List(Lit(0)))))
+    println(inject(cellExp9))
+
+    val cellExp10 = 
+              Let(Var("x"), Cons_(Lit(1), Cons_(Lit(2), Cons_(Lit(3), Lit(4)))),
+                Letrec(List((Var("f"), Lam(List(Var("lst")), If(Lt(Fst_(Var("lst")), Lit(1000)),
+                                                                Let(Var("_"), SetCar(Var("lst"), Plus(Fst_(Var("lst")), Lit(1))), // Modify function param...
+                                                                  App(Var("f"), List(Var("x")))), // But pass global list...
+                                                                Times(Var("x"), Lit(1)))))), // Global list should be affected by local function changes
+                  App(Var("f"), List(Var("x")))))
+    println(inject(cellExp10))
+
     println(cells)
   }
 }

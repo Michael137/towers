@@ -22,6 +22,7 @@ object EBase {
   case class Times(a:Exp,b:Exp) extends Primitive
   case class Equ(a:Exp,b:Exp) extends Primitive
   case class Gt(a:Exp,b:Exp) extends Primitive
+  case class Lt(a:Exp,b:Exp) extends Primitive
   case class IsNum(a:Exp) extends Primitive
   case class IsStr(a:Exp) extends Primitive
   case class IsCons(a:Exp) extends Primitive
@@ -148,7 +149,7 @@ object EBase {
       case st @ State(c: Exp, e: Env, s: Store, k: Cont) => {
         val ret = c match {
           case If(cond, conseq, alt) =>
-            evalms(State(cond, e, s, Halt())).asInstanceOf[Answer].v match {
+            deref(evalms(State(cond, e, s, Halt())).asInstanceOf[Answer].v) match {
               case Cst(b) => if(b != 0) State(conseq, e, s, k) else State(alt, e, s, k)
               case Code(c) =>
                 applyCont(k, reflectc(If(c,
@@ -259,8 +260,8 @@ object EBase {
           case _ => Str(s"Cannot perform - operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Times(e1, e2) =>
-        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
           case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
@@ -292,6 +293,17 @@ object EBase {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
           case _ => Str(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
+        }
+
+      case Lt(e1,e2) =>
+        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
+        (ret1, ret2) match {
+          case (Cst(n1), Cst(n2)) =>
+            Cst(if (n1 < n2) 1 else 0)
+          case (Code(s1),Code(s2)) =>
+            reflectc(Gt(s1,s2))
+          case _ => Str(s"Cannot perform < operation on expressions $ret1 and $ret2") // ? should be error instead
         }
 
       case Gt(e1,e2) =>

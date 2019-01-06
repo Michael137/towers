@@ -120,6 +120,18 @@ object ELisp {
         //  Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
         // case Tup(Str("lift-ref"),Tup(a,N)) =>
         //  Special(benv => Code(Special(b2 => evalms(benv,trans(a,env)))))
+
+        case Tup(Str("cons_"),      Tup(a,Tup(b,N))) => Cons_(trans(a,env),trans(b,env))
+        case Tup(Str("car_"),        Tup(a,N)) => Fst_(trans(a,env))
+        case Tup(Str("caar_"),       Tup(a,N)) => Fst_(Fst_(trans(a,env)))
+        case Tup(Str("cdr_"),        Tup(a,N)) => Snd_(trans(a,env))
+        case Tup(Str("cddr_"),       Tup(a,N)) => Snd_(Snd_(trans(a,env)))
+        case Tup(Str("cdddr_"),      Tup(a,N)) => Snd_(Snd_(Snd_(trans(a,env))))
+        case Tup(Str("cadr_"),       Tup(a,N)) => Fst_(Snd_(trans(a,env)))
+        case Tup(Str("caddr_"),      Tup(a,N)) => Fst_(Snd_(Snd_(trans(a,env))))
+        case Tup(Str("cadddr_"),     Tup(a,N)) => Fst_(Snd_(Snd_(Snd_(trans(a,env)))))
+        case Tup(Str("set-car!_"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetCar(lst, trans(b, env))
+
         case Tup(a, b) =>
             val exps = tupToTupList(b)
             App(trans(a, env), exps.map({ e => trans(e, env) }))
@@ -144,6 +156,9 @@ object ELisp {
         checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-cdr! lst 2) lst))", "Tup(Cst(1),Cst(2))")
         checkrun("(car '(1 2))", "Cst(1)")
         checkrun("(car '(1 2))", "Cst(1)")
+
+        // Mutating cons cells
+        checkrun("(let lst (cons_ 1 (cons_ 2 3)) (let _ (set-car!_ lst 2) (* (car_ lst) 1)))", "Cst(2)")
 
         testDone()
     }

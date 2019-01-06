@@ -10,9 +10,9 @@ object TestMain {
     // Bench.test()
     // CESK.test()
 
-    EBase.test()
+    // EBase.test()
     // ELisp.test()
-    // EVM.test()
+    EVM.test()
     println("// ###### Full testsuite done ######")
   }
 }

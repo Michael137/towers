@@ -20,6 +20,7 @@
     - [x] Extend λ↑↓ to support mutation of store and env
     - [x] Modify Lisp front-end to match new λ↑↓*
     - [x] Port SECD machine to new tower
+    - [ ] Be able to stage through side-effects e.g. pointers and mutation
     - [ ] Experiment with more severe side-effects
     - [ ] Formal description
 

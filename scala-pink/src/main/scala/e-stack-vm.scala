@@ -57,7 +57,7 @@ object EVM {
                                                     (LDC 0 LD (1 1) EQ SEL
                                                         (NIL LD (1 2) LD (1 1) MPY CONS
                                                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-                                                        (LD (1 2) JOIN)
+                                                        (LD (1 2) JOIN) ;this line deviates from book but is correct for now
                                                     RTN)
                                                 CONS LDF
                                                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP

@@ -17,9 +17,9 @@
     * New types of stage-polymorphic VMs? E.g. integrate into GraalVM
     * Alternative IR/collapsing methodology? Different normalization process?
     * Mixed code vs. non-code operations? E.g. Plus(Lit(0), Lift(Lit(5))) and support for Tup(Code(Var(0)), Tup(Code(Var(1)), Code(Var(2))))
-    - [ ] Extend λ↑↓ to support mutation of store and env
-    - [ ] Modify Lisp front-end to match new λ↑↓*
-    - [ ] Port SECD machine to new tower
+    - [x] Extend λ↑↓ to support mutation of store and env
+    - [x] Modify Lisp front-end to match new λ↑↓*
+    - [x] Port SECD machine to new tower
     - [ ] Experiment with more severe side-effects
     - [ ] Formal description
 

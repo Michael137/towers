@@ -115,6 +115,38 @@ We are interested in the last two point. In heterogeneous and practical towers a
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
 
+\subsection{Why do we want to collapse towers? (aren't they pretty?)}
+The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization
+is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
+
+Binding time analysis is one of the obstacles of program specialization. The program specializer needs to decide, either automatically or with assistance from the programmer, which data to treat as static and which as dynamic. Simple divisions
+can lead to code explosion or inefficient code generation, or worse, to non-termination of the specializer. This problem is known as \textit{division} and is one of the key differences between offline and online PE techniques \cite{jones1993partial}.
+
+An curious use-case for staging towers of interpreters started with the challenge of compiling the reflective language proposed by Asai et al. \cite{asai1997partial, asai2015compiling}. The authors are able to compile a Lisp-like reflective language, built through
+the infinite tower of interpreters model \cite{smith1982reflection,wand1988mystery,danvy1988intensions}, with respect to the initial semantics of the tower. Amin et al. \cite{amin2017collapsing} then extended this work to allow compilation of such towers
+under modified semantics i.e. dynamically changing behaviour of individual interpreters. An interesting consequence demonstrated in their paper is the ability to derive translators in the process of collapsing.
+
+\subsubsection{Example of Deriving Translators}
+A trivial but useful example is logging. Given the tower in figure \ref{logging_translator_tower} we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
+of the IR of the level above is a mere accidental consequence of design instead of a necessity. We claim this work to be \textit{interpretative overhead} and defer its quantification by benchmarks to a later section.
+
+Collapsing the tower achieves exactly what we wanted, base-language (here the compilation target language) expressions including logging specialized to the user-level program.
+
+A restriction with this method is its reliance on meta-circularity and reflection and other unsafe techniques:
+\begin{itemize}
+	\item we are able ``inject'' the logging evaluator into tower because of its meta-circularity
+	\item we expose staging operators throughout the tower through simple string manipulation
+	\item instrumentation relies on meta-circularity since we simply redefine how constructs are evaluated before injecting the evaluator
+	\item modification of semantics of the tower are done via reflection (ELABORATE)
+\end{itemize}
+
+Nonetheless, it is an interesting consequence of compiling towers that we can collect side-effects in individual levels (in the original framework at no extra cost), and have an interpreter
+above exhibit them. Analogous to a sieve, we take a coarse-grained collection of functionality, loosen it and extract only the individual grains we want. Imagine the sieve being coated with a thin film. All grains passing through
+will now have the film applied to them. Here sieves are the levels below and grains are the levels above. (REFINE ANALOGY)
+
+Our study examines this property by testing the limits of how we can get the side effects to stick to interpreters in a useful way. One could imagine optimizations, parallelization or instrumentation as possible use cases. Under certain side-effects, we may, however,
+reach limits in terms of security (TROJANS IN HYPERVISORS) or ability to reason about a system. We are interested in the extent of these limits.
+
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}
 

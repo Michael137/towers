@@ -118,7 +118,7 @@ object ELisp {
         case Tup(Str("set!"),       Tup(a,Tup(b,N))) => SetVar(trans(a,env),trans(b,env))
         case Tup(Str("set-car!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(trans(b, env), Snd(lst)))
         case Tup(Str("set-cdr!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(Fst(lst), trans(b, env)))
-        // case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
+        case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
         case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
         case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
         // case Tup(Str("trans"),  Tup(a,N)) =>
@@ -151,15 +151,15 @@ object ELisp {
     def test() = {
         import TestHelpers._
         println("// ------- ELisp.test --------")
+        println("// --> Non-staged <--")
 
         checkrun("(cadr (cons 1 (cons 2 (+ 5 5))))", "Cst(2)")
-        checkrun("(lift (cadr (cons 1 (cons 2 (+ 5 5)))))", "Code(Lit(2))")
         checkrun("(let x (let y 2 (+ y 1)) (let x 2 (+ x x)))", "Cst(4)")
         checkrun("(let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1)))", "Cst(137)")
         checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
         checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
         checkrun("(letrec ((x 2) (y 3) (z -2)) (+ z x))", "Cst(0)")
-        // checkrun("(letrec ((x 2) (y 3) (z (+ x 2))) (+ z x))", "Cst(0)")
+        // checkrun("(letrec ((x 2) (y 3) (z (+ x 2))) (+ z x))", "Cst(0)") // TODO
         checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-car! lst 2) (car lst)))", "Cst(2)")
         checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-cdr! lst 2) lst))", "Tup(Cst(1),Cst(2))")
         checkrun("(car '(1 2))", "Cst(1)")
@@ -174,6 +174,54 @@ object ELisp {
         checkrun("""(listref '(1 2 3 4 5))""", "Tup(Cst(1),Tup(Cst(2),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.))))))")
         checkrun("""(listref (let lst '(1 2 3 4 5)
                                 (cons_ (cons_ (car_ lst) (cadr_ lst)) (cddr_ lst))))""", "Tup(Tup(Cst(1),Cst(2)),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.)))))")
+
+        println("// --> Staged <--")
+        checkrun("(lift (cadr (cons 1 (cons 2 (+ 5 5)))))", "Code(Lit(2))")
+        checkrun("(lift (let x (let y 2 (+ y 1)) (let x 2 (+ x x))))", "Code(Lit(4))")
+        checkrun("(lift (let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1))))", "Code(Lit(137))")
+        checkrun("(lift (let x (lambda (x y z) (+ x 2)) (x 2)))", "Code(Lit(4))")
+
+        val compileLamArgs = "(let x (lambda (x y z) (+ x (lift 2))) (x (lift 2)))"
+        checkrun(compileLamArgs, "Code(Var(x5))")
+        checkrun(s"(run 0 $compileLamArgs)", "Cst(4)")
+
+        checkrun("(lift (letrec ((x 2) (y 3) (z -2)) (+ z x)))", "Code(Lit(0))")
+
+        checkrun("(lift (let lst (cons 1 (cons 2 3)) (let _ (set-car! lst 2) (car lst))))", "Code(Lit(2))")
+        val compileLetrec = "(lift (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (let _ (set-car! lst (lift 2)) (car lst))))"
+        checkrun(s"$compileLetrec", "Code(Var(x6))")
+        checkrun(s"(run 0 (run 0 $compileLetrec))", "Cst(2)")
+
+        checkrun("(run 0 (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (car lst)))", "Cst(1)")
+        checkrun("(run 0 (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (let _ (set-car! lst (lift 2)) (car lst))))", "Cst(2)")
+        checkrun("(run 0 (lift (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (let _ (set-car! lst (lift 2)) (car lst)))))", "Code(Lit(2))")
+
+        // Note interesting side effect: Allows IR with Tup of mixed code and non-code values. Not supported in the original language
+        checkrun("(let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (let _ (set-cdr! lst 2) lst))", "Tup(Code(Var(x4)),Cst(2))")
+
+        checkrun("(lift (car '(1 2)))", "Code(Lit(1))")
+ 
+        // Staging mutating cells
+        checkrun("(lift (ref (let lst (cons_ 1 (cons_ 2 3)) (cadr_ lst))))", "Code(Lit(2))")
+        // Note interesting side effect: effectively bypassed the lift() restriction on mixed code/non-code values since we turned tuples into linked lists
+        checkrun("(ref (let lst (cons_ (lift 1) (cons_ (lift 2) 3)) (cadr_ lst)))", "Code(Lit(2))")
+
+        checkrun("(listref (let lst (cons_ (lift 1) (lift 2)) lst))", "Tup(Code(Lit(1)),Code(Lit(2)))")
+        checkrun("(ref (let lst (cons_ (lift 1) (lift 2)) (car_ lst)))", "Code(Lit(1))")
+        checkrun("(ref (let lst (cons_ (lift 1) (lift 2)) (cdr_ lst)))", "Code(Lit(2))")
+
+        // TODO: investigate output
+        checkrun("(run 0 (ref (let lst (lift (cons_ (lift 1) (lift 2))) (car_ lst))))", "Code(Lit(2))")
+        // checkrun("(let lst (lift (cons_ (lift 1) (lift (cons_ (lift 2) (lift 3))))) (cadr_ lst))", "Code(Lit(2))")
+
+        // checkrun("(let lst (cons_ 1 (cons_ 2 3)) (let _ (set-car!_ lst 2) (* (car_ lst) 1)))", "Cst(2)")
+        // checkrun("(car_ '(QUOTED))", "Str(QUOTED)")
+        // checkrun("(cdr_ '(QUOTED))", "Str(.)")
+// 
+        // checkrun("(ref (let lst (cons_ (cons_ 1 2) (cons_ 3 4)) (cadr_ lst)))", "Cst(3)")
+        // checkrun("""(listref '(1 2 3 4 5))""", "Tup(Cst(1),Tup(Cst(2),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.))))))")
+        // checkrun("""(listref (let lst '(1 2 3 4 5)
+        //                         (cons_ (cons_ (car_ lst) (cadr_ lst)) (cddr_ lst))))""", "Tup(Tup(Cst(1),Cst(2)),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.)))))")
 
         testDone()
     }

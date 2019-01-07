@@ -64,7 +64,7 @@ object Base {
         stBlock = Nil
         //println(s"DEBUGGING f arg in reify")
         val last = f
-        println(s"DEBUGGING last in reify $last")
+        // println(s"DEBUGGING last in reify $last")
         (stBlock foldRight last)(Let)
       }
   }
@@ -122,7 +122,7 @@ object Base {
   def reifyc(f: => Val) = reify {
     //println(s"DEBUGGING reifyc pre-code")
     f match {
-      case Code(e) => println(s"DEBUGGING reifyc: $e"); e
+      case Code(e) => /*println(s"DEBUGGING reifyc: $e");*/ e
       case Tup(Code(e1), Code(e2)) => Cons(e1, e2) // TODO: double check this behaviour is sound w.r.t reify semantics
     }
   }
@@ -172,14 +172,14 @@ object Base {
   def evalms(env: Env, e: Exp): Val = e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
-    case Var(n) => println(env);env(n)
+    case Var(n) => /*println(env);*/env(n)
     case Lam(e) => Clo(env,e)
     case Let(e1,e2) => 
       val v1 = evalms(env,e1)
       evalms(env:+v1,e2)
 
     case Lift(e) => 
-      print(env);Code(lift(evalms(env,e)))
+      /*print(env);*/Code(lift(evalms(env,e)))
 
     case Run(b,e) =>
       // first argument decides whether to generate

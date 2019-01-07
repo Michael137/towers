@@ -89,7 +89,32 @@ To tackle the first of these problems we construct a similar yet condensed form 
 	\item Mimick a practical tower through a SECD machine on top of the base evaluator and show compilation without staging commands throughout the tower
 	\item Theoretical proposal of how one might achieve collapsing in practice
 \end{itemize}
-	
+
+\subsection{Staging}
+There are two types of partial evaluation methodologies \cite{jones1993partial}:
+\begin{itemize}
+	\item Offline partial evaluation
+	\item Online partial evaluation
+\end{itemize}
+Namin et al. \cite{amin2017collapsing}, propose two languages Pink and Purple. Pink uses a form of online partial evaluation but requires manual staging facilities. Purple relies on LMS for automatic binding time analysis and staging
+which limits it to offline partial evaluation and thus relies on further optimization heuristics to achieve the same level of program specialization in the generated code as Pink.
+
+Our language extends Pink with side effects and a stack machine that makes use of pointer like semantics for Lisp-like cons pairs. Thus we build on top of the NBE-style lift operator for staging. However, calling into
+the base-level lift requires knowledge about its use to be passed from the layers above. We can employ several strategies of doing this:
+\begin{itemize}
+	\item A basic approach exposes the base layer staging operation to the level above. This is how the original Pink implementation works.
+	\item At every layer \textit{deduce} whether we need to call the underlying interpreter staging operator
+	\begin{itemize}
+		\item This requires every level to include an implementation of such staging operations
+	\end{itemize}
+	\item A mixture of passing staging operations to the layer below or implementing ones own operators
+	\item Find a method of passing staging decisions through each layer in a generic way without intrusive changes to the evaluators of the layers
+	\item Decide about calling staging operations at a particular point in the tower and apply previous points
+\end{itemize}
+We are interested in the last two point. In heterogeneous and practical towers a programmer does not have the liberty to introduce intrusive changes along each layer.
+The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
+what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
+
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}
 

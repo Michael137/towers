@@ -155,8 +155,9 @@ object EBase {
     case Str(s) => Sym(s)
     case Tup(a,b) =>
       val (Code(u),Code(v)) = (a,b)
-      reflect(Cons(u,v)) // Add to Cons to stBlock and return Var(stFresh)
+      reflect(Cons(u,v)) // Add Cons to stBlock and return Var(stFresh)
     case Code(e) => reflect(Lift(e))
+    case c: Cell => lift(deref(c))
   }
 
   // multi-stage evaluation
@@ -296,11 +297,15 @@ object EBase {
           case _ => Str(s"Cannot perform * operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Fst(e1) =>
-        val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        a
+        inject(e1, e, s, false) match {
+          case Tup(a, b) => a
+          case Code(a) => reflectc(Fst(a))
+        }
       case Snd(e1) =>
-        val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        b
+        inject(e1, e, s, false) match {
+          case Tup(a, b) => b
+          case Code(a) => reflectc(Snd(a))
+        }
         
       case Ref(e1) =>
         val lst = inject(e1, e, s, false)
@@ -316,6 +321,7 @@ object EBase {
                                   case Cell(k2, idx2) => Cell(k2, 0)
                                   case _ => Cell(k, 0)
                                 }
+          case Code(a) => reflectc(Fst_(a))
           case Tup(a, b) => a
         }
       case Snd_(e1) =>
@@ -324,6 +330,7 @@ object EBase {
                                   case Cell(k2, idx2) => Cell(k2, 0)
                                   case _ => Cell(k, scala.math.min(1, idx + 1))
                                 }
+          case Code(a) => reflectc(Snd_(a))
           case Tup(a, b) => b // TODO: Tup should be handled in lisp-frontend and not here. This is
                               //       curently for '(...) to work
         }

@@ -167,27 +167,27 @@ object EBaseTests {
 
   def runCellTests() = {
     val cellExp1 = Cons_(Lit(1), Cons_(Lit(2), Lit(3)))
-    println(inject(cellExp1))
+    check(refToTuple(inject(cellExp1)))("Tup(Cst(1),Tup(Cst(2),Cst(3)))")
 
     val cellExp2 = Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3))))
-    println(inject(cellExp2))
+    check(refToTuple(inject(cellExp2)))("Tup(Cst(2),Cst(3))")
 
     val cellExp3 = Fst_(Cons_(Lit(1), Cons_(Lit(2), Lit(3))))
-    println(inject(cellExp3))
+    check(deref(inject(cellExp3)))("Cst(1)")
 
     val cellExp4 = Snd_(Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3)))))
-    println(inject(cellExp4))
+    check(deref(inject(cellExp4)))("Cst(3)")
 
     val cellExp5 = Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3)))))
-    println(inject(cellExp5))
+    check(deref(inject(cellExp5)))("Cst(-2)")
 
     val cellExp6 = Fst_(Fst_(Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))))))) // Note the semantics
-    println(inject(cellExp6))
+    check(deref(inject(cellExp6)))("Cst(-2)")
 
     val cellExp7 = Let(Var("x"),
                        Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))),
                        Plus(Fst_(Fst_(Var("x"))), Snd_(Fst_(Var("x"))))) // -2 + -3
-    println(inject(cellExp7))
+    check(inject(cellExp7))("Cst(-5)")
 
     val cellExp8 = Let(Var("x"),
                        Cons_(Lit(1), Cons_(Lit(2), Lit(3))),
@@ -196,7 +196,7 @@ object EBaseTests {
                            Let(Var("_"),
                                SetCar(Var("y"), Lit(4)), // Should change list pointed to by "x"
                                Var("x"))))
-    println(inject(cellExp8))
+    check(refToTuple(inject(cellExp8)))("Tup(Cst(1),Tup(Cst(4),Cst(3)))")
 
     // Mutable global list through recursive function calls.
     // Simulates while loop:
@@ -209,7 +209,7 @@ object EBaseTests {
                                                                 App(Var("f"), List(SetCar(Var("x"), Plus(Var("ctr"), Lit(1))))),
                                                                 Plus(Lit(-10), Var("x")))))),
                   App(Var("f"), List(Lit(0)))))
-    println(inject(cellExp9))
+    check(inject(cellExp9))("Cst(990)")
 
     val cellExp10 = 
               Let(Var("x"), Cons_(Lit(1), Cons_(Lit(2), Cons_(Lit(3), Lit(4)))),
@@ -218,8 +218,6 @@ object EBaseTests {
                                                                   App(Var("f"), List(Var("x")))), // But pass global list...
                                                                 Times(Var("x"), Lit(1)))))), // Global list should be affected by local function changes
                   App(Var("f"), List(Var("x")))))
-    println(inject(cellExp10))
-
-    println(cells)
+    check(inject(cellExp10))("Cst(1000)")
   }
 }

@@ -423,11 +423,11 @@ object EBase {
 
     println("// ------- EBase.test --------")
 
-    // expressionTests()
-    // letrecTests()
-    // factorialTests()
-    // liftTests()
-    // runExpTests()
+    expressionTests()
+    letrecTests()
+    factorialTests()
+    liftTests()
+    runExpTests()
     runCellTests()
 
     TestHelpers.testDone()

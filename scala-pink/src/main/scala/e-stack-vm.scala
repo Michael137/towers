@@ -70,8 +70,12 @@ object EVM {
   val vmc_src = s"(let maybe-lift (lambda (e) (lift e)) $vm_poly_src)"
 
   def test() = {
+    import TestHelpers._
+
     println("// ------- EVM.test --------")
-    println(deref(inject(trans(parseExp(vm_src), Nil))))
+    check(deref(inject(trans(parseExp(vm_src), Nil))))("Cst(3628800)")
+
+    testDone()
   }
 }
 

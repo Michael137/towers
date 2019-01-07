@@ -10,7 +10,12 @@ object ELisp {
         override val whiteSpace = """(\s|(;[^\n]*))+""".r
 
         def S(x:String) = Str(x)
-        def P(x:Val,y:Val) = Tup(x,y)
+        def P(x:Val,y:Val) = {
+            Tup(x,y)
+            // val key = gensym("qcell")
+            // cells += (key -> List(x, y))
+            // Cell(key, 0)
+        }
         def I(x:Int) = Cst(x)
         val N = Str(".")
 
@@ -114,14 +119,14 @@ object ELisp {
         case Tup(Str("set-car!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(trans(b, env), Snd(lst)))
         case Tup(Str("set-cdr!"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetVar(lst, Cons(Fst(lst), trans(b, env)))
         // case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
-        // case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
+        case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
         case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
         // case Tup(Str("trans"),  Tup(a,N)) =>
         //  Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
         // case Tup(Str("lift-ref"),Tup(a,N)) =>
         //  Special(benv => Code(Special(b2 => evalms(benv,trans(a,env)))))
 
-        case Tup(Str("cons_"),      Tup(a,Tup(b,N))) => Cons_(trans(a,env),trans(b,env))
+        case Tup(Str("cons_"),       Tup(a,Tup(b,N))) => Cons_(trans(a,env),trans(b,env))
         case Tup(Str("car_"),        Tup(a,N)) => Fst_(trans(a,env))
         case Tup(Str("caar_"),       Tup(a,N)) => Fst_(Fst_(trans(a,env)))
         case Tup(Str("cdr_"),        Tup(a,N)) => Snd_(trans(a,env))
@@ -131,6 +136,9 @@ object ELisp {
         case Tup(Str("caddr_"),      Tup(a,N)) => Fst_(Snd_(Snd_(trans(a,env))))
         case Tup(Str("cadddr_"),     Tup(a,N)) => Fst_(Snd_(Snd_(Snd_(trans(a,env)))))
         case Tup(Str("set-car!_"),   Tup(a,Tup(b,N))) => val lst = trans(a,env); SetCar(lst, trans(b, env))
+        case Tup(Str("ref"),         Tup(a, N)) => Ref(trans(a, env))
+        case Tup(Str("listref"),     Tup(a, N)) => ListRef(trans(a, env))
+                                                    
 
         case Tup(a, b) =>
             val exps = tupToTupList(b)
@@ -159,6 +167,13 @@ object ELisp {
 
         // Mutating cons cells
         checkrun("(let lst (cons_ 1 (cons_ 2 3)) (let _ (set-car!_ lst 2) (* (car_ lst) 1)))", "Cst(2)")
+        checkrun("(car_ '(QUOTED))", "Str(QUOTED)")
+        checkrun("(cdr_ '(QUOTED))", "Str(.)")
+
+        checkrun("(ref (let lst (cons_ (cons_ 1 2) (cons_ 3 4)) (cadr_ lst)))", "Cst(3)")
+        checkrun("""(listref '(1 2 3 4 5))""", "Tup(Cst(1),Tup(Cst(2),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.))))))")
+        checkrun("""(listref (let lst '(1 2 3 4 5)
+                                (cons_ (cons_ (car_ lst) (cadr_ lst)) (cddr_ lst))))""", "Tup(Tup(Cst(1),Cst(2)),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.)))))")
 
         testDone()
     }

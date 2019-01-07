@@ -6,7 +6,9 @@ import scala.collection.mutable.HashMap
 import scala.util.hashing
 
 object EBase {
-  var log: Val => Unit = {x => println(x)}
+  def log(x: Val): Unit = {
+    println(s"LOGGED: $x");
+  }
 
   // expressions
   abstract class Exp
@@ -46,13 +48,27 @@ object EBase {
   // For mutation
   var cells = HashMap[String, List[Val]]()
   case class Cell(key: String, ptr: Int) extends Val
-  case class Tup_(a: Val, b: Val) extends Val
+  // case class Tup_(a: Val, b: Val) extends Val
+  case class ListRef(a:Exp) extends Primitive
+  case class Ref(a:Exp) extends Primitive
   case class Cons_(a:Exp, b:Exp) extends Exp
   case class Fst_(a:Exp) extends Primitive
   case class Snd_(a:Exp) extends Primitive
   def deref(v: Val): Val = v match {
     case Cell(k, idx) => deref(cells(k)(idx))
     case _ => v
+  }
+  def listderef(v: Val): List[Val] = {
+    v match {
+      case c: Cell => listderef(cells(c.key)(0)):::listderef(cells(c.key)(1))
+      case _ => v :: Nil
+    }
+  }
+  def refToTuple(v: Val): Val = {
+    v match {
+      case c: Cell => Tup(refToTuple(cells(c.key)(0)),refToTuple(cells(c.key)(1)))
+      case _ => v
+    }
   }
 
   // for custom extensions to AST
@@ -187,6 +203,7 @@ object EBase {
           case SetCar(v: Var, exp) =>
             val value = inject(exp, e, s, false)
             inject(v, e, s, false) match {
+              // case Cell(k, idx) => println(deref(Cell(k, 1)));cells(k) = List(value, cells(k)(1));println(deref(cells(k)(1)));
               case Cell(k, idx) => cells(k) = List(value, cells(k)(1))
             }
             val ret = applyCont(k, value, s, e)
@@ -212,6 +229,17 @@ object EBase {
                           reifyv(evalms(State(code, e, s, Halt())).asInstanceOf[Answer].v),
                           s, e)
             }
+
+          case Log(b,exp) =>
+            inject(b, e, s, false) match {
+              case Code(b1) =>
+                reflectc(Log(b1, reifyc(inject(exp, e, s, false))))
+              case _ =>
+                val r = inject(exp, e, s, false)
+                // log(r)
+                println(s"LOGGED: $r")
+                applyCont(k, r, s, e)
+          }
 
           case Special(f) => applyCont(k, f(e), s, e)
 
@@ -252,8 +280,8 @@ object EBase {
           case _ => Str(s"Cannot perform + operation on expressions $ret1 and $ret2") // ? should be error instead
         }
       case Minus(e1, e2) =>
-        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
           case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
@@ -273,18 +301,33 @@ object EBase {
       case Snd(e1) =>
         val Tup(a, b) = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         b
+        
+      case Ref(e1) =>
+        val lst = inject(e1, e, s, false)
+        deref(lst)
+        
+      case ListRef(e1) =>
+        val lst = inject(e1, e, s, false)
+        refToTuple(lst)
+
       case Fst_(e1) =>
-        val Cell(k, idx) = inject(e1, e, s, false)
-        cells(k)(idx) match {
-          case Cell(k2, idx2) => Cell(k2, 0)
-          case _ => Cell(k, 0)
+        inject(e1, e, s, false) match {
+          case Cell(k, idx) => cells(k)(idx) match {
+                                  case Cell(k2, idx2) => Cell(k2, 0)
+                                  case _ => Cell(k, 0)
+                                }
+          case Tup(a, b) => a
         }
       case Snd_(e1) =>
-        val Cell(k, idx) = inject(e1, e, s, false)
-        cells(k)(scala.math.min(1, idx + 1)) match {
-          case Cell(k2, idx2) => Cell(k2, 0)
-          case _ => Cell(k, scala.math.min(1, idx + 1))
+        inject(e1, e, s, false) match {
+          case Cell(k, idx) => cells(k)(scala.math.min(1, idx + 1)) match {
+                                  case Cell(k2, idx2) => Cell(k2, 0)
+                                  case _ => Cell(k, scala.math.min(1, idx + 1))
+                                }
+          case Tup(a, b) => b // TODO: Tup should be handled in lisp-frontend and not here. This is
+                              //       curently for '(...) to work
         }
+        
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
@@ -322,8 +365,10 @@ object EBase {
     x: A =>
       if(x == a)
         b
-      else
+      else {
+        // println(s"FROM UPDATE: $a")
         store(x)
+      }
   }
 
   def updateMany[A, B](store: StoreFun[A, B], as: List[A], bs: List[B]): StoreFun[A, B] = (as, bs) match {

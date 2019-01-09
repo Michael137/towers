@@ -169,7 +169,7 @@ object EBase {
       case st @ State(c: Exp, e: Env, s: Store, k: Cont) => {
         val ret = c match {
           case If(cond, conseq, alt) =>
-            deref(evalms(State(cond, e, s, Halt())).asInstanceOf[Answer].v) match {
+            deref(inject(cond, e, s, false)) match {
               case Cst(b) => if(b != 0) State(conseq, e, s, k) else State(alt, e, s, k)
               case Code(c) =>
                 applyCont(k, reflectc(If(c,
@@ -341,7 +341,7 @@ object EBase {
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
-        
+        // println(s"DEBUGGING: $ret1 $ret2")
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))

@@ -150,14 +150,17 @@ object EBase {
     }
   }
 
+  // semantics -> syntax
   def lift(v: Val): Exp = v match {
+    // TODO: make sure of semantics for cells here
+    case c: Cell => lift(refToTuple(c))
     case Cst(n) => Lit(n)
     case Str(s) => Sym(s)
-    case Tup(a,b) =>
-      val (Code(u),Code(v)) = (a,b)
-      reflect(Cons(u,v)) // Add Cons to stBlock and return Var(stFresh)
+    case Tup(a,b) => (a,b) match {
+      case (Code(u), Code(v)) => reflect(Cons(u,v)) // Add Cons to stBlock and return Var
+      case (Code(u), t: Tup) => reflect(Cons(u,lift(t)))
+    }
     case Code(e) => reflect(Lift(e))
-    case c: Cell => lift(deref(c))
   }
 
   // multi-stage evaluation
@@ -285,7 +288,7 @@ object EBase {
         val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
-          case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
+          case (Code(n1),Code(n2)) => reflectc(Minus(n1, n2))
           case _ => Str(s"Cannot perform - operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Times(e1, e2) =>
@@ -293,7 +296,7 @@ object EBase {
         val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-          case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
+          case (Code(n1),Code(n2)) => reflectc(Times(n1, n2))
           case _ => Str(s"Cannot perform * operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Fst(e1) =>

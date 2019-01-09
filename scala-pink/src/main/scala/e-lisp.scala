@@ -210,18 +210,27 @@ object ELisp {
         checkrun("(ref (let lst (cons_ (lift 1) (lift 2)) (car_ lst)))", "Code(Lit(1))")
         checkrun("(ref (let lst (cons_ (lift 1) (lift 2)) (cdr_ lst)))", "Code(Lit(2))")
 
-        // TODO: investigate output
-        checkrun("(run 0 (ref (let lst (lift (cons_ (lift 1) (lift 2))) (car_ lst))))", "Code(Lit(2))")
-        // checkrun("(let lst (lift (cons_ (lift 1) (lift (cons_ (lift 2) (lift 3))))) (cadr_ lst))", "Code(Lit(2))")
+        checkrun("(run 0 (let lst (lift (cons_ (lift 1) (lift 2))) (car_ lst)))", "Cst(1)")
 
-        // checkrun("(let lst (cons_ 1 (cons_ 2 3)) (let _ (set-car!_ lst 2) (* (car_ lst) 1)))", "Cst(2)")
-        // checkrun("(car_ '(QUOTED))", "Str(QUOTED)")
-        // checkrun("(cdr_ '(QUOTED))", "Str(.)")
-// 
-        // checkrun("(ref (let lst (cons_ (cons_ 1 2) (cons_ 3 4)) (cadr_ lst)))", "Cst(3)")
-        // checkrun("""(listref '(1 2 3 4 5))""", "Tup(Cst(1),Tup(Cst(2),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.))))))")
-        // checkrun("""(listref (let lst '(1 2 3 4 5)
-        //                         (cons_ (cons_ (car_ lst) (cadr_ lst)) (cddr_ lst))))""", "Tup(Tup(Cst(1),Cst(2)),Tup(Cst(3),Tup(Cst(4),Tup(Cst(5),Str(.)))))")
+        check(Base.evalms(Nil, Lisp.trans(Lisp.parseExp("(let lst (cons (lift 1) (lift (cons (lift 2) (lift 3)))) (cadr lst))"), Nil)))("Code(Var(1))")
+        check(Base.evalms(Nil, Lisp.trans(Lisp.parseExp("(run 0 (let lst (cons (lift 1) (lift (cons (lift 2) (lift 3)))) (cadr lst)))"), Nil)))("Cst(2)")
+        checkrun("(ref (let lst (cons_ (lift 1) (cons_ (lift 2) (lift 3))) (cadr_ lst)))", "Code(Lit(2))")
+        checkrun("(run 0 (ref (let lst (cons_ (lift 1) (cons_ (lift 2) (lift 3))) (cadr_ lst))))", "Cst(2)")
+
+        checkrun("(run 0 (lift (let lst (lift (cons_ (lift 1) (cons_ (lift 2) (lift 3)))) (car_ lst))))", "Code(Lit(1))")
+        check(Base.evalms(Nil, Lisp.trans(Lisp.parseExp("(run 0 (lift (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (car lst))))"), Nil)))("Code(Lit(1))")
+        check(Lisp.ev("(run 0 (lift (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (car lst))))"))("Code(Lit(1))")
+
+        // Note semantics: when chaining cons_, should *ONLY* wrap the outer cons_ (if necessary)
+        //                 and the individual elements, *NOT* any of the inner cons_
+        check(Base.evalms(Nil, Lisp.trans(Lisp.parseExp("(run 0 (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (cadr lst)))"), Nil)))("Cst(2)")
+        checkrun("(run 0 (ref (let lst (lift (cons_ (lift 1) (cons_ (lift 2) (lift 3)))) (cadr_ lst))))", "Cst(2)")
+
+        checkrun("(run 0 (let lst (cons_ (lift 1) (cons_ (lift 2) (lift 3))) (let _ (set-car!_ lst (lift 2)) (* (ref (car_ lst)) (lift 1)))))", "Cst(2)")
+        
+        // Cons of two cons is consistent between original and new front-end
+        checkrun("(ref (let lst (cons_ (cons_ 1 2) (cons_ 3 4)) (cadr_ lst)))", "Cst(3)")
+        check(Lisp.ev("(let lst (cons (cons 1 2) (cons 3 4)) (cadr lst))"))("Cst(3)")
 
         testDone()
     }

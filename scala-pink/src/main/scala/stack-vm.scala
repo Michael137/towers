@@ -322,8 +322,6 @@ object VM {
     // testCrash() // For debugging crashes
     testTranslators() // Heterogeneous translators on top of Pink
 
-    // println(evalms(Nil, trans(parseExp("(run 0 (lift (let lst (lift (cons (lift 1) (lift (cons (lift 2) (lift 3))))) (car lst))))"), Nil)))
-
     testDone()
   }
 }

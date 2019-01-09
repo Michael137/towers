@@ -11,8 +11,8 @@ object TestMain {
     // CESK.test()
 
     //EBase.test()
-    ELisp.test()
-    // EVM.test()
+    // ELisp.test()
+    EVM.test()
     println("// ###### Full testsuite done ######")
   }
 }

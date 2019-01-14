@@ -1,5 +1,5 @@
 \documentclass{article}
-\title{Background Literature and Designs}
+\title{Ongoing Thesis Writeup}
 \author{Michael Buch}
 \date{\today}
 
@@ -7,6 +7,14 @@
 \usepackage[left=2cm,right=2cm]{geometry}
 \usepackage{verbatim} % for comments
 \usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\urlstyle{same}
 
 \begin{document}
 \maketitle
@@ -90,11 +98,21 @@ To tackle the first of these problems we construct a similar yet condensed form 
 	\item Theoretical proposal of how one might achieve collapsing in practice
 \end{itemize}
 
+\section{Normalization By Evaluation (NBE)}
+Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
+\href{http://www.cse.chalmers.se/~abela/univnbe.pdf}{NBE paper}
+\href{http://homepages.inf.ed.ac.uk/slindley/nbe/nbe-cambridge2016.pdf}{More slides}
+\href{https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/supercomp-by-eval.pdf?from=http%3A%2F%2Fresearch.microsoft.com%2Fen-us%2Fum%2Fpeople%2Fsimonpj%2Fpapers%2Fsupercompilation%2Fsupercomp-by-eval.pdf}{Supercompilation by Evaluation}
+\href{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.630.2123&rep=rep1&type=pdf}{Supercompilation and Normalization by Evaluation}
+
+\section{Type-Directed Partial Evluation (TDPE)}
+\cite{grobauer2001second}
+
 \subsection{Staging}
 There are two types of partial evaluation methodologies \cite{jones1993partial}:
 \begin{itemize}
 	\item Offline partial evaluation
-	\item Online partial evaluation
+	\item Online partial evaluation \cite{cook2011tutorial}
 \end{itemize}
 Namin et al. \cite{amin2017collapsing}, propose two languages Pink and Purple. Pink uses a form of online partial evaluation but requires manual staging facilities. Purple relies on LMS for automatic binding time analysis and staging
 which limits it to offline partial evaluation and thus relies on further optimization heuristics to achieve the same level of program specialization in the generated code as Pink.
@@ -114,6 +132,7 @@ the base-level lift requires knowledge about its use to be passed from the layer
 We are interested in the last two point. In heterogeneous and practical towers a programmer does not have the liberty to introduce intrusive changes along each layer.
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
+
 
 \subsection{Why do we want to collapse towers? (aren't they pretty?)}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization
@@ -146,6 +165,37 @@ will now have the film applied to them. Here sieves are the levels below and gra
 
 Our study examines this property by testing the limits of how we can get the side effects to stick to interpreters in a useful way. One could imagine optimizations, parallelization or instrumentation as possible use cases. Under certain side-effects, we may, however,
 reach limits in terms of security (TROJANS IN HYPERVISORS) or ability to reason about a system. We are interested in the extent of these limits. (concurrency as a side-effect: instead of launching missiles we launch threads)
+
+\section{Towers in the Wild}
+To provide a real-world analogy of the language towers we are constructing describe some existing arrangements of multi-interpreter systems below:
+\begin{itemize}
+	\item \href{https://github.com/jashkenas/coffeescript/wiki/List-of-languages-that-compile-to-JS}{Here} is a list of languages that are built on top of JavaScript. This is a three-level interpreter system: User-application<->DSL<->JavaScript Interpreter
+	\item \href{https://github.com/vindarel/languages-that-compile-to-python#other-languages-that-target-the-python-platform}{Here} is a list of languages that compile to Python.
+	\item \href{https://github.com/copy/v86}{v86} is a x86 CPU emulator written in JavaScript. This closely resembles our stack machine that is evaluated in both Pink or the Base language's multi-stage evaluator
+	\item \href{http://6502asm.com/}{6502asm} is a microcontroller emulator in JavaScript
+\end{itemize}
+
+\section{On Side-effects and Dynamic Semantics of Programming Languages}
+References:
+\begin{itemize}
+	\item 
+\end{itemize}
+
+\section{Heterogeneity}
+
+\subsection{Adding Levels}
+Added stack machine
+DIAGRAMS
+
+\subsection{Result of collapsing}
+
+\subsection{Cost of Emulation (or interpreteation)}
+% https://www.quora.com/Why-are-emulators-so-badly-optimized
+% https://stackoverflow.com/questions/448673/how-do-emulators-work-and-how-are-they-written
+\cite{steil2004dynamic}
+\href{http://materials.dagstuhl.de/files/17/17061/17061.PaulH.J.Kelly.Slides.pdf}{Turing Tax}
+\href{https://www.doc.ic.ac.uk/~phjk/AdvancedCompArchitecture/Lectures/pdfs/Ch01-TuringTaxDiscussionV02.pdf}{Turing Tax specific slides}
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

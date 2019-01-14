@@ -1,16 +1,6 @@
 Collapsing heterogeneous towers
 ===============================
-Current progress
-----------------
-* __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/stack-vm.scala)__: contains stack machine to be evaluated in Pink
-  * Instructions on running it are in the __[`README.md`](scala-pink/README.md)__
-* graal-towers: use GraalVM as the backend for the base evaluator
-  * Enables calling into other languages from Scala (very simple examples in test-main.scala)
-  * requires Graal to be installed
-  * Instructions on running this version is in ``Makefile''
+Turn an interpreter tower such as Python<->x86 Emulator<->JavaScript into a one-pass compiler
 
-Next steps
-----------
-* Extend stack machine
-* Compile vs. Eval stack machine and compare results
-* Emulate other types of towers
+Main body of work is currently in the __[`Scala version`](https://github.com/Michael137/towers/tree/master/scala-pink)__.
+Instructions on running the framework and progress updates are in the Scala __[`README.md`](scala-pink/README.md)__

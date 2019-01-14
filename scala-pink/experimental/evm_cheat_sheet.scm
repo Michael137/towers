@@ -109,3 +109,28 @@ args (f x y)
             y
         else
             f(z)
+
+(define (update* f xs ys)
+    (match* (xs ys)
+        [['() '()]    f]
+        [[(cons x xs*) (cons y ys*)]
+        (update* (update f x y) xs* ys*)]))
+
+(letrec
+    (
+        (update (lambda (f x y) (lambda (z) (if (eq? z x) y (f z)))))
+        (updateMany (lambda (f xs ys) (lambda (if (eq? xs '())
+                                                (if (eq? ys '())
+                                                    f
+                                                    (updateMany (update f (car xs) (car ys)) (cdr xs) (cdr ys)))))))
+    ) ...)
+
+(let fargs
+    (updateMany (lambda (x) 'init) (cadr exp) (cadr exp)) 
+        (lambda (x) x))
+
+(letrec
+    ((update (lambda (f x y) (lambda (z) (if (eq? z x) y (f z)))))
+        (updateMany (lambda (f xs ys) (if (and (eq? xs '()) (eq? ys '()))
+                                            f
+                                            (updateMany (update f (car xs) (car ys)) (cdr xs) (cdr ys)))))))

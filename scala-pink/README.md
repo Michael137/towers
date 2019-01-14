@@ -21,7 +21,7 @@
     - [x] Modify Lisp front-end to match new λ↑↓*
     - [x] Port SECD machine to new tower
     - [ ] Be able to stage through side-effects e.g. pointers and mutation
-    - [ ] Multi-argument lambdas in e-pink
+    - [x] Multi-argument lambdas in e-pink
     - [ ] Letrec in e-pink
     - [ ] Construct following towers:
       - [ ] Base<->VM<->Evaluator<->User program

@@ -1,11 +1,11 @@
 # Pink in Scala (Collapsing Towers of Interpreters)
 
 ## Current main body of work
-  - [x] Implement the stack-based VM (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master//scheme-pink/stack-vm.scm))
+  - [x] Implement the stack-based VM (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master/archive/scheme-pink/stack-vm.scm))
     - [x] jmp
     - [x] ret
     - [x] branch
-  - [X] Be able to run fibonacci/factorial testsuite (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master/scheme-pink/stack-vm.scm))
+  - [X] Be able to run fibonacci/factorial testsuite (see [stack-vm.scm](https://github.com/Michael137/towers/tree/master/archive/scheme-pink/stack-vm.scm))
   - [x] Add the stack-machine as a user-level in Pink
     * __[`stack-vm.scala`](https://github.com/Michael137/towers/tree/master/scala-pink/src/main/scala/stack-vm.scala)__
     * Followups: tracing stack, factorial has workaround instructions (i.e. {PUSH,SUB,NEG,DUP}ENV, Persistent AP and REP)
@@ -21,6 +21,11 @@
     - [x] Modify Lisp front-end to match new λ↑↓*
     - [x] Port SECD machine to new tower
     - [ ] Be able to stage through side-effects e.g. pointers and mutation
+    - [ ] Multi-argument lambdas in e-pink
+    - [ ] Letrec in e-pink
+    - [ ] Construct following towers:
+      - [ ] Base<->VM<->Evaluator<->User program
+      - [ ] Base<->Pink<->VM<->Evaluator<->User program
     - [ ] Experiment with more severe side-effects
     - [ ] Formal description
 
@@ -33,6 +38,9 @@
 or to run full Pink testsuite
 
 * sbt test
+
+## Run Test Suite
+* sbt ~run
 
 # Debugging
 ## Intellij

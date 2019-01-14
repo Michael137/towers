@@ -15,29 +15,45 @@
                     (if (eq? 'EQ (car ops)) (machine (cons (eq? (car s) (cadr s)) (cddr s)) e c d (cdr ops))
                     (if (eq? 'GT (car ops)) (machine (cons (> (car s) (cadr ops)) (cdr s)) e c d (cddr ops))
                     (if (eq? 'CONS (car ops)) (machine (cons (cons (car s) (cadr s)) (cddr s)) e c d (cdr ops))
-                    (if (eq? 'NIL (car ops)) (machine (cons '() s) e c d (cdr ops))      
+                    (if (eq? 'NIL (car ops)) (machine (cons '() s) e c d (cdr ops))
                     (if (eq? 'SEL (car ops))
                         (if (car s)
                             (machine (cdr s) e c (cons (cdddr ops) d) (cadr ops))
                             (machine (cdr s) e c (cons (cdddr ops) d) (caddr ops)))
+                    (if (eq? 'DUM (car ops)) (machine s (cons '() e) c d (cdr ops))
                     (if (eq? 'JOIN (car ops))
                         (machine s e c (cdr d) (car d))
-                    (if (eq? 'LDF (car ops)) (machine (cons (cons (cadr ops) e) s) e (cons (cadr ops) c) d (cdr ops))
+
+                    (if (eq? 'LDF (car ops)) (machine (cons (cons (cadr ops) e) s) e c d (cddr ops)) ; (machine (cons (cons (cadr ops) e) s) e c d (cdr ops))
                     (if (eq? 'AP (car ops))
                         (machine '() (cons (cadr s) (cdr (car s))) c (cons (cddr s) (cons e (cons (cdr ops) d))) (caar s))
                     (if (eq? 'RTN (car ops))
                         (let ((resume (caddr d)))
                             (machine (cons (car s) (car d)) (cadr d) c (cdddr d) resume))
-                    (if (eq? 'DUM (car ops)) (machine s (cons '() e) c d (cdr ops))
                     (if (eq? 'RAP (car ops))
                         (begin
                             (set-car! e (cadr s))
                             (machine '() e c (cons (cddr s) (cons e (cons (cdr ops) d))) (caar s)))
 
-                    (if (eq? 'DBG (car ops)) (begin (display (car s))
-                                                    (machine s e c d (cdr ops)))
+                            ; (
+                            ;     (
+                            ;         (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN)
+                            ;         ()
+                            ;         (10 1)
+                            ;     )
+                            ;     (
+                            ;         (
+                            ;             (LDC 0 LD (1 1) EQ SEL (LDC 1 JOIN) (NIL LD (1 2) LD (1 1) MPY CONS LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN) RTN)
+                            ;             ()
+                            ;             (10 1)
+                            ;         )
+                            ;     )
+                            ; )
+
+                    (if (eq? 'DBG (car ops)) s;(begin (display (cadr s))
+                                              ;       (machine s e c d (cdr ops)))
                                             
-                    (if (eq? 'WRITEC (car ops)) (car s)
+                    (if (eq? 'WRITEC (car ops)) (car e)
                         (machine s e c d (cdr ops)))))))))))))))))))))))
 
 (define (start ops) (machine vm-stack env-list op-list call-stack ops))
@@ -45,12 +61,12 @@
 (define fac_src '(NIL LDC 1 CONS LDC 10 CONS LDF
                         (DUM NIL LDF
                             (LDC 0 LD (1 1) EQ SEL
-                                (LD (1 2) JOIN)
+                                (LDC 1 JOIN) ; (LD (1 2) JOIN)
                                 (NIL LD (1 2) LD (1 1) MPY CONS
                                         LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
                             RTN)
                         CONS LDF
-                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-                        RTN) AP WRITEC))
+                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) DBG RAP
+                        RTN) AP STOP))
 
 (display (start fac_src))

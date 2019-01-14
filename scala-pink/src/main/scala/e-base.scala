@@ -18,16 +18,19 @@ object EBase {
   case class Sym(s:String) extends Exp
   case class Var(s:String) extends Exp
   case class Lam(vs: List[Var], e:Exp) extends Exp
+  case class VarargLam(e: Exp, vs: Exp, env: List[String]) extends Exp
   // Primitives
   case class Plus(a:Exp,b:Exp) extends Primitive
   case class Minus(a:Exp,b:Exp) extends Primitive
   case class Times(a:Exp,b:Exp) extends Primitive
   case class Equ(a:Exp,b:Exp) extends Primitive
+  case class And(a:Exp,b:Exp) extends Primitive
   case class Gt(a:Exp,b:Exp) extends Primitive
   case class Lt(a:Exp,b:Exp) extends Primitive
   case class IsNum(a:Exp) extends Primitive
   case class IsStr(a:Exp) extends Primitive
   case class IsCons(a:Exp) extends Primitive
+  case class IsCell(a:Exp) extends Primitive
   case class Fst(a:Exp) extends Primitive
   case class Snd(a:Exp) extends Primitive
 
@@ -93,6 +96,7 @@ object EBase {
 
   case class Answer(v: Val, s: Store, e: Env) extends Val
   case class State(c: Exp, e: Env, s: Store, k: Cont) extends Val
+  case class Null() extends Val
 
   case class Code(e:Exp) extends Val
 
@@ -181,11 +185,11 @@ object EBase {
           // Function application
           case App(f, es) =>
             // NB: staging decision done in ``applyProc''
-            val proc = evalAtom(f, e, s) // TODO: should be evalms
+            val Answer(proc, newStore, newEnv) = evalms(State(f, e, s, Halt())) // TODO: should be evalms or evalAtom?
             val args = es.map({ x =>
-                                evalms(State(x, e, s, Halt())).asInstanceOf[Answer].v
+                                inject(x, newEnv, newStore, false) // TODO: use newEnv or old e for inject
                               })
-            applyProc(proc, args, s, k)
+            applyProc(proc, args, newStore, k)
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
             val (vs, es) = exps.unzip
@@ -257,13 +261,41 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case Lit(_) | Sym(_) | Lam(_, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
+    case Lit(_) | Sym(_) | Lam(_, _) | VarargLam(_, _, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
       case Sym(str) => Str(str)
       case Var(str) => s(e(str))
       case Lit(num) => Cst(num)
+      case IsNum(e1) =>
+        inject(e1,e,s,false) match {
+          case (Code(s1)) =>
+            reflectc(IsNum(s1))
+          case v => 
+            Cst(if (v.isInstanceOf[Cst]) 1 else 0)
+        }
+      case IsStr(e1) => 
+        inject(e1,e,s,false) match {
+          case (Code(s1)) =>
+            reflectc(IsStr(s1))
+          case v => 
+            Cst(if (v.isInstanceOf[Str]) 1 else 0)
+        }
+      case IsCons(e1) =>
+        inject(e1,e,s,false) match {
+          case (Code(s1)) =>
+            reflectc(IsCons(s1))
+          case v => 
+            Cst(if (v.isInstanceOf[Tup]) 1 else 0)
+        }
+      case IsCell(e1) =>
+        inject(e1,e,s,false) match {
+          case (Code(s1)) =>
+            reflectc(IsCell(s1))
+          case v => 
+            Cst(if (v.isInstanceOf[Cell]) 1 else 0)
+        }
       case Cons(e1,e2) => 
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
@@ -274,7 +306,50 @@ object EBase {
         val key = gensym("cell")
         cells += (key -> List(ret1, ret2))
         Cell(key, 0)
-      case Lam(vs, body) => Clo(Lam(vs, body), e)
+      case lam: Lam => Clo(lam, e)
+
+      /* The complexity is the price we pay for multi-argument
+      ** lambda support in the EPink evaluator. We use
+      ** check the lambda argument list names here
+      ** and then buid a regular lambda (i.e. Lam()) but inject a functional
+      ** store into the body of the lambda in case the expression evaluated
+      ** in the body requests a variable from the argument list.
+      */
+      case VarargLam(vs, body, env) => {
+
+        // Get variable name list.
+        // If lambda was constructed in Pink using (...)
+        // as the argument list we match what the user program
+        // that pink is evaluating has declared as the argument
+        // list. I.e. we turn (...) into Tup(Var(x), Tup(Var(y), N))
+        // if a Pink program declared (lambda (x y) <body>)
+        val t = inject(vs, e, s, false)
+        val vars = (ELisp.tupToList(t)).map({ x: String => Var(x) }) // TODO: move tupToList and other helpers to separate module
+
+        // Create the functional store:
+        // It is a lambda that takes a single argument
+        // and checks whether it matches any of the variables
+        // in the argument list. If it finds a match, return
+        // the variable matching the argument, otherwise
+        // defer to an environment lookup
+        def aux(exp: List[Var]): Exp = exp match {
+          case hd::tl => If(Equ(Var("__z__"), Sym(hd.s)), hd, aux(tl))
+          case _ => App(Var("env"),List(Var("__z__")))
+        }
+
+        val injectionBranches = aux(vars)
+        val envInjection = Lam(List(Var("__z__")), injectionBranches)
+
+        // We replace the (...) placeholder with the funcional store
+        // from above
+        val bodyApp = body.asInstanceOf[App]
+        val i = (bodyApp.arg).lastIndexOf(Sym("..."))
+        val newArgs = (bodyApp.arg).updated(i, envInjection)
+        val newBody = App(bodyApp.f, newArgs)
+
+        Clo(Lam(vars, newBody), e)
+      }
+
       case Plus(e1, e2) =>
         val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
         val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
@@ -309,7 +384,7 @@ object EBase {
           case Tup(a, b) => b
           case Code(a) => reflectc(Snd(a))
         }
-        
+
       case Ref(e1) =>
         val lst = inject(e1, e, s, false)
         deref(lst)
@@ -341,7 +416,6 @@ object EBase {
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
-        // println(s"DEBUGGING: $ret1 $ret2")
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
@@ -369,6 +443,17 @@ object EBase {
             reflectc(Gt(s1,s2))
           case _ => Str(s"Cannot perform > operation on expressions $ret1 and $ret2") // ? should be error instead
         }
+
+      case And(e1,e2) =>
+        val ret1 = inject(e1, e, s, false)
+        val ret2 = inject(e2, e, s, false)
+        (ret1, ret2) match {
+          case (Cst(n1), Cst(n2)) =>
+            Cst(if (n1 == 1 && n2 == 1) 1 else 0)
+          case (Code(s1),Code(s2)) =>
+            reflectc(And(s1,s2))
+          case _ => Str(s"Cannot perform && operation on expressions $ret1 and $ret2") // ? should be error instead
+        }
     }
 
   def update[A,B](store: StoreFun[A, B], a: A, b: B): StoreFun[A, B] = {
@@ -376,7 +461,6 @@ object EBase {
       if(x == a)
         b
       else {
-        // println(s"FROM UPDATE: $a")
         store(x)
       }
   }

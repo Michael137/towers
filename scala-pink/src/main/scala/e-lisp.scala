@@ -70,6 +70,7 @@ object ELisp {
     def trans(e: Val, env: List[String]): Exp = e match {
         case Cst(n) => Lit(n)
         case Str(s) => val i = env.lastIndexOf(s); assert(i>=0, s + " not in " + env); Var(s)
+        case Tup(Str("..."),    N)   => Sym("...")
         case Tup(Str("quote"),  Tup(Str(s),N))   => Sym(s)
         case Tup(Str("+"),      Tup(a,Tup(b,N))) => Plus(trans(a,env),trans(b,env))
         case Tup(Str("-"),      Tup(a,Tup(b,N))) => Minus(trans(a,env),trans(b,env))
@@ -92,16 +93,20 @@ object ELisp {
             )
             Letrec(params, trans(b, env:::vars))
         
-        // (lambda (xs...) e)
+        case Tup(Str("lambda"), Tup(Tup(Str("..."), N), Tup(body, Tup(varargs,N)))) =>
+            VarargLam(trans(varargs, env), trans(body, env), env)
+        
+        // (lambda (x1 x2 -> xN) e)
         case Tup(Str("lambda"), Tup(a, Tup(e,N))) =>
             val varnames = tupToList(a)
             val vars = varnames.map({ x: String => Var(x) })
             Lam(vars, trans(e,env:::varnames))
 
         case Tup(Str("if"),     Tup(c,Tup(a,Tup(b,N)))) => If(trans(c,env),trans(a,env),trans(b,env))
-        // case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
-        // case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
-        // case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))
+        case Tup(Str("and"),    Tup(a,Tup(b,N))) => And(trans(a,env),trans(b,env))
+        case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
+        case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
+        case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))
         case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
         case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
         case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))
@@ -159,6 +164,7 @@ object ELisp {
         checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
         checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
         checkrun("(letrec ((x 2) (y 3) (z -2)) (+ z x))", "Cst(0)")
+        checkrun("(letrec ((f (lambda (x) (if (eq? x 0) (+ x 1) (f (- x 1)))))) (f 15))", "Cst(1)")
         // checkrun("(letrec ((x 2) (y 3) (z (+ x 2))) (+ z x))", "Cst(0)") // TODO
         checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-car! lst 2) (car lst)))", "Cst(2)")
         checkrun("(let lst (cons 1 (cons 2 3)) (let _ (set-cdr! lst 2) lst))", "Tup(Cst(1),Cst(2))")
@@ -231,6 +237,10 @@ object ELisp {
         // Cons of two cons is consistent between original and new front-end
         checkrun("(ref (let lst (cons_ (cons_ 1 2) (cons_ 3 4)) (cadr_ lst)))", "Cst(3)")
         check(Lisp.ev("(let lst (cons (cons 1 2) (cons 3 4)) (cadr lst))"))("Cst(3)")
+
+        checkrun("((lambda (x) x) 4)", "Cst(4)")
+
+        checkrun("(let y 2 ((lambda (x) y) 4))", "Cst(2)")
 
         testDone()
     }

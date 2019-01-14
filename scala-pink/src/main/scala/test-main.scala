@@ -1,3 +1,7 @@
+import Base._
+import Lisp._
+import VM._
+
 object TestMain {
   def main(args: Array[String]) {
     // Base.test()
@@ -10,9 +14,11 @@ object TestMain {
     // Bench.test()
     // CESK.test()
 
-    //EBase.test()
+    // EBase.test()
     // ELisp.test()
-    EVM.test()
+    // EVM.test()
+    EPink.test()
+    // EVMComp.test()
     println("// ###### Full testsuite done ######")
   }
 }

@@ -52,7 +52,7 @@ object EVM {
                                                 (loc j (loc i env))
                             ))
                             (letrec ((machine (lambda (s e c d ops)
-                                                (if (eq? 'STOP (car_ ops)) (maybe-lift s)
+                                                (if (eq? 'STOP (car_ ops)) s
                                                 (if (eq? 'LDC (car_ ops)) (machine (cons_ (cadr_ ops) s) e c d (cddr_ ops))
                                                 (if (eq? 'LD (car_ ops))
                                                     (machine (cons_ (locate (car_ (cadr_ ops)) (cadr_ (cadr_ ops)) e) s) e c d (cddr_ ops))
@@ -94,6 +94,13 @@ object EVM {
     val vm_src_state = evalms(State(trans(parseExp(vm_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
     val vmc_src_state = evalms(State(trans(parseExp(vmc_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
 
+    /*
+    ** We expect evaluation and compilation in the VM
+    ** to essentially be the same since it is built from
+    ** purely static input data. To get benefit from
+    ** collapsing we need to add another level or be able
+    ** to operate on dynamic inputs from within the VM
+    */
     def factorialTest() = {
         // Interpret factorial
         val fac_state = applyProc(vm_src_state.v, List(fac_exp), vm_src_state.s, Halt()).asInstanceOf[State]
@@ -103,7 +110,10 @@ object EVM {
         // Compile factorial
         val comp_fac_state = applyProc(vmc_src_state.v, List(fac_exp), vmc_src_state.s, Halt()).asInstanceOf[State]
         val comp_fac_code = fac_state.c
-        println(evalms(comp_fac_state).asInstanceOf[Answer].v)
+        check(evalms(comp_fac_state).asInstanceOf[Answer].v)("Code(Lit(3628800))")
+
+        // TODO: verify machine in Scheme
+        // TODO: stage with respect to user program. Needs solution to branches for code values i.e. SEL when input is Code()
     }
 
   def test() = {

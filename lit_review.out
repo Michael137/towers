@@ -1,24 +1,25 @@
 \BOOKMARK [1][-]{section.1}{About this document}{}% 1
-\BOOKMARK [1][-]{section.2}{Examples}{}% 2
-\BOOKMARK [1][-]{section.3}{Methodologies Background}{}% 3
-\BOOKMARK [2][-]{subsection.3.1}{Towers of Interpreters Project Overview}{section.3}% 4
-\BOOKMARK [3][-]{subsubsection.3.1.1}{Scala}{subsection.3.1}% 5
-\BOOKMARK [1][-]{section.4}{Results}{}% 6
-\BOOKMARK [1][-]{section.5}{Problems}{}% 7
-\BOOKMARK [1][-]{section.6}{Contributions}{}% 8
-\BOOKMARK [1][-]{section.7}{Normalization By Evaluation \(NBE\)}{}% 9
-\BOOKMARK [1][-]{section.8}{Type-Directed Partial Evluation \(TDPE\)}{}% 10
-\BOOKMARK [2][-]{subsection.8.1}{Staging}{section.8}% 11
-\BOOKMARK [1][-]{section.9}{An Introduction to Towers of Interpreters}{}% 12
-\BOOKMARK [2][-]{subsection.9.1}{LISP-3 and the Need for Reflection}{section.9}% 13
-\BOOKMARK [2][-]{subsection.9.2}{Tower Semantics}{section.9}% 14
-\BOOKMARK [2][-]{subsection.9.3}{Compiling Reflective Languages}{section.9}% 15
-\BOOKMARK [1][-]{section.10}{Heterogeneity}{}% 16
-\BOOKMARK [1][-]{section.11}{Why do we want to collapse towers? \(aren't they pretty?\)}{}% 17
-\BOOKMARK [2][-]{subsubsection.11.0.1}{Example of Deriving Translators}{section.11}% 18
-\BOOKMARK [1][-]{section.12}{Towers in the Wild}{}% 19
-\BOOKMARK [1][-]{section.13}{On Side-effects and Dynamic Semantics of Programming Languages}{}% 20
-\BOOKMARK [2][-]{subsection.13.1}{Adding Levels}{section.13}% 21
-\BOOKMARK [2][-]{subsection.13.2}{Result of collapsing}{section.13}% 22
-\BOOKMARK [2][-]{subsection.13.3}{Cost of Emulation \(or interpreteation\)}{section.13}% 23
-\BOOKMARK [1][-]{section.14}{Methodologies}{}% 24
+\BOOKMARK [1][-]{section.2}{An Introduction to Towers of Interpreters}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{LISP-3 and the Need for Reflection}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Tower Semantics}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Compiling Reflective Languages}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.4}{Heterogeneity}{section.2}% 6
+\BOOKMARK [1][-]{section.3}{Examples}{}% 7
+\BOOKMARK [1][-]{section.4}{Methodologies Background}{}% 8
+\BOOKMARK [2][-]{subsection.4.1}{Towers of Interpreters Project Overview}{section.4}% 9
+\BOOKMARK [3][-]{subsubsection.4.1.1}{Scala}{subsection.4.1}% 10
+\BOOKMARK [1][-]{section.5}{Results}{}% 11
+\BOOKMARK [2][-]{subsection.5.1}{Benchmarks}{section.5}% 12
+\BOOKMARK [1][-]{section.6}{Problems}{}% 13
+\BOOKMARK [1][-]{section.7}{Contributions}{}% 14
+\BOOKMARK [1][-]{section.8}{Normalization By Evaluation \(NBE\)}{}% 15
+\BOOKMARK [1][-]{section.9}{Type-Directed Partial Evluation \(TDPE\)}{}% 16
+\BOOKMARK [2][-]{subsection.9.1}{Staging}{section.9}% 17
+\BOOKMARK [1][-]{section.10}{Why do we want to collapse towers? \(aren't they pretty?\)}{}% 18
+\BOOKMARK [2][-]{subsubsection.10.0.1}{Example of Deriving Translators}{section.10}% 19
+\BOOKMARK [1][-]{section.11}{Towers in the Wild}{}% 20
+\BOOKMARK [1][-]{section.12}{On Side-effects and Dynamic Semantics of Programming Languages}{}% 21
+\BOOKMARK [2][-]{subsection.12.1}{Adding Levels}{section.12}% 22
+\BOOKMARK [2][-]{subsection.12.2}{Result of collapsing}{section.12}% 23
+\BOOKMARK [2][-]{subsection.12.3}{Cost of Emulation \(or interpreteation\)}{section.12}% 24
+\BOOKMARK [1][-]{section.13}{Methodologies}{}% 25

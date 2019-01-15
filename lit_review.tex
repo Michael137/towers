@@ -26,6 +26,14 @@
 \section{About this document}
 This is a collection of references and summaries to research in the field of meta-programming/supercompilation/partial evaluation
 
+\section{An Introduction to Towers of Interpreters}
+\subsection{LISP-3 and the Need for Reflection}
+In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time.
+
+\subsection{Tower Semantics}
+\subsection{Compiling Reflective Languages}
+\subsection{Heterogeneity}
+
 \section{Examples}
 Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
 \begin{itemize}
@@ -70,6 +78,51 @@ Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
 	\item Able to achieve compilation of stack-machine on top the Pink evaluator (including tracing evaluator etc.)
 	\item Compilation i.e. collapsing through explicit staging annotations requires intricate knowledge of infrastructure and does not support all data structures e.g. stacks
 \end{itemize}
+
+\subsection{Benchmarks}
+We extended the benchmarks provided as part of the original framework \cite{amin2017collapsing} with timings for staging the stack machine with respect to a user factorial program and timings for evaluating said program.
+The compilation output yielded and is essentially a loop unrolling of the (non-recursive SECD) factorial program without traces of the SECD emulator left:
+\begin{verbatim}
+	Let(
+		Gt(Lit(3),Lit(1)),
+		Let(
+			Equ(Var(3),Lit(0)),
+			Let(
+				If(Var(4),
+					Lit(1),
+					Let(
+						Lift(Sym(.)),
+						Let(
+							Cons(Lit(3),Sym(.)),
+							Let(
+								Fst(Var(6)),
+								Let(
+									Minus(Lit(1),Var(7)),
+									Let(
+										Times(Var(8),Lit(-1)),
+										Let(
+											Fst(Var(6)),
+											Let(
+												Times(Var(9),Var(10)),
+												Let(
+													Snd(Var(6)),
+													Let(
+														Minus(Lit(1),Var(7)),
+														Let(
+															Times(Var(13),Lit(-1)),
+															Let(
+																Minus(Lit(1),Var(14)),
+																Let(
+																	Times(Var(15),Lit(-1)),
+																	Let(
+																		Times(Var(16),Var(11)),
+																		Let(
+																			Minus(Lit(1),Var(14)),
+																			Let(
+																				Times(Var(18),Lit(-1)),
+																				Var(17))))))))))))))))),
+					Var(5))))
+\end{verbatim}
 
 \section{Problems}
 A useful analogy is the one presented in \cite{amin2017collapsing}: a Python interpreter running on a JavaScript emulator of a x86 CPU. What we envision (with reference to this hypothetical setting) is handling the two following cases:
@@ -132,14 +185,6 @@ the base-level lift requires knowledge about its use to be passed from the layer
 We are interested in the last two point. In heterogeneous and practical towers a programmer does not have the liberty to introduce intrusive changes along each layer.
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
-
-\section{An Introduction to Towers of Interpreters}
-\subsection{LISP-3 and the Need for Reflection}
-In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time.
-
-\subsection{Tower Semantics}
-\subsection{Compiling Reflective Languages}
-\section{Heterogeneity}
 
 \section{Why do we want to collapse towers? (aren't they pretty?)}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization

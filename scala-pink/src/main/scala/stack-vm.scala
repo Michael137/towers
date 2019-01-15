@@ -194,7 +194,8 @@ object VM {
         (vm fac_src)))""", "Cst(24)")
 
     // compilation
-    val staged_fac = evalms(Nil, trans(parseExp(s"($vmc_src '(${getFacSource(3)}))"), Nil))
+    val staged_fac_code = reifyc(evalms(Nil, trans(parseExp(s"($vmc_src '(${getFacSource(10)}))"), Nil)))
+    println(staged_fac_code)
 
     // run compilation
     prettify(s"(run 0 ($vmc_src '(${getFacSource(2)})))", false)

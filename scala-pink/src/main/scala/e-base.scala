@@ -191,8 +191,8 @@ object EBase {
             val args = es.map({ x =>
                                 inject(x, newEnv, newStore, false) // TODO: use newEnv or old e for inject
                               })
-            if(f != Var("eval"))
-              println(s"DEBUGGING: $proc $args")
+            /*if(f != Var("eval"))
+              println(s"DEBUGGING: $proc $args")*/
             applyProc(proc, args, newStore, k)
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)

@@ -6,7 +6,7 @@ import EBase._
 import ELisp._
 
 object EVMUtils {
-    val fac_src = """'(
+    val fac_src = """
                     NIL LDC 1 CONS LDC 10 CONS LDF
                         (DUM NIL LDF
                             (LDC 0 LD (1 1) EQ SEL
@@ -17,11 +17,9 @@ object EVMUtils {
                         CONS LDF
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
                         RTN) AP WRITEC ;could be "STOP" instead
-                )"""
+                """
 
-    val Tup(Str(_), Tup(fac_exp, Str(_))) = parseExp(fac_src)
-
-    val simple_src = """'(
+    val simple_src = """
             LDC 10
             LDC 20
             ADD
@@ -32,7 +30,7 @@ object EVMUtils {
             LDF (LD (1 1) LDC 1 ADD RTN)
             AP
             WRITEC
-        )
+        
     """
 }
 
@@ -91,8 +89,19 @@ object EVM {
 
     val vm_src = s"(let maybe-lift (lambda (e) e) $vm_poly_src)"
     val vmc_src = s"(let maybe-lift (lambda (e) (lift e)) $vm_poly_src)"
-    val vm_src_state = evalms(State(trans(parseExp(vm_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
-    val vmc_src_state = evalms(State(trans(parseExp(vmc_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
+    
+    def runVM(vm_src: String, src: Any) = {
+        val parsed = src match {
+            case str: String =>
+                val Tup(Str(_), Tup(ret, Str(_))) = parseExp(s"'($str)")
+                ret
+            case exp: Val => exp
+        }
+
+        val vm_src_state = evalms(State(trans(parseExp(vm_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
+        val state = applyProc(vm_src_state.v, List(parsed), vm_src_state.s, Halt()).asInstanceOf[State]
+        evalms(state).asInstanceOf[Answer].v
+    }
 
     /*
     ** We expect evaluation and compilation in the VM
@@ -103,17 +112,13 @@ object EVM {
     */
     def factorialTest() = {
         // Interpret factorial
-        val fac_state = applyProc(vm_src_state.v, List(fac_exp), vm_src_state.s, Halt()).asInstanceOf[State]
-        val fac_code = fac_state.c
-        check(evalms(fac_state).asInstanceOf[Answer].v)("Cst(3628800)")
+        check(runVM(vm_src, fac_src))("Cst(3628800)")
 
         // Compile factorial
-        val comp_fac_state = applyProc(vmc_src_state.v, List(fac_exp), vmc_src_state.s, Halt()).asInstanceOf[State]
-        val comp_fac_code = fac_state.c
-        check(evalms(comp_fac_state).asInstanceOf[Answer].v)("Code(Lit(3628800))")
+        check(runVM(vmc_src, fac_src))("Code(Lit(3628800))")
 
-        // TODO: verify machine in Scheme
         // TODO: stage with respect to user program. Needs solution to branches for code values i.e. SEL when input is Code()
+        // TODO: verify machine in Scheme
     }
 
   def test() = {

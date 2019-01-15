@@ -55,7 +55,7 @@ object EPink {
                 (if (eq?  'pair?  (car exp))   (pair? (eval (cadr exp) env))
                 (if (eq?  'run    (car exp))   (run (eval (cadr exp) env) (eval (caddr exp) env))
                 (if (eq?  'log    (car exp))   (log (eval (cadr exp) env) (eval (caddr exp) env))
-                (env (car exp) (eval (cadr exp) env)))))))))))))))))))))))))))
+                ((log 0 (env (car exp))) (eval (cadr exp) env)))))))))))))))))))))))))))
             ((eval (car exp) env) (eval (cadr exp) env))))))
         """
 
@@ -90,7 +90,7 @@ object EPink {
         // println(Lisp.ev("(let x (cons 1 2) (car x))"))
         // println(ev("(let x (cons 1 2) (car x))"))
 
-        // direct execution
+        /*// direct execution
         checkrun(s"""
         (let fac $fac_src 
             (fac 4))""",
@@ -136,9 +136,25 @@ object EPink {
         (let eval $eval_src
             (let src (quote (letrec ((y 4)) (cons y 2)))
                 (eval src)))""",
-        "Tup(Cst(4),Cst(2))")
+        "Tup(Cst(4),Cst(2))")*/
 
-        // TODO
+        // TODO: works with (log 0!
+        checkrun(s"""
+        (let eval $eval_src
+            (let src (quote (let y (lambda (m) (+ m 2)) (y 1)))
+                (eval src)))""",
+        "Cst(3)")
+        // checkrun(s"""
+        // (let eval $eval_src
+        //     (let src (quote (let y (lambda (m) (+ m 2)) (y 1)))
+        //         ((eval src) 9)))""",
+        // "Cst(11)")
+        // checkrun(s"""
+        // (let eval $eval_src
+        //     (let src (quote (let y (lambda (m) (+ m 2)) (+ 10 1)))
+        //         (eval src)))""",
+        // "Cst(11)")
+
         // checkrun(s"""
         // (let eval $eval_src
         //     (let src (quote (letrec ((y (lambda (m) (+ m 2)))) (y 1)))

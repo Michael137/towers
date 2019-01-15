@@ -10,9 +10,9 @@ object TestMain {
     // Pink_CPS.test()
     // Pink_clambda.test()
     // Matcher.test()
+  
     // VM.test()
     // Bench.test()
-    // CESK.test()
 
     // EBase.test()
     // ELisp.test()

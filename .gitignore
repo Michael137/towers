@@ -11,3 +11,5 @@ scala-pink/trace.log
 *.aux
 *.tex.bak
 scala-pink/src/main/scala/cesk.scala
+lit_review.out
+lit_review.synctex.gz

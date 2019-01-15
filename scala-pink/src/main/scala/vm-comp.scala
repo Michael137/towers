@@ -115,10 +115,7 @@ object EVMComp {
 
     def runOnVM(src: String) = {
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
-        println(instrs)
-        val state = applyProc(vm_src_state.v, List(instrs), vm_src_state.s, Halt()).asInstanceOf[State]
-        val code = state.c
-        deref(evalms(state).asInstanceOf[Answer].v)
+        deref(runVM(vm_src, instrs))
     }
 
     def test() = {

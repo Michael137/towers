@@ -20,7 +20,7 @@ object EPinkBase {
 import EPinkBase._
 
 object EPink {
-    //TODO: letrec/set!/set-car!/cells
+    //TODO: set!/set-car!/cells
     val ev_poly_src = """
         (lambda (maybe-lift eval exp env)
             (if (num?                exp)    (maybe-lift exp)
@@ -37,15 +37,11 @@ object EPink {
                 (if (eq?  'sym?   (car exp))   (sym? (eval (cadr exp) env))
                 (if (eq?  'lambda (car exp))   (lambda (...) (eval (caddr exp) (...)) (cadr exp))
                 (if (eq?  'let    (car exp))   (let x (eval (caddr exp) env)
-                                                    (eval (cadddr exp) (lambda (y)
-                                                                            (if (eq?  y (cadr exp))
+                                                    (eval (cadddr exp) (lambda (z)
+                                                                            (if (eq?  z (cadr exp))
                                                                                 x
-                                                                                (env y)))))
-                (if (eq?  'letrec (car exp))   (let x (eval (caddr exp) env)
-                                                    (eval (cadddr exp) (lambda (y)
-                                                                            (if (eq?  y (cadr exp))
-                                                                                x
-                                                                                (env y)))))
+                                                                                (env z)))))
+                (if (eq?  'letrec (car exp))   (letrec (...) (eval (caddr exp) (...)) (cadr exp))
                 (if (eq?  'car    (car exp))   (car  (eval (cadr exp) env))
                 (if (eq?  'caar    (car exp))  (caar (eval (cadr exp) env))
                 (if (eq?  'cdr    (car exp))   (cdr  (eval (cadr exp) env))
@@ -124,10 +120,34 @@ object EPink {
                 (eval src)))""",
         "Cst(2)")
 
+        checkrun(s"""
+        (let eval $eval_src
+            (let src (quote (letrec ((y 1) (x 2)) (+ y x)))
+                (eval src)))""",
+        "Cst(3)")
+
+        checkrun(s"""
+        (let eval $eval_src
+            (let src (quote (letrec ((y 1) (x 2) (z 3)) (+ x (- z y))))
+                (eval src)))""",
+        "Cst(4)")
+
+        checkrun(s"""
+        (let eval $eval_src
+            (let src (quote (letrec ((y 4)) (cons y 2)))
+                (eval src)))""",
+        "Tup(Cst(4),Cst(2))")
+
         // TODO
         // checkrun(s"""
         // (let eval $eval_src
-        //     (let src (quote (letrec ((y 1)) (+ y 1)))
+        //     (let src (quote (letrec ((y (lambda (m) (+ m 2)))) (y 1)))
+        //         (eval src)))""",
+        // "Cst(11)")
+
+        // checkrun(s"""
+        // (let eval $eval_src
+        //     (let src (quote ((lambda (x) (* x x)) 40))
         //         (eval src)))""",
         // "Cst(2)")
 

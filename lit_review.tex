@@ -40,7 +40,7 @@ Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
 	\end{itemize}
 \end{itemize}
 
-\section{Methodologies}
+\section{Methodologies Background}
 \begin{itemize}
 	\item Stage polymorphism \cite{ofenbeck2017staging}: ``abstract over staging decisions'' i.e. single program generator can produce code that is specialized in many different ways (instance of the Fourth Futamura Projection? \cite{gluck2009there}) 
 	\item Multi-level base evaluator written in \mslang: supports staging operators (\textbf{polymorphic Lift})
@@ -133,8 +133,15 @@ We are interested in the last two point. In heterogeneous and practical towers a
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
 
+\section{An Introduction to Towers of Interpreters}
+\subsection{LISP-3 and the Need for Reflection}
+In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time.
 
-\subsection{Why do we want to collapse towers? (aren't they pretty?)}
+\subsection{Tower Semantics}
+\subsection{Compiling Reflective Languages}
+\section{Heterogeneity}
+
+\section{Why do we want to collapse towers? (aren't they pretty?)}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization
 is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
 
@@ -181,8 +188,6 @@ References:
 	\item 
 \end{itemize}
 
-\section{Heterogeneity}
-
 \subsection{Adding Levels}
 Added stack machine
 DIAGRAMS
@@ -195,6 +200,8 @@ DIAGRAMS
 \cite{steil2004dynamic}
 \href{http://materials.dagstuhl.de/files/17/17061/17061.PaulH.J.Kelly.Slides.pdf}{Turing Tax}
 \href{https://www.doc.ic.ac.uk/~phjk/AdvancedCompArchitecture/Lectures/pdfs/Ch01-TuringTaxDiscussionV02.pdf}{Turing Tax specific slides}
+
+\section{Methodologies}
 
 
 \bibliographystyle{IEEEtran}

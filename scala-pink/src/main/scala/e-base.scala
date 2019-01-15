@@ -18,7 +18,7 @@ object EBase {
   case class Sym(s:String) extends Exp
   case class Var(s:String) extends Exp
   case class Lam(vs: List[Var], e:Exp) extends Exp
-  case class VarargLam(e: Exp, vs: Exp, env: List[String]) extends Exp
+  case class VarargLam(e: Exp, vs: Exp) extends Exp
   // Primitives
   case class Plus(a:Exp,b:Exp) extends Primitive
   case class Minus(a:Exp,b:Exp) extends Primitive
@@ -44,6 +44,7 @@ object EBase {
   // Auxiliary
   case class Let(v: Var, e: Exp, body: Exp) extends Exp
   case class Letrec(p: List[(Var, Exp)], b: Exp) extends Exp
+  case class VarargLet(e: Exp, vs: Exp) extends Exp
   case class App(f: Exp, arg: List[Exp]) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
@@ -180,7 +181,8 @@ object EBase {
                                          reifyc(evalms(State(conseq, e, s, Halt())).asInstanceOf[Answer].v),
                                          reifyc(evalms(State(alt, e, s, Halt())).asInstanceOf[Answer].v))), null, e)
             }
-          case Let(v, exp, body) => State(exp, e, s, LetK(v, body, e, k))
+          case Let(v, exp, body) =>
+            State(exp, e, s, LetK(v, body, e, k))
 
           // Function application
           case App(f, es) =>
@@ -189,6 +191,8 @@ object EBase {
             val args = es.map({ x =>
                                 inject(x, newEnv, newStore, false) // TODO: use newEnv or old e for inject
                               })
+            if(f != Var("eval"))
+              println(s"DEBUGGING: $proc $args")
             applyProc(proc, args, newStore, k)
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
@@ -200,6 +204,25 @@ object EBase {
             val vals = es.map({ x => evalAtom(x, updatedEnv, s) })
             val updatedStore = updateMany(s, addrs, vals)
             State(body, updatedEnv, updatedStore, k)
+
+          case VarargLet(exps, body) => {
+            println(s"$exps | $body")
+            val t = inject(exps, e, s, false)
+
+            // Extract list of (var, val) pairs from input "exps" tuple
+            val (vs, vals) = ELisp.tupToTupList(t).map({ x => x match {
+              case Tup(vr: Str, Tup(vl, ELisp.parser.N)) => (vr.s, inject(ELisp.trans(vl, Nil), e, s, false))
+            }}).unzip
+
+            val addrs = vs.map({ _ => fresh() })
+            val updatedEnv = updateMany(e, vs, addrs)
+            val updatedStore = updateMany(s, addrs, vals)
+
+            val newBody = injectEnvForVarargs(vs.map({x => Var(x)}), body)
+            println(vals)
+            println(newBody)
+            State(newBody, updatedEnv, updatedStore, k)
+          }
 
           case SetVar(v: Var, exp) =>
             val value = evalms(State(exp, e, s, Halt())).asInstanceOf[Answer].v
@@ -261,7 +284,7 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case Lit(_) | Sym(_) | Lam(_, _) | VarargLam(_, _, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
+    case Lit(_) | Sym(_) | Lam(_, _) | VarargLam(_, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
@@ -315,7 +338,7 @@ object EBase {
       ** store into the body of the lambda in case the expression evaluated
       ** in the body requests a variable from the argument list.
       */
-      case VarargLam(vs, body, env) => {
+      case VarargLam(vs, body) => {
 
         // Get variable name list.
         // If lambda was constructed in Pink using (...)
@@ -326,26 +349,7 @@ object EBase {
         val t = inject(vs, e, s, false)
         val vars = (ELisp.tupToList(t)).map({ x: String => Var(x) }) // TODO: move tupToList and other helpers to separate module
 
-        // Create the functional store:
-        // It is a lambda that takes a single argument
-        // and checks whether it matches any of the variables
-        // in the argument list. If it finds a match, return
-        // the variable matching the argument, otherwise
-        // defer to an environment lookup
-        def aux(exp: List[Var]): Exp = exp match {
-          case hd::tl => If(Equ(Var("__z__"), Sym(hd.s)), hd, aux(tl))
-          case _ => App(Var("env"),List(Var("__z__")))
-        }
-
-        val injectionBranches = aux(vars)
-        val envInjection = Lam(List(Var("__z__")), injectionBranches)
-
-        // We replace the (...) placeholder with the funcional store
-        // from above
-        val bodyApp = body.asInstanceOf[App]
-        val i = (bodyApp.arg).lastIndexOf(Sym("..."))
-        val newArgs = (bodyApp.arg).updated(i, envInjection)
-        val newBody = App(bodyApp.f, newArgs)
+        val newBody = injectEnvForVarargs(vars, body)
 
         Clo(Lam(vars, newBody), e)
       }
@@ -456,6 +460,30 @@ object EBase {
         }
     }
 
+  def injectEnvForVarargs(vars: List[Var], body: Exp): Exp = {
+    // Create the functional store:
+    // It is a lambda that takes a single argument
+    // and checks whether it matches any of the variables
+    // in the argument list. If it finds a match, return
+    // the variable matching the argument, otherwise
+    // defer to an environment lookup
+    def aux(exp: List[Var]): Exp = exp match {
+      case hd::tl => If(Equ(Var("__z__"), Sym(hd.s)), hd, aux(tl))
+      case _ => App(Var("env"),List(Var("__z__")))
+    }
+
+    val injectionBranches = aux(vars)
+    val envInjection = Lam(List(Var("__z__")), injectionBranches)
+
+    // We replace the (...) placeholder with the funcional store
+    // from above
+    val bodyApp = body.asInstanceOf[App]
+    val i = (bodyApp.arg).lastIndexOf(Sym("..."))
+    val newArgs = (bodyApp.arg).updated(i, envInjection)
+    val newBody = App(bodyApp.f, newArgs)
+    newBody
+  }
+
   def update[A,B](store: StoreFun[A, B], a: A, b: B): StoreFun[A, B] = {
     x: A =>
       if(x == a)
@@ -487,6 +515,7 @@ object EBase {
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
       val updatedStore = updateMany(s, addrs, args)
+      // println(s"""FROM APPLYPROC: $varNames $args $body ${updatedStore(updatedEnv("y"))}""")
       State(body, updatedEnv, updatedStore, k)
 
     // TODO: check if all args are Code as well?

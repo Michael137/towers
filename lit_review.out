@@ -1,6 +1,6 @@
 \BOOKMARK [1][-]{section.1}{About this document}{}% 1
 \BOOKMARK [1][-]{section.2}{Examples}{}% 2
-\BOOKMARK [1][-]{section.3}{Methodologies}{}% 3
+\BOOKMARK [1][-]{section.3}{Methodologies Background}{}% 3
 \BOOKMARK [2][-]{subsection.3.1}{Towers of Interpreters Project Overview}{section.3}% 4
 \BOOKMARK [3][-]{subsubsection.3.1.1}{Scala}{subsection.3.1}% 5
 \BOOKMARK [1][-]{section.4}{Results}{}% 6
@@ -9,11 +9,16 @@
 \BOOKMARK [1][-]{section.7}{Normalization By Evaluation \(NBE\)}{}% 9
 \BOOKMARK [1][-]{section.8}{Type-Directed Partial Evluation \(TDPE\)}{}% 10
 \BOOKMARK [2][-]{subsection.8.1}{Staging}{section.8}% 11
-\BOOKMARK [2][-]{subsection.8.2}{Why do we want to collapse towers? \(aren't they pretty?\)}{section.8}% 12
-\BOOKMARK [3][-]{subsubsection.8.2.1}{Example of Deriving Translators}{subsection.8.2}% 13
-\BOOKMARK [1][-]{section.9}{Towers in the Wild}{}% 14
-\BOOKMARK [1][-]{section.10}{On Side-effects and Dynamic Semantics of Programming Languages}{}% 15
-\BOOKMARK [1][-]{section.11}{Heterogeneity}{}% 16
-\BOOKMARK [2][-]{subsection.11.1}{Adding Levels}{section.11}% 17
-\BOOKMARK [2][-]{subsection.11.2}{Result of collapsing}{section.11}% 18
-\BOOKMARK [2][-]{subsection.11.3}{Cost of Emulation \(or interpreteation\)}{section.11}% 19
+\BOOKMARK [1][-]{section.9}{An Introduction to Towers of Interpreters}{}% 12
+\BOOKMARK [2][-]{subsection.9.1}{LISP-3 and the Need for Reflection}{section.9}% 13
+\BOOKMARK [2][-]{subsection.9.2}{Tower Semantics}{section.9}% 14
+\BOOKMARK [2][-]{subsection.9.3}{Compiling Reflective Languages}{section.9}% 15
+\BOOKMARK [1][-]{section.10}{Heterogeneity}{}% 16
+\BOOKMARK [1][-]{section.11}{Why do we want to collapse towers? \(aren't they pretty?\)}{}% 17
+\BOOKMARK [2][-]{subsubsection.11.0.1}{Example of Deriving Translators}{section.11}% 18
+\BOOKMARK [1][-]{section.12}{Towers in the Wild}{}% 19
+\BOOKMARK [1][-]{section.13}{On Side-effects and Dynamic Semantics of Programming Languages}{}% 20
+\BOOKMARK [2][-]{subsection.13.1}{Adding Levels}{section.13}% 21
+\BOOKMARK [2][-]{subsection.13.2}{Result of collapsing}{section.13}% 22
+\BOOKMARK [2][-]{subsection.13.3}{Cost of Emulation \(or interpreteation\)}{section.13}% 23
+\BOOKMARK [1][-]{section.14}{Methodologies}{}% 24

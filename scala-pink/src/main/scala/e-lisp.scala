@@ -92,9 +92,13 @@ object ELisp {
                 }
             )
             Letrec(params, trans(b, env:::vars))
+
+        case Tup(Str("letrec"), Tup(Tup(Str("..."), N), Tup(body, Tup(varargs, N))))  =>
+            VarargLet(trans(varargs, env), trans(body, env))
         
+        // (lambda (...) <body with (...) placeholder>)
         case Tup(Str("lambda"), Tup(Tup(Str("..."), N), Tup(body, Tup(varargs,N)))) =>
-            VarargLam(trans(varargs, env), trans(body, env), env)
+            VarargLam(trans(varargs, env), trans(body, env))
         
         // (lambda (x1 x2 -> xN) e)
         case Tup(Str("lambda"), Tup(a, Tup(e,N))) =>

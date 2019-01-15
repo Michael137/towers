@@ -16,8 +16,8 @@ object TestMain {
 
     // EBase.test()
     // ELisp.test()
-    // EVM.test()
-    EPink.test()
+    EVM.test()
+    // EPink.test()
     // EVMComp.test()
     println("// ###### Full testsuite done ######")
   }

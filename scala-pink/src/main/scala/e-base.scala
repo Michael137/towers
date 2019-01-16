@@ -3,6 +3,7 @@
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.LinkedHashMap
 import scala.util.hashing
 
 object EBase {
@@ -50,7 +51,7 @@ object EBase {
   case class Run(b:Exp,e:Exp) extends Exp
 
   // For mutation
-  var cells = HashMap[String, List[Val]]()
+  var cells = LinkedHashMap[String, List[Val]]()
   case class Cell(key: String, ptr: Int) extends Val
   // case class Tup_(a: Val, b: Val) extends Val
   case class ListRef(a:Exp) extends Primitive
@@ -102,7 +103,7 @@ object EBase {
   case class Code(e:Exp) extends Val
 
   // Staging operations
-  var stBlock: List[(String, Exp)] = Nil
+  var stBlock: LinkedHashMap[String, Exp] = LinkedHashMap.empty
   def run[A](f: => A): A = {
     val sF = stFresh
     val sB = stBlock
@@ -118,7 +119,7 @@ object EBase {
 
   def reify(f: => Exp) = {
       run {
-        stBlock = Nil
+        stBlock = LinkedHashMap.empty
         val last = f
         stBlock.foldRight(last)({ (t: Tuple2[String,Exp], b: Exp) =>
                                       val (v, e) = t
@@ -127,21 +128,22 @@ object EBase {
   }
   def reflect(s:Exp) = {
     var varName = gensym()
-    stBlock :+= (varName, s)
+    stBlock += varName -> s
+    // println(varName)
     Var(varName)
   }
 
   def reifyc(f: => Val) = reify {
-    f match {
+    deref(f) match {
       case Code(e) => e
     }
   }
   def reflectc(s: Exp) = Code(reflect(s))
 
   def reifyv(f: => Val) = run {
-    stBlock = Nil
+    stBlock = LinkedHashMap.empty
     val res = f
-    if (stBlock != Nil) {
+    if (stBlock != LinkedHashMap.empty) {
       // if we are generating code at all,
       // the result must be code
       val Code(last) = res
@@ -158,12 +160,13 @@ object EBase {
   // semantics -> syntax
   def lift(v: Val): Exp = v match {
     // TODO: make sure of semantics for cells here
-    case c: Cell => lift(refToTuple(c))
+    case c: Cell => val tup = refToTuple(c); /*println(tup);*/ lift(tup)
     case Cst(n) => Lit(n)
     case Str(s) => Sym(s)
     case Tup(a,b) => (a,b) match {
       case (Code(u), Code(v)) => reflect(Cons(u,v)) // Add Cons to stBlock and return Var
       case (Code(u), t: Tup) => reflect(Cons(u,lift(t)))
+      case (u, t) => reflect(Cons(lift(u),lift(t)))
     }
     case Code(e) => reflect(Lift(e))
   }
@@ -251,13 +254,21 @@ object EBase {
             evalms(State(b, e, s, Halt())).asInstanceOf[Answer].v match {
               case Code(b1) =>
                 applyCont(k, 
-                          reflectc(Run(b1, reifyc(evalms(State(exp, e, s, Halt())).asInstanceOf[Answer].v))),
+                          reflectc(Run(b1, reifyc(inject(exp, e, s, false)))),
                           s, e)
               case _ =>
                 // TODO: verify stFresh reset not needed
+                // TODO: do we really need to leak stBlock like this?
+                // var oldBlock = LinkedHashMap[String, Exp]()
+                // var ans = Answer(null,null,null)
+                // val code = reifyc({ /*stFresh = env.length;*/ ans = evalms(State(exp, e, s, Halt())).asInstanceOf[Answer]; oldBlock = stBlock; ans.v })
+                // val ret = reifyv(inject(code, ans.e, ans.s, false))
+                // applyCont(k,
+                //           ret,
+                //           s, e)
                 val code = reifyc({ /*stFresh = env.length;*/ evalms(State(exp, e, s, Halt())).asInstanceOf[Answer].v })
                 applyCont(k,
-                          reifyv(evalms(State(code, e, s, Halt())).asInstanceOf[Answer].v),
+                          reifyv(inject(code, e, s, false)),
                           s, e)
             }
 
@@ -423,6 +434,8 @@ object EBase {
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
+          // TODO NEXT: case (Code(v1), s2) => Cst(if (s2 == inject(v1, e, s, false)) 1 else 0)
+          // case (s1,Code(v2: Var)) => val ret = inject(stBlock(v2.s), e, s, false); println(ret); Cst(if (s1 == ret) 1 else 0)
           case _ => Str(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
         }
 
@@ -531,8 +544,8 @@ object EBase {
   def inject(e: Exp, env: Env = initEnv, store: Store = initStore, reset: Boolean = true) = {
     if(reset) {
       stFresh = 0
-      stBlock = Nil
-      cells = HashMap[String, List[Val]]()
+      stBlock = LinkedHashMap.empty
+      cells = LinkedHashMap[String, List[Val]]() // TODO: could be made regular HashMap
     }
 
     evalms(State(e, env, store, Halt())).asInstanceOf[Answer].v

@@ -131,7 +131,7 @@ object VM {
     // ((λuv.λwx.λyz.(y-x)+u) 2 1) 4 3) 6 5 = 6 - 3 + 2
     checkrun(s"""
       ($vm_src
-      '(NIL LDC 1 CONS LDC 2 CONS LDF  
+        '(NIL LDC 1 CONS LDC 2 CONS LDF  
                       (NIL LDC 3 CONS LDC 4 CONS 
                         LDF 
                           (NIL LDC 5 CONS LDC 6 CONS 

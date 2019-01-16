@@ -246,6 +246,15 @@ object ELisp {
 
         checkrun("(let y 2 ((lambda (x) y) 4))", "Cst(2)")
 
+        // Run() tests
+        checkrunExp(trans(parseExp(s"(run 0 (let x (lift 1) (let y (lift 2) (+ y x))))"), Nil),"Cst(3)")
+        checkrunExp(trans(parseExp(s"(run 0 (lift (let x (lift 1) (let y (lift 2) ((lambda (z) (+ z z)) (+ y x))))))"), Nil),"Code(Lit(6))")
+        checkrunExp(trans(parseExp(s"(run 0 ((lambda (x) (+ x (lift 10))) (lift 10)))"), Nil),"Cst(20)")
+        checkrunExp(trans(parseExp(s"(run 0 (let x (lift 1) (+ x (lift 2))))"), Nil),"Cst(3)")
+        checkrunExp(trans(parseExp(s"(run 0 (let x (lambda (x) (* x (lift 2))) (x (lift 3))))"), Nil),"Cst(6)")
+        checkrunExp(trans(parseExp(s"(run 0 (let x 10 ((lambda (y) (+ y (lift 2))) (lift 3))))"), Nil),"Cst(5)")
+        checkrunExp(trans(parseExp(s"(run 0 (lift (let x (lift '()) (let y (lift 2) (cons y x)))))"), Nil),"Tup(Cst(2),Str(.))")
+
         testDone()
     }
 }

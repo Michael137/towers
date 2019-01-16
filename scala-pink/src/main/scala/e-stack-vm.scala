@@ -50,8 +50,8 @@ object EVM {
                                                 (loc j (loc i env))
                             ))
                             (letrec ((machine (lambda (s e c d ops)
-                                                (if (eq? 'STOP (car_ ops)) s
-                                                (if (eq? 'LDC (car_ ops)) (machine (cons_ (cadr_ ops) s) e c d (cddr_ ops))
+                                                (if (eq? 'STOP (car_ ops)) (maybe-lift s)
+                                                (if (eq? 'LDC (car_ ops)) (machine (cons_ (maybe-lift (cadr_ ops)) s) e c d (cddr_ ops))
                                                 (if (eq? 'LD (car_ ops))
                                                     (machine (cons_ (locate (car_ (cadr_ ops)) (cadr_ (cadr_ ops)) e) s) e c d (cddr_ ops))
                                                 (if (eq? 'ADD (car_ ops)) (machine (cons_ (+ (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
@@ -62,9 +62,9 @@ object EVM {
                                                 (if (eq? 'CONS (car_ ops)) (machine (cons_ (cons_ (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'NIL (car_ ops)) (machine (cons_ '() s) e c d (cdr_ ops))      
                                                 (if (eq? 'SEL (car_ ops))
-                                                    (if (eq? (ref (car_ s)) 0)
+                                                    (maybe-lift (if (eq? (ref (car_ s)) (maybe-lift 0))
                                                         (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (caddr_ ops))
-                                                        (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (cadr_ ops)))
+                                                        (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (cadr_ ops))))
                                                 (if (eq? 'JOIN (car_ ops))
                                                     (machine s e c (cdr_ d) (ref (car_ d)))
                                                 (if (eq? 'LDF (car_ ops)) (machine (cons_ (cons_ (cadr_ ops) e) s) e (cons_ (cadr_ ops) c) d (cdr_ ops))
@@ -90,7 +90,7 @@ object EVM {
     val vm_src = s"(let maybe-lift (lambda (e) e) $vm_poly_src)"
     val vmc_src = s"(let maybe-lift (lambda (e) (lift e)) $vm_poly_src)"
     
-    def runVM(vm_src: String, src: Any) = {
+    def runVM(vmSrc: String, src: Any) = {
         val parsed = src match {
             case str: String =>
                 val Tup(Str(_), Tup(ret, Str(_))) = parseExp(s"'($str)")
@@ -98,7 +98,8 @@ object EVM {
             case exp: Val => exp
         }
 
-        val vm_src_state = evalms(State(trans(parseExp(vm_src), Nil), initEnv, initStore, Halt())).asInstanceOf[Answer]
+        val vmSrcExp = trans(parseExp(vmSrc), Nil)
+        val vm_src_state = evalms(State(vmSrcExp, initEnv, initStore, Halt())).asInstanceOf[Answer]
         val state = applyProc(vm_src_state.v, List(parsed), vm_src_state.s, Halt()).asInstanceOf[State]
         evalms(state).asInstanceOf[Answer].v
     }
@@ -115,10 +116,48 @@ object EVM {
         check(runVM(vm_src, fac_src))("Cst(3628800)")
 
         // Compile factorial
-        check(runVM(vmc_src, fac_src))("Code(Lit(3628800))")
+        // check(runVM(vmc_src, fac_src))("Code(Lit(3628800))")
 
-        // TODO: stage with respect to user program. Needs solution to branches for code values i.e. SEL when input is Code()
+        // Stage VM
+        println(ev(s"($vm_src '(LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP))"))
+        println(ev(s"($vmc_src '(LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP))"))
+        println(ev(s"(run 0 ($vmc_src '(LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP)))"))
+        println(ev(s"(run 0 (run 0 ($vmc_src '(LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP))))"))
+
+        println(reifyc(runVM(vmc_src, "LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP")))
+        println(inject(Run(Lit(0), reifyc(runVM(vmc_src, "LDC 10 LDC 20 ADD SEL (LDC 1 JOIN) (LDC -1 JOIN) STOP")))))
+        
+        println(reifyc(runVM(vmc_src, """LDC 10 LDC 20 ADD SEL
+                                                    (LDC 10 JOIN)
+                                                    (LDC -1 JOIN) STOP""")))
+        println(inject(Run(Lit(0), reifyc(runVM(vmc_src, """LDC 10 LDC 20 ADD SEL
+                                                                (LDC 10 JOIN)
+                                                                (LDC -1 JOIN) STOP""")))))
+
+        println(inject(Run(Lit(0), reifyc(runVM(vmc_src, """LDC 10 LDC 20 ADD SEL
+                                                                (LDF (RTN) JOIN)
+                                                                (LDC -1 JOIN) STOP""")))))
+
+        println(reifyc(ev(s"($vmc_src '(LDC 2 LDC 1 STOP))")))
+        println(ev(s"(run 0 ($vmc_src '(LDC 2 LDC 1 STOP)))"))
+        println(reifyc(ev(s"($vmc_src '(LDC 2 LDC 1 ADD STOP))")))
+        println(ev(s"(run 0 ($vmc_src '(LDC 2 LDC 1 ADD STOP)))"))
+        println(reifyc(ev(s"($vmc_src '(LDC 2 LDC 1 CONS STOP))"))) // TODO: fix CONS instr for cells
+        println(ev(s"(run 0 ($vmc_src '(LDC 2 LDC 1 CONS STOP)))"))
+        
+        println(ev(s"""(run 0 ($vmc_src '(
+                    NIL LDC 1 CONS LDC 2 CONS LDF  
+                      (NIL LDC 3 CONS LDC 4 CONS 
+                        LDF 
+                          (NIL LDC 5 CONS LDC 6 CONS 
+                          LDF (LD (3 1) LD (2 2) LD (1 1) SUB ADD RTN) AP RTN)
+                        AP 
+                        RTN) 
+                      AP STOP)))"""))
+        
+        // TODO: stage with respect to factorial + benchmarks. Needs solution to branches for code values i.e. SEL when input is Code()
         // TODO: verify machine in Scheme
+        // println(ev(s"""(run 0 ($vmc_src '($fac_src)))"""))
     }
 
   def test() = {

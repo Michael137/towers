@@ -69,4 +69,14 @@
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) DBG RAP
                         RTN) AP STOP))
 
+(define test_src '(NIL LDC 1 CONS LDC 2 CONS LDF  
+                    (NIL LDC 3 CONS LDC 4 CONS 
+                    LDF 
+                        (NIL LDC 5 CONS LDC 6 CONS 
+                        LDF (LD (3 1) LD (2 2) LD (1 1) SUB ADD RTN) AP RTN)
+                    AP 
+                    RTN) 
+                    AP STOP))
+
 (display (start fac_src))
+(display (start test_src))

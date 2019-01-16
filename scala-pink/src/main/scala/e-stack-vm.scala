@@ -87,6 +87,20 @@ object EVM {
             )))))))))
     """
 
+    /*
+        (let start (lambda (ops)
+            (letrec ((liftNums (lambda (x)
+                        (if (pair? x)
+                            (if (num? (car x))
+                                (cons (maybe-lift (car x)) (liftNums (cdr x)))
+                            (if (pair? (car x))
+                                (cons (liftNums (car x)) (liftNums (cdr x)))
+                            (cons (car x) (liftNums (cdr x)))))
+                            x))))
+                (machine vm-stack env-list op-list call-stack (liftNums ops))))
+        (start program)
+    */
+
     val vm_src = s"(let maybe-lift (lambda (e) e) $vm_poly_src)"
     val vmc_src = s"(let maybe-lift (lambda (e) (lift e)) $vm_poly_src)"
     

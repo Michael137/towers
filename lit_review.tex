@@ -27,12 +27,18 @@
 This is a collection of references and summaries to research in the field of meta-programming/supercompilation/partial evaluation
 
 \section{An Introduction to Towers of Interpreters}
-\subsection{LISP-3 and the Need for Reflection}
+\subsection{LISP-3, Metacircularity and Reflection}
 In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time.
+\subsection{A Formal Account}
+\cite{wand1988mystery}
+\cite{danvy1988intensions}
 
 \subsection{Tower Semantics}
 \subsection{Compiling Reflective Languages}
+\cite{asai1996duplication}
+\cite{asai2015compiling}
 \subsection{Heterogeneity}
+So far we have only discussed towers that were homogeneous in nature. We define homogeneous as the combination of metacircularity and reflectivity of interpreter embeddings. A consequence of homogeneity are small semantic gaps throughout levels.
 
 \section{Examples}
 Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
@@ -126,6 +132,21 @@ The compilation output yielded and is essentially a loop unrolling of the (non-r
 Generalization: because we sacrifice the fact input is static and mark them as dynamic (code) values
 PE technique is more like a translation then evaluation. The result of evluation is a new IR in terms of the base language
 
+Varying degrees of generalization:
+\begin{enumerate}
+	\item Interpreter: VM, Static input: Instructions, Dynamic inpute: Generalized to be the numbers or specially tagged value => here we benchmark interpretative overhead of SECD machine for various generalization points
+	\begin{itemize}
+		\item Treat all input as static => equivalent to full evaluation
+		\item Treat all input as dynamic => Generate a recursive loop in base-language terms but doesn't require case checking against non-existent instructions
+		\item Treat small part of input as dynamic
+		\item Treat part of input as dynamic => Evaluates most of program
+	\end{itemize}
+	\item Interpreter: Pink, Static input: VM, further input: instructions => need to decide where to stage
+	\item Interpreter: VM, Static input: Evaluator, further input: User program => need to decide where to stage
+\end{enumerate}
+
+Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features
+
 \section{Problems}
 A useful analogy is the one presented in \cite{amin2017collapsing}: a Python interpreter running on a JavaScript emulator of a x86 CPU. What we envision (with reference to this hypothetical setting) is handling the two following cases:
 \begin{enumerate}
@@ -146,6 +167,7 @@ To tackle the first of these problems we construct a similar yet condensed form 
 
 \section{Contributions}
 \begin{itemize}
+	\item Generalized framework for collapsable towers. A generilzation of \cite{amin2017collapsing} for ``heterogeneous'' towers
 	\item Extension of the core \mslang to support side effects, combining previous insights into multi-level $\lambda$ \cite{nielson1996multi} and work on side-effects in partial evaluators \cite{asai1997partial}.
 	\item Development a CESK-style abstract machine/ abstract interpreter for said extended \mslang
 	\item Form a basis for further work on towers by providing a stage polymorphic base evaluator capable of modelling functional or imperative languages
@@ -249,6 +271,7 @@ DIAGRAMS
 \href{https://www.doc.ic.ac.uk/~phjk/AdvancedCompArchitecture/Lectures/pdfs/Ch01-TuringTaxDiscussionV02.pdf}{Turing Tax specific slides}
 
 \section{Methodologies}
+\subsection{Abstract Machines}
 
 
 \bibliographystyle{IEEEtran}

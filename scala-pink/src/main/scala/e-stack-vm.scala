@@ -37,7 +37,7 @@ object EVMUtils {
 object EVM {
     import EVMUtils._
     import TestHelpers._
-
+    // TODO NEXT: similar to matcher the VM should be a nested lambda, first accepting a program and the next expecting inputs to the program (i.e. env-list or stack or both)
     val vm_poly_src = """
     (lambda (program)
         (let dbgCtr 8
@@ -57,14 +57,17 @@ object EVM {
                                                 (if (eq? 'ADD (car_ ops)) (machine (cons_ (+ (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'SUB (car_ ops)) (machine (cons_ (- (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'MPY (car_ ops)) (machine (cons_ (* (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
+                                                (if (eq? 'CAR (car_ ops)) (machine (cons_ (car_ (car_ s)) (cdr_ s)) e c d (cdr_ ops))
+                                                (if (eq? 'CDR (car_ ops)) (machine (cons_ (cdr_ (car_ s)) (cdr_ s)) e c d (cdr_ ops))
+                                                (if (eq? 'QUOTE (car_ ops)) (machine (cons_ (quote (car_ s)) (cdr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'EQ (car_ ops)) (machine (cons_ (eq? (ref (car_ s)) (ref (cadr_ s))) (cddr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'GT (car_ ops)) (machine (cons_ (> (car_ s) (cadr_ ops)) (cdr_ s)) e c d (cddr_ ops))
                                                 (if (eq? 'CONS (car_ ops)) (machine (cons_ (cons_ (car_ s) (cadr_ s)) (cddr_ s)) e c d (cdr_ ops))
                                                 (if (eq? 'NIL (car_ ops)) (machine (cons_ '() s) e c d (cdr_ ops))      
                                                 (if (eq? 'SEL (car_ ops))
                                                     (maybe-lift (if (eq? (ref (car_ s)) (maybe-lift 0))
-                                                        (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (caddr_ ops))
-                                                        (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (cadr_ ops))))
+                                                        (maybe-lift (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (caddr_ ops)))
+                                                        (maybe-lift (machine (cdr_ s) e c (cons_ (cdddr_ ops) d) (cadr_ ops)))))
                                                 (if (eq? 'JOIN (car_ ops))
                                                     (machine s e c (cdr_ d) (ref (car_ d)))
                                                 (if (eq? 'LDF (car_ ops)) (machine (cons_ (cons_ (cadr_ ops) e) s) e (cons_ (cadr_ ops) c) d (cdr_ ops))
@@ -81,13 +84,16 @@ object EVM {
                                                 (if (eq? 'WRITEC (car_ ops)) (maybe-lift (ref (car_ s)))
                                                 (if (eq? 'DBG (car_ ops)) (if (eq? dbgCtr 0) (ref (cdr_ (car_ e))) (let _ (log 0 (ref (cdr_ (car_ e)))) (let _ (set! dbgCtr (- dbgCtr 1)) (machine s e c d (cdr_ ops)))))
                                                 (if (eq? 'DBG2 (car_ ops)) (car_ s)
-                                                    (machine s e c d (cdr_ ops)))))))))))))))))))))))))
+                                                    (machine s e c d (cdr_ ops))))))))))))))))))))))))))))
                                 (let start (lambda (ops) (machine vm-stack env-list op-list call-stack ops))
                                             (start program)
             )))))))))
     """
 
     /*
+                                (let start (lambda (ops) (machine vm-stack env-list op-list call-stack ops))
+                                            (start program)
+                                            
         (let start (lambda (ops)
             (letrec ((liftNums (lambda (x)
                         (if (pair? x)
@@ -170,6 +176,7 @@ object EVM {
                       AP STOP)))"""))
         
         // TODO: stage with respect to factorial + benchmarks. Needs solution to branches for code values i.e. SEL when input is Code()
+        // TODO: argument to stack machine program could be initial environment or initial stack => could be classified as dynamic values => convert all initial values on stack and env to code. Still needs way to generalize conditional infinite loop
         // TODO: verify machine in Scheme
         // println(ev(s"""(run 0 ($vmc_src '($fac_src)))"""))
     }

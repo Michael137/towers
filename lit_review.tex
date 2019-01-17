@@ -32,7 +32,7 @@ In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984re
 \subsection{A Formal Account}
 Friedman et al. took Smith's account of reflection and decomposed it into processes called reification and reflection \cite{friedman1984reification}.
 \cite{wand1988mystery}
-\cite{danvy1988intensions}: starts with a non-reflective tower (and not strictly meta-circular) WHICH IS EXACTLY WHAT WE WANT and turns it into a reflective tower
+\cite{danvy1988intensions}: starts with a non-reflective tower (and not strictly meta-circular) WHICH IS EXACTLY WHAT WE WANT and turns it into a reflective tower; contains many assumptions including identical levels throughout tower, meta-circularity and absence of a store (and thus side-effects)
 
 \subsection{Tower Semantics}
 \subsection{Compiling Reflective Languages}
@@ -42,6 +42,9 @@ Friedman et al. took Smith's account of reflection and decomposed it into proces
 So far we have only discussed towers that were homogeneous in nature. We define homogeneous as the combination of metacircularity and reflectivity of interpreter embeddings. A consequence of homogeneity are small semantic gaps throughout levels.
 \cite{sturdy1993lisp}
 First part of \cite{danvy1988intensions}
+
+Recent work due to Sampson et al. \cite{sampson2017static} differentiates between value splicing and materialization. Materialization and cross-stage references are used to persist information
+across stages. This provides a possible solution to pass information about staging decisions across levels.
 
 \subsection{Coming Full Circle: Partial Evaluation, Reflective Towers (and Supercompilation)}
 

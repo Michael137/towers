@@ -91,6 +91,18 @@ object EVMComp {
         case Tup(Str("eq?"), args) =>
             compileBuiltin(args, env, Tup(Str("EQ"), acc))
 
+        case Tup(Str("car"), args) =>
+            compileBuiltin(args, env, Tup(Str("CAR"), acc))
+
+        case Tup(Str("cdr"), args) =>
+            compileBuiltin(args, env, Tup(Str("CDR"), acc))
+
+        case Tup(Str("cons"), args) =>
+            compileBuiltin(args, env, Tup(Str("CONS"), acc))
+
+        case Tup(Str("quote"), args) =>
+            compileBuiltin(args, env, Tup(Str("QUOTE"), acc))
+
         case Tup(Str("if"), Tup(c,Tup(a,Tup(b,N)))) =>
             compileIf(c, a, b, env, acc)
 
@@ -132,5 +144,12 @@ object EVMComp {
                     (letrec (fact)
                         ((lambda (n m) (if (eq? n 0) one (fact (- n one) (* n m)))))
                         (fact x one)))"""))
+
+        println(runOnVM("""(letrec (eval) ((lambda (ops)
+                                                (if (eq? (car ops) 5) 5
+                                                (if (eq? (car ops) 6) 6
+                                                (if (eq? (cdr ops) .) .
+                                                (eval (cdr ops)))))))
+                                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))"""))
     }
 }

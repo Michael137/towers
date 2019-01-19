@@ -90,7 +90,7 @@ object EBase {
   abstract class Val
   case class Cst(n:Int) extends Val
   case class Str(s:String) extends Val
-  case class Clo(f: Lam, env: Env) extends Val
+  case class Clo(f: Lam, state: State) extends Val
   case class Tup(v1:Val,v2:Val) extends Val
   // Continuation types
   case class LetK(v: Var, c: Exp, e: Env, k: Cont) extends Val // ? var, v, is de Bruijn Level
@@ -111,7 +111,7 @@ object EBase {
   }
 
   var stFresh = 0
-  def fresh() = {
+  def fresh(): Int = {
     stFresh += 1; stFresh
   }
   def gensym() = { s"x${fresh()}" }
@@ -121,9 +121,10 @@ object EBase {
       run {
         stBlock = LinkedHashMap.empty
         val last = f
-        stBlock.foldRight(last)({ (t: Tuple2[String,Exp], b: Exp) =>
+        val ret = stBlock.foldRight(last)({ (t: Tuple2[String,Exp], b: Exp) =>
                                       val (v, e) = t
                                       Let(Var(v), e, b) })
+        ret
       }
   }
   def reflect(s:Exp) = {
@@ -169,6 +170,20 @@ object EBase {
       case (u, t) => reflect(Cons(lift(u),lift(t)))
     }
     case Code(e) => reflect(Lift(e))
+    case Clo(Lam(vs: List[Var], f), state) =>
+      // TODO: put back memoization?
+      val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str("Error: using init store")) v })
+      if(missingVars.size > 0) {
+        val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
+        val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
+        val args = varNames.map({s: String => Code(Var(s))})
+        val updatedEnv = updateMany(state.e, varNames, addrs)
+        val updatedStore = updateMany(state.s, addrs, args)
+        reflect(Lam(vs, reify{ val Code(r) = deref(inject(f, updatedEnv, updatedStore, false)); r }))
+      } else {
+        val Code(r) = inject(f, state.e, state.s, false)
+        reflect(Lam(vs, reify{ val Code(r) = inject(f, state.e, initStore, false); r }))
+      }
   }
 
   // multi-stage evaluation
@@ -194,8 +209,6 @@ object EBase {
             val args = es.map({ x =>
                                 inject(x, newEnv, newStore, false) // TODO: use newEnv or old e for inject
                               })
-            /*if(f != Var("eval"))
-              println(s"DEBUGGING: $proc $args")*/
             applyProc(proc, args, newStore, k)
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
@@ -209,7 +222,6 @@ object EBase {
             State(body, updatedEnv, updatedStore, k)
 
           case VarargLet(exps, body) => {
-            println(s"$exps | $body")
             val t = inject(exps, e, s, false)
 
             // Extract list of (var, val) pairs from input "exps" tuple
@@ -245,7 +257,8 @@ object EBase {
 
           case Lift(exp) =>
             val trans = State(exp, e, s, Halt())
-            val lifted = lift(evalms(trans).asInstanceOf[Answer].v)
+            val evaled = evalms(trans).asInstanceOf[Answer].v
+            val lifted = lift(evaled)
             applyCont(k, Code(lifted), s, e)
 
           case Run(b,exp) =>
@@ -340,7 +353,7 @@ object EBase {
         val key = gensym("cell")
         cells += (key -> List(ret1, ret2))
         Cell(key, 0)
-      case lam: Lam => Clo(lam, e)
+      case lam: Lam => Clo(lam, State(null, e, s, null))
 
       /* The complexity is the price we pay for multi-argument
       ** lambda support in the EPink evaluator. We use
@@ -362,7 +375,7 @@ object EBase {
 
         val newBody = injectEnvForVarargs(vars, body)
 
-        Clo(Lam(vars, newBody), e)
+        Clo(Lam(vars, newBody), State(null, e, s, null))
       }
 
       case Plus(e1, e2) =>
@@ -434,7 +447,7 @@ object EBase {
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
-          // TODO NEXT: case (Code(v1), s2) => Cst(if (s2 == inject(v1, e, s, false)) 1 else 0)
+          case (Code(v1: Var), s2) => Cst(if (s2 == inject(v1, e, s, false)) 1 else 0)
           // case (s1,Code(v2: Var)) => val ret = inject(stBlock(v2.s), e, s, false); println(ret); Cst(if (s1 == ret) 1 else 0)
           case _ => Str(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
         }
@@ -522,17 +535,26 @@ object EBase {
   }
 
   def applyProc(proc: Val, args: List[Val], s: Store, k: Cont) = proc match {
-    case Clo(Lam(vs, body), env) =>
+    case Clo(Lam(vs, body), State(_, env, _, _)) =>
       // val addrs = vs.map({x: Var => x.s.hashCode()})
       val addrs = vs.map({_ => fresh()})
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
       val updatedStore = updateMany(s, addrs, args)
-      // println(s"""FROM APPLYPROC: $varNames $args $body ${updatedStore(updatedEnv("y"))}""")
-      State(body, updatedEnv, updatedStore, k)
+
+      val sizeDiff = vs.size - args.size
+      if(sizeDiff > 0) {
+        // Curry function
+        State(Lam(vs.drop(args.size), body), updatedEnv, updatedStore, k)
+      } else if(args.size == vs.size) {
+        // Evaluate body
+        State(body, updatedEnv, updatedStore, k)
+      } else {
+        State(Sym("ERROR: tried to apply closure to too many arguments"), null, null, Halt())
+      }
 
     // TODO: check if all args are Code as well?
-    case Code(s1) => 
+    case Code(s1) =>
       val codeArgs = args.map({ a => val Code(res) = a; res })
       applyCont(k, reflectc(App(s1, codeArgs)), s, null)
   }

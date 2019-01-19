@@ -165,8 +165,9 @@ object ELisp {
         checkrun("(cadr (cons 1 (cons 2 (+ 5 5))))", "Cst(2)")
         checkrun("(let x (let y 2 (+ y 1)) (let x 2 (+ x x)))", "Cst(4)")
         checkrun("(let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1)))", "Cst(137)")
-        checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
-        checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)")
+        // checkrun("(let x (lambda (x y z) (+ x 2)) (x 2))", "Cst(4)") // unused arguments not possible
+        checkrun("(let x (lambda (x y z) (+ x 2)) (((x 2) 3) 4))", "Cst(4)")
+        checkrun("(let x (lambda (x y z) (+ x 2)) (x 2 3 4))", "Cst(4)")
         checkrun("(letrec ((x 2) (y 3) (z -2)) (+ z x))", "Cst(0)")
         checkrun("(letrec ((f (lambda (x) (if (eq? x 0) (+ x 1) (f (- x 1)))))) (f 15))", "Cst(1)")
         // checkrun("(letrec ((x 2) (y 3) (z (+ x 2))) (+ z x))", "Cst(0)") // TODO
@@ -189,10 +190,10 @@ object ELisp {
         checkrun("(lift (cadr (cons 1 (cons 2 (+ 5 5)))))", "Code(Lit(2))")
         checkrun("(lift (let x (let y 2 (+ y 1)) (let x 2 (+ x x))))", "Code(Lit(4))")
         checkrun("(lift (let x (let y 2 (+ y 1)) (let _ (set! x 136) (+ x 1))))", "Code(Lit(137))")
-        checkrun("(lift (let x (lambda (x y z) (+ x 2)) (x 2)))", "Code(Lit(4))")
+        checkrun("(lift (let x (lambda (x y z) (+ x 2)) (x 2 3 4)))", "Code(Lit(4))")
 
-        val compileLamArgs = "(let x (lambda (x y z) (+ x (lift 2))) (x (lift 2)))"
-        checkrun(compileLamArgs, "Code(Var(x5))")
+        val compileLamArgs = "(let x (lambda (x) (+ x (lift 2))) (x (lift 2)))"
+        checkrun(compileLamArgs, "Code(Var(x3))")
         checkrun(s"(run 0 $compileLamArgs)", "Cst(4)")
 
         checkrun("(lift (letrec ((x 2) (y 3) (z -2)) (+ z x)))", "Code(Lit(0))")

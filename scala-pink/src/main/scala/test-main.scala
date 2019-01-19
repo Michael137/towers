@@ -14,11 +14,11 @@ object TestMain {
     // VM.test()
     // Bench.test()
 
-    // EBase.test()
-    // ELisp.test()
+    EBase.test()
+    ELisp.test()
     EVM.test()
-    // EPink.test()
-    // EVMComp.test()
+    EPink.test()
+    EVMComp.test()
     println("// ###### Full testsuite done ######")
   }
 }

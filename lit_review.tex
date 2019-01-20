@@ -36,11 +36,20 @@ This is a collection of references and summaries to research in the field of met
 
 \section{An Introduction to Towers of Interpreters}
 \subsection{LISP-3, Metacircularity and Reflection}
-In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time.
+In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. He argues that reflection is not a property that metacircular interpreters languages provide, but additionally requires a way with which an embedded language can access structures of the system it was described in in its own terms. LISP-3 achieves this by way of a, conceptually infinite, reflective tower. Crucial is the idea of implicit as opposed to explicit information about a system during computation. Smith's idea of reflection is the ability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of the Lisp process, are implicitly passed around, a LISP-3 program can access both these structures explicitly at any point in time. Smith divides a process into two parts: a ``structural field'' that consists of a program with accompanying data structures and an evaluator that acts on the structural field. Replacing the evaluator with a meta-circular evaluator (MCP in \cite{smith1984reflection}) then provides a way to construct infinite reflective tower. Key to such a reflective tower are ``reflective procedures'' which when called from an evaluator are run at a level above in the tower.
 \subsection{A Formal Account}
-Friedman et al. took Smith's account of reflection and decomposed it into processes called reification and reflection \cite{friedman1984reification}.
-\cite{wand1988mystery}
-\cite{danvy1988intensions}: starts with a non-reflective tower (and not strictly meta-circular) WHICH IS EXACTLY WHAT WE WANT and turns it into a reflective tower; contains many assumptions including identical levels throughout tower, meta-circularity and absence of a store (and thus side-effects)
+\begin{figure}[t]
+	\centering
+	\includegraphics{refl_reif_tower.png}
+	\caption{Demonstration of reflection and reification in a two-level tower.}\label{refl_reif_tower}
+\end{figure}
+
+Friedman et al. took Smith's account of reflection and decomposed it into distinct operations: reification and reflection \cite{friedman1984reification, wand1988mystery}. The authors provide one of the early denotational descriptions of reflective towers assuming a model where an interpreter maps an expression ($Exp$), environment ($E$) and continuation ($K$) to a domain of answers ($A$) and the input values to the interpreter bind to $\epsilon$, $\rho$, $\kappa$ respecitvely:
+$\mathcal{E}: <Exp> \rightarrow Env \rightarrow K \rightarrow A = \lambda\epsilon\rho\kappa....$
+
+The need for a formalization of reflection was that earlier work described reflection in terms of reflective towers which themselves were explained in terms of a tower model. To part from this circular reasoning Friedman et al. define levels within a tower and their mutual interaction through operators on the state of the valuation function above. Reflection takes values for expression, environment and continuation and re-installs them into the interpreter state. Reification operators provide access to the interpreter state and pass it to the program as values. A packaged up state of $\epsilon$, $\rho$, and $\kappa$ is said to be ``reified''. In the context of multiple-levels of interpretation in a tower, calling a reflection operator, \texttt{meaning( <Exp> )} spawns a new level in the tower with the interpreter state being the one at the time of application. Once evaluation was performed in the new level control is passed back to the interpreter that spawned it. Reification operators package up the state of the interpreter at the level of application and pass it to the expression to be evaluated. Diagramatically this process is shown in figure \ref{refl_reif_tower}.
+
+A subsequent study due to Danvy et al. \cite{danvy1988intensions} provide a systematic approach to constructing reflective towers, provide a denotational semantic account of their reflection model similar to the technique described above, and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower (and not strictly meta-circular) WHICH IS EXACTLY WHAT WE WANT and turns it into a reflective tower; contains many assumptions including identical levels throughout tower, meta-circularity and absence of a store (and thus side-effects)
 
 \subsection{Tower Semantics}
 \subsection{Compiling Reflective Languages}
@@ -65,10 +74,14 @@ Thus, flat reflective systems are suitable for implementing reflection, but not 
 
 Perhaps the closest study of mixed languages in a reflective tower was performed in in chapter 5 of Sturdy's thesis \cite{sturdy1993lisp} where he highlighted for the importance of supporting a mixture of languages within a interpretation framework since multi-layer systems such as YACC and C or Shell and Make are common practice. Sturdy goes on to introduce into his framework support for mixed languages that transform to a Lisp parse tree to fit the reflective tower model. Our work is similar in its commmon representation of languages, however, we remove the requirement of reflectivity and argue that this provides a convenient way of collapsing, through partial evaluation a mixed level tower of interpreters.
 
+Sturdy develops a framework Plathypus for reflective tower interpretation of many languages whereas we construct a non-reflective tower consisting of mixed languages.
+
 The mix parial evluation framework \cite{jones1989mix}, Jones et al. demonstrate the PE of a simple interpreter into a language called Mixwell developed by the authors. This is similar in spirit to our framework except it is smaller in height. (section 5 of the paper \cite{jones1989mix}). also mentions removal of layers of metainterpretation in its conclusion
 
 Recent work due to Sampson et al. \cite{sampson2017static} differentiates between value splicing and materialization. Materialization and cross-stage references are used to persist information
 across stages. This provides a possible solution to pass information about staging decisions across levels.
+
+Partial Evaluation of Machine Code
 
 \subsection{Coming Full Circle: Partial Evaluation, Reflective Towers (and Supercompilation)}
 

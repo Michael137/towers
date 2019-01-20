@@ -7,6 +7,8 @@
 \usepackage[left=2cm,right=2cm]{geometry}
 \usepackage{verbatim} % for comments
 \usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{stmaryrd}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -45,11 +47,26 @@ In his proposal for a language extension to Lisp called LISP-3 \cite{smith1984re
 \end{figure}
 
 Friedman et al. took Smith's account of reflection and decomposed it into distinct operations: reification and reflection \cite{friedman1984reification, wand1988mystery}. The authors provide one of the early denotational descriptions of reflective towers assuming a model where an interpreter maps an expression ($Exp$), environment ($E$) and continuation ($K$) to a domain of answers ($A$) and the input values to the interpreter bind to $\epsilon$, $\rho$, $\kappa$ respecitvely:
-$\mathcal{E}: <Exp> \rightarrow Env \rightarrow K \rightarrow A = \lambda\epsilon\rho\kappa....$
+
+\begin{equation}\label{non_refl_eqn}
+\mathcal{E}: Exp \rightarrow Env \rightarrow K \rightarrow A = \lambda\epsilon\rho\kappa....
+\end{equation}
 
 The need for a formalization of reflection was that earlier work described reflection in terms of reflective towers which themselves were explained in terms of a tower model. To part from this circular reasoning Friedman et al. define levels within a tower and their mutual interaction through operators on the state of the valuation function above. Reflection takes values for expression, environment and continuation and re-installs them into the interpreter state. Reification operators provide access to the interpreter state and pass it to the program as values. A packaged up state of $\epsilon$, $\rho$, and $\kappa$ is said to be ``reified''. In the context of multiple-levels of interpretation in a tower, calling a reflection operator, \texttt{meaning( <Exp> )} spawns a new level in the tower with the interpreter state being the one at the time of application. Once evaluation was performed in the new level control is passed back to the interpreter that spawned it. Reification operators package up the state of the interpreter at the level of application and pass it to the expression to be evaluated. Diagramatically this process is shown in figure \ref{refl_reif_tower}.
 
-A subsequent study due to Danvy et al. \cite{danvy1988intensions} provide a systematic approach to constructing reflective towers, provide a denotational semantic account of their reflection model similar to the technique described above, and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower (and not strictly meta-circular) WHICH IS EXACTLY WHAT WE WANT and turns it into a reflective tower; contains many assumptions including identical levels throughout tower, meta-circularity and absence of a store (and thus side-effects)
+A subsequent study due to Danvy et al. \cite{danvy1988intensions} provide a systematic approach to constructing reflective towers, provide a denotational semantic account of their reflection model similar to the technique described above, and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and without the assumption that individual levels are meta-circular. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of ecah levels in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower in terms of the domains of interpreter state with respect to levels of a tower. Adding supscripts to the valuation function in equation \ref{non_refl_eqn} and providing domains for components of the interpreter's state, we get:
+
+\begin{align*}\label{denot_non_refl_tower}
+	\rho_n \in Environment_n = Identifier_n \rightarrow DenotableValue_n \\
+	\kappa_n \in Continuation_n = DenotableValue_n \rightarrow Answer_n  \\
+	\mathcal{E}_n: Expression_n x Environment_n x Continuation_n \rightarrow Answer_n
+\end{align*}
+
+\begin{equation}\label{valuation_fn_non_refl}
+	\mathcal{E}_n \llbracket interpreter_n \rrbracket \rho_n \kappa_n \simeq \mathcal{E}_{n-1}
+\end{equation}
+
+A consequence of this formulation is the fact that domains between levels are distinct but connected via the valuation function in equation \ref{valuation_fn_non_refl}. An even more relevant fact is that according to this denotational model, we are free to choose the representation of denotable values in each level. The authors assume for the rest of their study that levels are identical, however, in our work we assume the exact opposite, non of our levels are identical but can be formulated in the same framework given above. An example would be the denotation of an expression $Exp_0 = (1 + 2)$ at level 0 in our hypothetical tower of $n$ levels. At level $n = 1$ this can be represented as $Exp_1 = (v_1, (1 + 2)_0)$ or at level $n = 10$ as $Exp_{10} = (v_{10}, (01 + 10))$. In our model do we not only add the notion of non-identical levels and non-metacirularity, but also the concept of a store, which the authors purposefully ommitted to keep the description purely funcitonal.
 
 \subsection{Tower Semantics}
 \subsection{Compiling Reflective Languages}

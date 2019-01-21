@@ -8,6 +8,11 @@
 \usepackage{verbatim} % for comments
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
 \usepackage{stmaryrd}
 \usepackage{hyperref}
 \hypersetup{
@@ -56,10 +61,10 @@ The need for a formalization of reflection was that earlier work described refle
 
 A subsequent study due to Danvy et al. \cite{danvy1988intensions} provide a systematic approach to constructing reflective towers, provide a denotational semantic account of their reflection model similar to the technique described above, and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and without the assumption that individual levels are meta-circular. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of ecah levels in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower in terms of the domains of interpreter state with respect to levels of a tower. Adding supscripts to the valuation function in equation \ref{non_refl_eqn} and providing domains for components of the interpreter's state, we get:
 
-\begin{align*}\label{denot_non_refl_tower}
-	\rho_n \in Environment_n = Identifier_n \rightarrow DenotableValue_n \\
-	\kappa_n \in Continuation_n = DenotableValue_n \rightarrow Answer_n  \\
-	\mathcal{E}_n: Expression_n x Environment_n x Continuation_n \rightarrow Answer_n
+\begin{align*}
+	\rho_n \in Environment_n = Identifier_n \rightarrow DenotableValue_n \nonumber \\
+	\kappa_n \in Continuation_n = DenotableValue_n \rightarrow Answer_n  \nonumber \\
+	\mathcal{E}_n: Expression_n \times Environment_n \times Continuation_n \rightarrow Answer_n \label{denot_non_refl_tower}
 \end{align*}
 
 \begin{equation}\label{valuation_fn_non_refl}
@@ -68,14 +73,72 @@ A subsequent study due to Danvy et al. \cite{danvy1988intensions} provide a syst
 
 A consequence of this formulation is the fact that domains between levels are distinct but connected via the valuation function in equation \ref{valuation_fn_non_refl}. An even more relevant fact is that according to this denotational model, we are free to choose the representation of denotable values in each level. The authors assume for the rest of their study that levels are identical, however, in our work we assume the exact opposite, non of our levels are identical but can be formulated in the same framework given above. An example would be the denotation of an expression $Exp_0 = (1 + 2)$ at level 0 in our hypothetical tower of $n$ levels. At level $n = 1$ this can be represented as $Exp_1 = (v_1, (1 + 2)_0)$ or at level $n = 10$ as $Exp_{10} = (v_{10}, (01 + 10))$. In our model do we not only add the notion of non-identical levels and non-metacirularity, but also the concept of a store, which the authors purposefully ommitted to keep the description purely funcitonal.
 
-\subsection{Tower Semantics}
-\subsection{Compiling Reflective Languages}
-\cite{asai1996duplication}: Language ``Black''; has early uses of the act of collapsing modes of interpretation in a reflective setting. Its reflective model is closer to 3-LISP than to Blond or Brown
-\cite{asai2015compiling}
+\begin{equation}
+	\begin{split}
+		\mathcal{E}_n \llbracket ((reify\;(e\;r\;k)\;body)\;E*) \rrbracket \rho_n \kappa_n \\
+		= \mathcal{E}_{n+1} \llbracket body \rrbracket (& [\llbracket e \rrbracket \mapsto (map_n \; \hat{exp_{n}} \llbracket E* \rrbracket) \\
+		& \llbracket r \rrbracket \mapsto (\hat{env_{n}}  \rho_n) \\
+		& \llbracket k \rrbracket \mapsto (\hat{cont_{n}} \kappa_n)]\rho_{n+1}) \kappa_{n+1} \label{reify_lvls_relation}
+	\end{split}
+\end{equation}
 
-The Truffle framework due to Wh{\"u}rthinger et al. \cite{wurthinger2017practical} demonstrate a practical partial evluation framework for interpreters independent of language by providing a language and interpreter specifically designed to partially evaluate and thus collect as much information about a dynamic language at run time as possible.
+To gain a a better intuition for the above, we now summarize Danvy et al.'s denotational description of reflection and reification operators in their tower model. Equation \ref{reify_lvls_relation} describes the effect of a reification operation, here \textit{reify(e r k)} where e, r and k are the variables that are bound to the expression, environment and continuation of the upper level respectively, between a level $n$ and the level above (i.e. its interpreter) $n+1$.
+
+\begin{equation}
+	\begin{split}
+	\mathcal{E}_n \llbracket (reflect (E\;R\;K)) \rrbracket \rho_n \kappa_n \\
+	= \mathcal{E}_n \llbracket E \rrbracket \rho_n & (\lambda\,a.\mathcal{E}_n \llbracket R \rrbracket \rho_n \\
+										& (\lambda\,b.\mathcal{E}_n \llbracket K \rrbracket \rho_n \\
+										& (\lambda\,c.\mathcal{E}_{n-1} (\check{exp_n}\,a)(\check{env_n}\,b)(\check{cont_n}\,c)))) \label{refl_lvls_relation}
+	\end{split}									
+\end{equation}
+
+The reflection operation in relation between two levels, $n$ and the interpreter it interprets $n-1$, is shown in equation \ref{refl_lvls_relation}. The domains for individual reflection and reification operations (superscripted with $\hat{}$ and $\check{}$ respectively), are given equation \ref{refl_reify_types}
+
+\begin{equation}
+	\begin{split}
+		exp^\wedge_n & : DenotableValue_n \rightarrow Expression_{n-1} \cup {error}		\\
+		env^\wedge_n & : DenotableValue_n \rightarrow Environment_{n-1} \cup {error}	\\
+		cont^\wedge_n & : DenotableValue_n \rightarrow Continuation_{n-1} \cup {error} 	\\
+		exp\,\check{}_{n} & : Expression_{n} \rightarrow DenotableValue_{n+1}			\\
+		env\,\check{}_{n} & : Environment_{n} \rightarrow DenotableValue_{n+1}			\\
+		cont\,\check{}_{n} & : Continuation_{n} \rightarrow DenotableValue_{n+1}		\label{refl_reify_types}
+	\end{split}
+\end{equation}
+
+An important observation is that in this model, reification and reflection operators are not commutative. As an example reifying a continuation at level $n$, $cont_n$, followed by reflecting the continuation in level $n+1$ does not yield the same domain when called in reversed order: $\check{cont_{n+1}} \circ \hat{cont_n} \neq \hat{cont_n} \circ \check{cont_{n+1}}$. The expression types given by equations \ref{refl_reify_types} let us explain this trivially by rewriting the compositions as:
+
+\begin{multline}
+	\label{rewrite_composition_fst}
+	(Continuation_{n} \rightarrow DenotableValue_{n+1}) \rightarrow (DenotableValue_{n+1} \\
+	\rightarrow Continuation_{n+1-1} \cup {error}) = Continuation_n
+\end{multline}
+
+\begin{multline}
+	\label{rewrite_composition_snd}
+	(DenotableValue_{n+1} \rightarrow Continuation_{n} \cup {error}) \\ 
+	\rightarrow (Continuation_{n} \rightarrow DenotableValue_{n+1}) = DenotableValue_{n+1} \cup {error}
+\end{multline}
+
+A less formal explanation of this statement is in terms of the possible values reflection versus reification can result in. Reflection spawns a new interpreter that can yield any result, including an error. Then reifying an error would not yield a valid interpreter state. If one reflects a reified expression it by definition corresponds to simple evaluation in the current interpreter. The importance of this is that this restricts us from being able to fully explain a reflective tower model and valuation functions that act on a level below, $\mathcal{E}^-1_n$. If we are not able to provide a definition for reflection and reification at interpreters below any level $n$ we will not have a full description of a reflective tower. This gives a denotational account for the metacontinuations that 3-LISP originally introduced. It was to deal with exaclty this discrepancy in the compositionality of reflection and reification operations. Danvy et al. then add meta-continuations into the equations previously described and their purpose is to describe the continuation that accepts the result of the interpreter it interprets.
 
 \subsection{Heterogeneity}
+A central part of our study revolves around the notion of heterogeneous towers. Prior work on towers of interpreters that inspired some these concepts includes Sturdy's work on the Plathypus language framework that provided a mixed-language interpreter built from a reflective tower \cite{sturdy1993lisp}, Jones et al.'s Mix partial evaluator \cite{jones1989mix} in which systems consisting of multiple levels of interpreters could be partially evaluated and Amin et al.'s study of collapsing towers of interpreters in which the authors present a technique for turning systems of meta-circular interpreters into one-pass compilers. We continue from where the latter left of, namely the question of how one might achieve the effect of turning multiple interpreters into compilers in heterogeneous settings. Since \textit{heterogeneous} has been mentioned but not explained until now we provide our definition of heterogeneous as follows:
+\theoremstyle{definition}
+\begin{definition}
+	Towers of interpreters are systems of interpreters, $I_0, I_1, ..., I_n$ where $n \in \mathbb R_{\ge 0}$ and $I_n$ determines an interpreter at level $n$ interpreted by $I_{n-1}$, written in language $L$ such that $L_{I_n}$ is the language interpreter $I_n$ is written in.
+\end{definition}
+
+A level here is analogous to an instance of an interpreter within the tower and as such level $n$ implies $I_n$ if not mentioned explicitly otherwise.
+
+\begin{definition}
+	Heterogeneous towers of interpreters are towers which exhibit following properties:
+	\begin{enumerate}
+		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\equiv L_{I_m}$
+		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\blacktriangleleft L_{I_m}$, where $\blacktriangleleft$ implies access to the left-hand side interpreter's state
+		\item For any language used in the tower $L_m \in \sigma_L$, $\exists L_a \not\in \Sigma_L.L_m \blacktriangleleft L_c \land L_c \blacktriangleleft L_c$
+	\end{enumerate}
+\end{definition}
 So far we have only discussed towers that were homogeneous in nature. We define homogeneous as the combination of metacircularity and reflectivity of interpreter embeddings. A consequence of homogeneity are small semantic gaps throughout levels.
 First part of \cite{danvy1988intensions}
 
@@ -100,7 +163,12 @@ across stages. This provides a possible solution to pass information about stagi
 
 Partial Evaluation of Machine Code
 
-\subsection{Coming Full Circle: Partial Evaluation, Reflective Towers (and Supercompilation)}
+\subsection{Coming Full Circle: Partial Evaluation and Reflective Towers}
+\subsubsection{Compiling Reflective Languages}
+\cite{asai1996duplication}: Language ``Black''; has early uses of the act of collapsing modes of interpretation in a reflective setting. Its reflective model is closer to 3-LISP than to Blond or Brown
+\cite{asai2015compiling}
+
+The Truffle framework due to Wh{\"u}rthinger et al. \cite{wurthinger2017practical} demonstrate a practical partial evluation framework for interpreters independent of language by providing a language and interpreter specifically designed to partially evaluate and thus collect as much information about a dynamic language at run time as possible.
 
 \section{Examples}
 Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
@@ -283,7 +351,7 @@ We are interested in the last two point. In heterogeneous and practical towers a
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
 
-\section{Why do we want to collapse towers? (aren't they pretty?)}
+\section{Why do we want to collapse towers?}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization
 is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
 

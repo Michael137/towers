@@ -10,6 +10,16 @@ object EVMComp {
 
     type CompEnv = List[List[Val]]
 
+    def instrsToString(tup: Val, acc: String = ""): String = tup match {
+        case Tup(Tup(Cst(n1), Tup(Cst(n2), N)), rst) => instrsToString(rst, acc + s" ($n1 $n2) ")
+        case Tup(Tup(Str(s1), t2), rst) =>
+            val inner = instrsToString(t2, acc + s" ($s1 ")
+            instrsToString(rst, inner + ") ")
+        case Tup(Cst(n1), rst) => instrsToString(rst, acc + s" $n1 ")
+        case Tup(Str(s1), rst) => instrsToString(rst, acc + s" $s1 ")
+        case N => acc
+    }
+
     def tupToList(t: Val): List[Val] = t match {
         case Tup(t, N) => t::Nil
         case Tup(t1, t2) => t1::tupToList(t2)
@@ -97,6 +107,12 @@ object EVMComp {
         case Tup(Str("cdr"), args) =>
             compileBuiltin(args, env, Tup(Str("CDR"), acc))
 
+        case Tup(Str("cadr"), args) =>
+            compileBuiltin(args, env, Tup(Str("CADR"), acc))
+
+        case Tup(Str("caddr"), args) =>
+            compileBuiltin(args, env, Tup(Str("CADDR"), acc))
+
         case Tup(Str("cons"), args) =>
             compileBuiltin(args, env, Tup(Str("CONS"), acc))
 
@@ -125,31 +141,63 @@ object EVMComp {
         case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))
     }
 
-    def runOnVM(src: String) = {
+    // env and src are passed to PE.runVM in quotes
+    // Compilation
+    def runOnVM(src: String, env: String, run: Boolean = true) = {
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
-        deref(runVM(vm_src, instrs))
+        // println(instrs)
+        val instrSrc = instrsToString(instrs)
+        println("TESTING: " + instrSrc)
+        deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
+    }
+
+    // Evaluation
+    def evalOnVM(src: String, env: String) = {
+        val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
+        val instrSrc = instrsToString(instrs)
+        println("TESTING: " + instrSrc)
+        deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
     }
 
     def test() = {
-        println(runOnVM("(+ 5 5)"))
-        println(runOnVM("(if (eq? 0 1) (+ 5 5) (- -10 10))"))
-        println(runOnVM("(lambda (x y) (if (eq? x 0) (+ x y) (- x y)))"))
-        println(runOnVM("(let (x) (136) (+ x 1))"))
-        println(runOnVM("((lambda (x y) (if (eq? x 0) (+ x y) (- x y))) 1 20)"))
+        import TestHelpers._
+        println("// ------- VMComp.test --------")
 
-        // Factorial
-        println(
-            runOnVM(
-                """(let (x one) (10 1)
-                    (letrec (fact)
-                        ((lambda (n m) (if (eq? n 0) one (fact (- n one) (* n m)))))
-                        (fact x one)))"""))
+        check(runOnVM("(+ 5 5)", "'()"))("Cst(10)")
+        check(runOnVM("(if (eq? 0 1) (+ 5 5) (- -10 10))", "'()"))("Cst(-20)")
+        check(runOnVM("(let (x) (136) (+ x 1))", "'()"))("Cst(137)")
+        check(runOnVM("((lambda (x y) (if (eq? x 0) (+ x y) (- x y))) 1 20)", "'()"))("Cst(-19)")
+        check(evalOnVM("""
+            (let (eval) ((lambda (ops)
+                                (if (eq? (car ops) 5) 5
+                                (if (eq? (car ops) 6) 6
+                                (if (eq? (car ops) .) .
+                                (caddr ops))))))
+                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))
+        """, "'()"))("Cst(9)")
 
-        println(runOnVM("""(letrec (eval) ((lambda (ops)
+        check(evalOnVM("""(letrec (eval) ((lambda (ops)
                                                 (if (eq? (car ops) 5) 5
                                                 (if (eq? (car ops) 6) 6
-                                                (if (eq? (cdr ops) .) .
+                                                (if (eq? (car ops) .) .
                                                 (eval (cdr ops)))))))
-                                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))"""))
+                                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))""", "'()"))("Cst(6)")
+
+        // Factorial
+        // check(
+        //     runOnVM(
+        //         """(let (x one) (10 1)
+        //             (letrec (fact)
+        //                 ((lambda (n m) (if (eq? n 0) one (fact (- n one) (* n m)))))
+        //                 (fact x one)))""", "'()"))("Cst(1)") // TODO: revise result
+
+        check(runOnVM("""(letrec (eval) ((lambda (ops)
+                                                (if (eq? (car ops) 5) 5
+                                                (if (eq? (car ops) 6) 6
+                                                (if (eq? (car ops) .) .
+                                                (eval (cdr ops)))))))
+                                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))""", "'()"))("Cst(6)")
+
+        testDone()
     }
 }

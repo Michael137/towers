@@ -56,10 +56,10 @@ object EVMComp {
     def compileLambda(body: Val, env: CompEnv, acc: Val) = 
         Tup(Str("LDF"), Tup(compile(body, env, Tup(Str("RTN"), N)), acc))
 
-    def compileBuiltin(args: Val, env: CompEnv, acc: Val, quoting: Boolean = false): Val = 
+    def compileBuiltin(args: Val, env: CompEnv, acc: Val): Val = 
         args match {
             case N => acc
-            case Tup(a, b) => compileBuiltin(b, env, compile(a, env, acc, quoting), quoting)
+            case Tup(a, b) => compileBuiltin(b, env, compile(a, env, acc))
         }
 
     def compileIf(cond: Val, conseq: Val, alt: Val, env: CompEnv, acc: Val) = {
@@ -73,16 +73,19 @@ object EVMComp {
         case Tup(hd, tl) => compileApp(tl, env, compile(hd, env, Tup(Str("CONS"), acc)))
     }
 
-    def compile(e: Val, env: CompEnv, acc: Val, quoting: Boolean = false): Val = e match {
+    def compileList(args: Val, env: CompEnv, acc: Val): Val = args match {
+        case N => acc
+        case Tup(s: Str, N) => Tup(Str("LDC"), Tup(s, acc))
+        case Tup(fst, (Tup(snd, N))) => Tup(Str("LDC"), Tup(snd, Tup(Str("LDC"), Tup(fst, Tup(Str("CONS"), acc)))))
+        case Tup(hd, tl) => compileList(tl, env, Tup(Str("LDC"), Tup(hd, Tup(Str("CONS"), acc))))
+    }
+
+    def compile(e: Val, env: CompEnv, acc: Val): Val = e match {
         // Null, Number or Identifier
         case N => Tup(Str("NIL"), acc)
         case s: Str => {
-          if(quoting) {
-            Tup(Str("LDC"), Tup(s, acc))
-          } else {
             val ij = index(s, env)
             Tup(Str("LD"), Tup(ij, acc))
-          }
         }
         case n: Cst => Tup(Str("LDC"), Tup(n, acc))
 
@@ -91,8 +94,8 @@ object EVMComp {
         case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
             compileLambda(body, tupToList(args)::env, acc)
 
-        case Tup(Str("quote"), args) =>
-            compileBuiltin(args, env, Tup(Str("QUOTE"), acc), true)
+        case Tup(Str(s), args) if(s == "list" || s == "quote") =>
+            compileList(args, env, Tup(Str(""), acc))
 
         case Tup(Str("+"), args) =>
             compileBuiltin(args, env, Tup(Str("ADD"), acc))
@@ -203,12 +206,13 @@ object EVMComp {
                                                 (eval (cdr ops)))))))
                                             (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))""", "'()"))("Cst(6)")
 
-        check(runOnVM("(let (x) ((quote 1 2 3 4)) x)", "'()"))("Cst(1)") // TODO: revise result
+        check(runOnVM("(let (x) ((list 1 2 3 4)) (caddr x))", "'()"))("Cst(3)")
 
         check(runOnVM("""(letrec (eval) ((lambda (ops)
-                                                (if (eq? (car ops) 'plus) (+ (cadr ops) (caddr ops))
-                                                    .)))
-                                            (eval (quote plus 2 2)))""", "'()"))("Cst(6)")
+                                                (if (eq? (car ops) 'plus)
+                                                        (+ (cadr ops) (caddr ops))
+                                                        .)))
+                                            (eval (list plus 2 2)))""", "'()"))("Cst(4)")
 
         testDone()
     }

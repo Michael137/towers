@@ -148,6 +148,8 @@ object PETests {
                     LDC 2 LDC 3 CONS LDC plus CONS LD (1 1) AP RTN
                 ) RAP STOP
         )) '())""")))("Cst(5)")
+
+        // TODO: add test for functions that read from unavailable point in environment
     }
 
     def factorialTest() = {

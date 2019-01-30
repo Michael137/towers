@@ -139,16 +139,15 @@ args (f x y)
 // Lift all numeric inputs to VM
 (let start (lambda (ops) (machine vm-stack env-list op-list call-stack ops))
         (start program)
-        
+                
 (let start (lambda (ops)
 (letrec ((liftNums (lambda (x)
 (if (pair? x)
 (if (num? (car x))
-(cons (maybe-lift (car x)) (liftNums (cdr x)))
+    (cons (maybe-lift (car x)) (liftNums (cdr x)))
 (if (pair? (car x))
-(cons (liftNums (car x)) (liftNums (cdr x)))
+    (cons (liftNums (car x)) (liftNums (cdr x)))
 (cons (car x) (liftNums (cdr x)))))
 x))))
 (machine vm-stack env-list op-list call-stack (liftNums ops))))
 (start program)
-                

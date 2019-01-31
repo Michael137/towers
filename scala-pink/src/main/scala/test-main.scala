@@ -16,10 +16,10 @@ object TestMain {
 
     // EBase.test()
     // ELisp.test()
-    PE.test()
-    // EVMComp.test()
-    // EVM.test()
+    // PE.test()
+    EVMComp.test()
     // EPink.test() // TODO
+    // EVM.test()
     println("// ###### Full testsuite done ######")
   }
 }

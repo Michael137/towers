@@ -21,8 +21,10 @@ object ELisp {
 
         lazy val exp: Parser[Val] =
             wholeNumber ^^ { case s => I(s.toInt) } |
-            """[^\s\(\)'"]+""".r ^^ { case s => S(s) } |
+            """[^\s\(\)'`,"]+""".r ^^ { case s => S(s) } |
             "'" ~> exp ^^ { case s => P(S("quote"), P(s, N)) } |
+            "`" ~> exp ^^ { case s => P(S("quasi"), P(s, N)) } |
+            "," ~> exp ^^ { case s => P(S("unquote"), P(s, N)) } |
             "()" ^^ { case _ => N } |
             "(" ~> exps <~ ")" ^^ { case vs => vs }
 
@@ -72,6 +74,7 @@ object ELisp {
         case Str(s) => val i = env.lastIndexOf(s); assert(i>=0, s + " not in " + env); Var(s)
         case Tup(Str("..."),    N)   => Sym("...")
         case Tup(Str("quote"),  Tup(Str(s),N))   => Sym(s)
+        case Tup(Str("quasi"),  Tup(Str(s),N))   => Sym(s)
         case Tup(Str("+"),      Tup(a,Tup(b,N))) => Plus(trans(a,env),trans(b,env))
         case Tup(Str("-"),      Tup(a,Tup(b,N))) => Minus(trans(a,env),trans(b,env))
         case Tup(Str("*"),      Tup(a,Tup(b,N))) => Times(trans(a,env),trans(b,env))
@@ -130,6 +133,19 @@ object ELisp {
         case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
         case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
         case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
+        case Tup(Str("quasi"),  Tup(a,b)) => 
+            val exps = tupToTupList(a)
+            val transed = exps.map({ a => a match {
+                case Tup(Str("unquote"), Tup(rst, N)) => trans(rst, env)
+                case other => Special(benv => other)
+            }})
+
+            def aux(lst: List[Exp]): Exp = lst match {
+                case hd::tl => Cons(hd, aux(tl))
+                case Nil => Sym(".")
+            }
+            aux(transed)
+
         // case Tup(Str("trans"),  Tup(a,N)) =>
         //  Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
         // case Tup(Str("lift-ref"),Tup(a,N)) =>
@@ -255,6 +271,11 @@ object ELisp {
         checkrunExp(trans(parseExp(s"(run 0 (let x (lambda (x) (* x (lift 2))) (x (lift 3))))"), Nil),"Cst(6)")
         checkrunExp(trans(parseExp(s"(run 0 (let x 10 ((lambda (y) (+ y (lift 2))) (lift 3))))"), Nil),"Cst(5)")
         checkrunExp(trans(parseExp(s"(run 0 (lift (let x (lift '()) (let y (lift 2) (cons y x)))))"), Nil),"Tup(Cst(2),Str(.))")
+
+        // Quasi-quotation
+        checkrun(s"(listref `(,(+ 2 2) 3))", "Tup(Cst(4),Tup(Cst(3),Str(.)))")
+        checkrun(s"(listref `(,(+ 2 2) ,3))", "Tup(Cst(4),Tup(Cst(3),Str(.)))")
+        checkrun(s"(listref (cons_ `(,(+ 2 2) 3) 4))", "Tup(Tup(Cst(4),Tup(Cst(3),Str(.))),Cst(4))")
 
         testDone()
     }

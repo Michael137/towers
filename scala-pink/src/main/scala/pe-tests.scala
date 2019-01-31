@@ -11,15 +11,15 @@ object PETests {
         check(reifyc(ev(s"(($cmp '(LDC 10 LDC 15 ADD WRITEC)) '())")))("Let(Var(x13),Lam(List(Var(e)),Let(Var(x31),Plus(Lit(15),Lit(10)),Var(x31))),Let(Var(x14),App(Var(x13),List(Sym(.))),Var(x14)))")
         check(ev(s"(run 0 (($cmp '(LDC 10 LDC 15 LD (1 1) ADD WRITEC)) '((5 6 7 8 9))))"))("Cst(20)")
         check(reifyc(ev(s"($cmp '(LDC 10 LDC 15 LD (1 1) ADD WRITEC))")))("Let(Var(x13),Lam(List(Var(e)),Let(Var(x37),Fst_(Var(e)),Let(Var(x40),Fst_(Var(x37)),Let(Var(x48),Plus(Var(x40),Lit(15)),Var(x48))))),Var(x13))")
-        check(reifyc(ev(s"""($cmp '(LDC 135
+        check(reifyc(ev(s"""($cmp '(NIL LDC 135 CONS
                                         LDF (LDC 10 LD (1 1) ADD RTN)
                                         AP
-                                        STOP))""")))("Let(Var(x13),Lam(List(Var(e)),Let(Var(x64),Plus(Lit(135),Lit(10)),Var(x64))),Var(x13))")
-        check(ev(s"""(run 0 (($cmp '(LDC 135
+                                        STOP))""")))("Let(Var(x13),Lam(List(Var(e)),Let(Var(x80),Plus(Lit(135),Lit(10)),Var(x80))),Var(x13))")
+        check(ev(s"""(run 0 (($cmp '(NIL LDC 135 CONS
                                         LDF (LDC 10 LD (1 1) ADD RTN)
                                         AP
                                         STOP)) '()))"""))("Cst(145)")
-        check(ev(s"""(run 0 (($cmp '(LDC 135
+        check(ev(s"""(run 0 (($cmp '(NIL LDC 135 CONS
                                         LDF (LDC 10 LD (1 1) ADD RTN)
                                         AP
                                         STOP)) '()))"""))("Cst(145)")
@@ -121,15 +121,16 @@ object PETests {
             STOP
         ))""")))("Let(Var(x13),Lam(List(Var(e)),Let(Var(x37),Fst_(Var(e)),Let(Var(x40),Fst_(Var(x37)),Var(x40)))),Var(x13))")
 
+        // Note the double CONS
         check(ev(s"""(($evl '(
-            LDC -1 LDC -2 CONS LDC -3 CONS LDF (
+            NIL LDC -1 CONS LDC -2 CONS LDC -3 CONS CONS LDF (
                 LD (1 1) CADDR RTN
             ) AP
             WRITEC
         )) '())"""))("Cst(-1)")
 
         check(ev(s"""(($evl '(
-            LDC -2 LDC -3 CONS LDC + CONS LDF (
+            NIL LDC -2 CONS LDC -3 CONS LDC + CONS CONS LDF (
                 LDC + LD (1 1) CAR EQ SEL
                     (LD (1 1) CADDR LD (1 1) CADR ADD JOIN)
                     (NIL JOIN)
@@ -145,7 +146,7 @@ object PETests {
                                     (NIL JOIN)
                 RTN)
                 CONS LDF (
-                    LDC 2 LDC 3 CONS LDC plus CONS LD (1 1) AP RTN
+                    NIL LDC 2 CONS LDC 3 CONS LDC plus CONS CONS LD (1 1) AP RTN
                 ) RAP STOP
         )) '())""")))("Cst(5)")
 

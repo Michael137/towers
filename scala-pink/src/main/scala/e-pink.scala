@@ -90,7 +90,7 @@ object EPink {
         // println(Lisp.ev("(let x (cons 1 2) (car x))"))
         // println(ev("(let x (cons 1 2) (car x))"))
 
-        /*// direct execution
+        // direct execution
         checkrun(s"""
         (let fac $fac_src 
             (fac 4))""",
@@ -136,14 +136,14 @@ object EPink {
         (let eval $eval_src
             (let src (quote (letrec ((y 4)) (cons y 2)))
                 (eval src)))""",
-        "Tup(Cst(4),Cst(2))")*/
+        "Tup(Cst(4),Cst(2))")
 
-        // TODO: works with (log 0!
-        checkrun(s"""
-        (let eval $eval_src
-            (let src (quote (let y (lambda (m) (+ m 2)) (y 1)))
-                (eval src)))""",
-        "Cst(3)")
+        // // TODO: works with (log 0!
+        // checkrun(s"""
+        // (let eval $eval_src
+        //     (let src (quote (let y (lambda (m) (+ m 2)) (y 1)))
+        //         (eval src)))""",
+        // "Cst(3)")
         // checkrun(s"""
         // (let eval $eval_src
         //     (let src (quote (let y (lambda (m) (+ m 2)) (y 1)))

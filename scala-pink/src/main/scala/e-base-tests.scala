@@ -181,18 +181,25 @@ object EBaseTests {
     val cellExp5 = Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3)))))
     check(deref(inject(cellExp5)))("Cst(-2)")
 
-    val cellExp6 = Fst_(Fst_(Fst_(Fst_(Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))))))) // Note the semantics
-    check(deref(inject(cellExp6)))("Cst(-2)")
+    // ((-2 -4) (2 3))
+    val cellExp6 = Snd_(Fst_(Cons_(
+                                  Cons_(
+                                    Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))
+                                  ),
+                                  Cons_(
+                                    Lit(2), Lit(3)
+                                  ))))
+    check(inject(cellExp6))("Cst(-4)")
 
     val cellExp7 = Let(Var("x"),
                        Cons_(Cons_(Lit(-2), Snd_(Cons_(Lit(-3), Lit(-4)))), Cons_(Lit(2), Lit(3))),
-                       Plus(Fst_(Fst_(Var("x"))), Snd_(Fst_(Var("x"))))) // -2 + -3
-    check(inject(cellExp7))("Cst(-5)")
+                       Plus(Fst_(Fst_(Var("x"))), Snd_(Fst_(Var("x"))))) // -2 + -6
+    check(inject(cellExp7))("Cst(-6)")
 
     val cellExp8 = Let(Var("x"),
                        Cons_(Lit(1), Cons_(Lit(2), Lit(3))),
                        Let(Var("y"),
-                           Fst_(Snd_(Var("x"))),
+                           Snd_(Var("x")),
                            Let(Var("_"),
                                SetCar(Var("y"), Lit(4)), // Should change list pointed to by "x"
                                Var("x"))))

@@ -60,13 +60,13 @@ object PE {
                                                                     (let _ (set-car!_ env (cadr_ s))
                                                                         (machine '() (cons_ (cddr_ s) (cons_ env (cons_ (cdr_ ops) d))) (ref (caar_ s)) env))
 
-                                                                (if (eq? 'CAR (car_ ops)) ((machine (cons_ (car_ (car_ s)) (cdr_ s)) d (cdr_ ops)) env)
-                                                                (if (eq? 'CDR (car_ ops)) ((machine (cons_ (cdr_ (car_ s)) (cdr_ s)) d (cdr_ ops)) env)
-                                                                (if (eq? 'QUOTE (car_ ops)) ((machine (cons_ `(,(car_ s)) (cdr_ s)) d (cdr_ ops)) env)
+                                                                (if (eq? 'CAR (car_ ops)) (machine (cons_ (car_ (car_ s)) (cdr_ s)) d (cdr_ ops) env)
+                                                                (if (eq? 'CDR (car_ ops)) (machine (cons_ (cdr_ (car_ s)) (cdr_ s)) d (cdr_ ops) env)
+                                                                (if (eq? 'QUOTE (car_ ops)) (machine (cons_ `(,(car_ s)) (cdr_ s)) d (cdr_ ops) env)
 
-                                                                (if (eq? 'CADR (car_ ops)) ((machine (cons_ (cadr_ (car_ s)) (cdr_ s)) d (cdr_ ops)) env)
-                                                                (if (eq? 'CADDR (car_ ops)) ((machine (cons_ (caddr_ (car_ s)) (cdr_ s)) d (cdr_ ops)) env)
-                                                                (if (eq? 'CADDDR (car_ ops)) ((machine (cons_ (cadddr_ (car_ s)) (cdr_ s)) d (cdr_ ops)) env)
+                                                                (if (eq? 'CADR (car_ ops)) (machine (cons_ (cadr_ (car_ s)) (cdr_ s)) d (cdr_ ops) env)
+                                                                (if (eq? 'CADDR (car_ ops)) (machine (cons_ (caddr_ (car_ s)) (cdr_ s)) d (cdr_ ops) env)
+                                                                (if (eq? 'CADDDR (car_ ops)) (machine (cons_ (cadddr_ (car_ s)) (cdr_ s)) d (cdr_ ops) env)
 
                                                                 (maybe-lift 'ERROR)))))))))))))))))))))))))
                                                         (m e)))
@@ -95,9 +95,9 @@ object PE {
     def test() = {
         println("// ------- PE.test --------")
 
-        // PETests.basicTests
+        PETests.basicTests
         PETests.listAccessTest
-        // PETests.factorialTest
+        PETests.factorialTest
 
         testDone()
     }

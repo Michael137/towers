@@ -130,7 +130,6 @@ object EBase {
   def reflect(s:Exp) = {
     var varName = gensym()
     stBlock += varName -> s
-    // println(varName)
     Var(varName)
   }
 
@@ -147,12 +146,15 @@ object EBase {
     if (stBlock != LinkedHashMap.empty) {
       // if we are generating code at all,
       // the result must be code
-      val Code(last) = res
-      Code(
-        stBlock.foldRight(last)({ (t: Tuple2[String,Exp], b: Exp) =>
-                                      val (v, e) = t
-                                      Let(Var(v), e, b) })
-      )
+      res match {
+        case Code(last) =>
+          Code(
+            stBlock.foldRight(last)({ (t: Tuple2[String,Exp], b: Exp) =>
+                                          val (v, e) = t
+                                          Let(Var(v), e, b) })
+          )
+        case other => other
+      }
     } else {
       res
     }
@@ -172,7 +174,7 @@ object EBase {
     case Code(e) => reflect(Lift(e))
     case Clo(Lam(vs: List[Var], f), state) =>
       // TODO: put back memoization?
-      val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str("Error: using init store")) v })
+      val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str(initStoreErrorStr)) v })
       if(missingVars.size > 0) {
         val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
         val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
@@ -186,18 +188,28 @@ object EBase {
       }
   }
 
+  var recursionDepth = 0
   // multi-stage evaluation
   def evalms(arg: Val): Val = {
     arg match {
       case st @ State(c: Exp, e: Env, s: Store, k: Cont) => {
+        recursionDepth += 1;
         val ret = c match {
           case If(cond, conseq, alt) =>
-            deref(inject(cond, e, s, false)) match {
+            val evaled = deref(inject(cond, e, s, false))
+            // println("IF: " + cond + " ====> " + evaled)
+            // println("CONSEQ: " + conseq + " ALT: " + alt)
+            evaled match {
               case Cst(b) => if(b != 0) State(conseq, e, s, k) else State(alt, e, s, k)
               case Code(c) =>
-                applyCont(k, reflectc(If(c,
-                                         reifyc(evalms(State(conseq, e, s, Halt())).asInstanceOf[Answer].v),
-                                         reifyc(evalms(State(alt, e, s, Halt())).asInstanceOf[Answer].v))), null, e)
+                if(recursionDepth > 10000) {
+                  println(s"ERROR: evalms If($c, $conseq, $alt) recursion limit reached...Exiting")
+                  System.exit(1)
+                }
+                val reifConseq = reifyc(inject(conseq, e, s, false))
+                val reifAlt = reifyc(inject(alt, e, s, false))
+                recursionDepth = 0
+                applyCont(k, reflectc(If(c, reifConseq, reifAlt)), null, e)
             }
           case Let(v, exp, body) =>
             State(exp, e, s, LetK(v, body, e, k))
@@ -209,15 +221,24 @@ object EBase {
             val args = es.map({ x =>
                                 inject(x, newEnv, newStore, false) // TODO: use newEnv or old e for inject
                               })
-            applyProc(proc, args, newStore, k)
+            // println("DEBUGGING from app(): " + f + "[-->" + proc + "<--]" + " " + args)
+            // println("DEBUGGING from app() proc ops: " + proc.asInstanceOf[Clo].state.s(proc.asInstanceOf[Clo].state.e("ops")))
+            // println("DEBUGGING from app() ops: " + newStore(newEnv("ops")))
+            val newProc = proc match {
+              case clo: Clo => Clo(clo.asInstanceOf[Clo].f, State(null, newEnv, newStore, null))
+              case code: Code => proc
+            }
+            val ret = applyProc(newProc, args, newStore, k)
+            // println("DEBUGGING from app() ret: " + ret)
+            ret
 
-          case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
+          case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)]
             val (vs, es) = exps.unzip
             // val addrs = vs.map({ x: Var => x.s.hashCode() })
             val addrs = vs.map({ _ => fresh() })
             val varNames = vs.map({x: Var => x.s})
             val updatedEnv = updateMany(e, varNames, addrs)
-            val vals = es.map({ x => evalAtom(x, updatedEnv, s) })
+            val vals = es.map({ x => inject(x, updatedEnv, s, false) })
             val updatedStore = updateMany(s, addrs, vals)
             State(body, updatedEnv, updatedStore, k)
 
@@ -251,6 +272,7 @@ object EBase {
             inject(v, e, s, false) match {
               // case Cell(k, idx) => println(deref(Cell(k, 1)));cells(k) = List(value, cells(k)(1));println(deref(cells(k)(1)));
               case Cell(k, idx) => cells(k) = List(value, cells(k)(1))
+              case _ => Str(s"ERROR: $v does not have the correct list structure for a 'set-car!'")
             }
             val ret = applyCont(k, value, s, e)
             ret
@@ -313,7 +335,11 @@ object EBase {
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
       case Sym(str) => Str(str)
-      case Var(str) => s(e(str))
+
+       // TODO: find a less difficult to debug way to do this.
+       //       This just to let unknown values at evaluation time be reflected
+       //       to code values instead
+      case Var(str) => val ret = s(e(str)); /*println("VAR: " + str + " ===> " + ret);*/if(ret == Str(initStoreErrorStr)) Code(Var(str)) else ret
       case Lit(num) => Cst(num)
       case IsNum(e1) =>
         inject(e1,e,s,false) match {
@@ -353,7 +379,7 @@ object EBase {
         val key = gensym("cell")
         cells += (key -> List(ret1, ret2))
         Cell(key, 0)
-      case lam: Lam => Clo(lam, State(null, e, s, null))
+      case lam: Lam => /*println("DEBUGGING from lam ops: " + s(e("ops")) + "[-->" + lam + "<--]");*/ Clo(lam, State(null, e, s, null))
 
       /* The complexity is the price we pay for multi-argument
       ** lambda support in the EPink evaluator. We use
@@ -384,6 +410,7 @@ object EBase {
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
           case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
+          case (Code(n1),n2) => reflectc(Plus(n1, lift(n2)))
           case _ => Str(s"Cannot perform + operation on expressions $ret1 and $ret2") // ? should be error instead
         }
       case Minus(e1, e2) =>
@@ -392,6 +419,7 @@ object EBase {
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
           case (Code(n1),Code(n2)) => reflectc(Minus(n1, n2))
+          case (Code(n1),n2) => reflectc(Minus(n1, lift(n2)))
           case _ => Str(s"Cannot perform - operation on expressions $e1 and $e2") // ? should be error instead
         }
       case Times(e1, e2) =>
@@ -400,7 +428,8 @@ object EBase {
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
           case (Code(n1),Code(n2)) => reflectc(Times(n1, n2))
-          case _ => Str(s"Cannot perform * operation on expressions $e1 and $e2") // ? should be error instead
+          case (Code(n1),n2) => reflectc(Times(n1, lift(n2)))
+          case _ => Str(s"Cannot perform * operation on expressions $e1 and $e2 (evaluated to $ret1 $ret2 respectively)") // ? should be error instead
         }
       case Fst(e1) =>
         inject(e1, e, s, false) match {
@@ -422,33 +451,45 @@ object EBase {
         refToTuple(lst)
 
       case Fst_(e1) =>
+        // println("FST: s ==> " + deref(s(e("s"))))
         inject(e1, e, s, false) match {
           case Cell(k, idx) => cells(k)(idx) match {
                                   case Cell(k2, idx2) => Cell(k2, 0)
-                                  case _ => Cell(k, 0)
+                                  case other => other // Cell(k, 0)
                                 }
           case Code(a) => reflectc(Fst_(a))
           case Tup(a, b) => a
+          case Str(s) if(s == initStoreErrorStr) => reflectc(e1) // Error because variable not in scope *yet*
+          case Cst(_) | Str(_) => Str(s"ERROR: $e1 does not have correct list structure to perform a 'car'")
         }
       case Snd_(e1) =>
         inject(e1, e, s, false) match {
           case Cell(k, idx) => cells(k)(scala.math.min(1, idx + 1)) match {
                                   case Cell(k2, idx2) => Cell(k2, 0)
-                                  case _ => Cell(k, scala.math.min(1, idx + 1))
+                                  case otherwise => otherwise // Cell(k, scala.math.min(1, idx + 1))
                                 }
           case Code(a) => reflectc(Snd_(a))
           case Tup(a, b) => b // TODO: Tup should be handled in lisp-frontend and not here. This is
                               //       curently for '(...) to work
+          case Str(s) if(s == initStoreErrorStr) => reflectc(e1) // Error because variable not in scope *yet*
+          case Cst(_) | Str(_) => Str(s"ERROR: $e1 does not have correct list structure to perform a 'cdr'")
         }
         
       case Equ(e1, e2) =>
         val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
         val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        // println("EQU: " + ret1 + "[-->" + e1 + "<--] #### " + ret2 + "[-->" + e2 + "<--]")
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
+
+          case (Code(n1: Lit),Code(n2: Lit)) => Cst(if (n1 == n2) 1 else 0)
           case (Code(n1),Code(n2)) => reflectc(Equ(n1, n2))
-          case (Code(v1: Var), s2) => Cst(if (s2 == inject(v1, e, s, false)) 1 else 0)
-          // case (s1,Code(v2: Var)) => val ret = inject(stBlock(v2.s), e, s, false); println(ret); Cst(if (s1 == ret) 1 else 0)
+
+          case (Code(Lit(n1)), Cst(n2)) => Cst(if (n1 == n2) 1 else 0)
+          case (Cst(n1), Code(Lit(n2))) => Cst(if (n1 == n2) 1 else 0)
+          
+          case (Code(v1), s2) => reflectc(Equ(v1, lift(s2)))
+          case (s1, Code(v2)) => reflectc(Equ(lift(s1), v2))
           case _ => Str(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
         }
 
@@ -535,8 +576,7 @@ object EBase {
   }
 
   def applyProc(proc: Val, args: List[Val], s: Store, k: Cont) = proc match {
-    case Clo(Lam(vs, body), State(_, env, _, _)) =>
-      // val addrs = vs.map({x: Var => x.s.hashCode()})
+    case Clo(Lam(vs, body), State(_, env, store, _)) =>
       val addrs = vs.map({_ => fresh()})
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
@@ -555,16 +595,21 @@ object EBase {
 
     // TODO: check if all args are Code as well?
     case Code(s1) =>
-      val codeArgs = args.map({ a => val Code(res) = a; res })
+      val codeArgs = args.map( {a => a match {
+        case Code(res: Exp) => res
+        case otherwise: Val => lift(otherwise)
+      }})
       applyCont(k, reflectc(App(s1, codeArgs)), s, null)
   }
 
   // TODO: should be more robust
+  val initStoreErrorStr = "Error: using init store"
   val initEnv = {arg: String => -1}
-  val initStore = {arg: Int => Str("Error: using init store")}
+  val initStore = {arg: Int => Str(initStoreErrorStr)}
 
   def inject(e: Exp, env: Env = initEnv, store: Store = initStore, reset: Boolean = true) = {
     if(reset) {
+      recursionDepth = 0
       stFresh = 0
       stBlock = LinkedHashMap.empty
       cells = LinkedHashMap[String, List[Val]]() // TODO: could be made regular HashMap

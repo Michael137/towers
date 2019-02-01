@@ -10,16 +10,23 @@ object EVMComp {
 
     type CompEnv = List[List[Val]]
 
-    def instrsToString(tup: Val, acc: String = ""): String = tup match {
+    var indent = 0
+    def instrsToString(tup: Val, acc: String = ""): String = (tup match {
         case Tup(Tup(Cst(n1), Tup(Cst(n2), N)), rst) => instrsToString(rst, acc + s" ($n1 $n2) ")
         case Tup(Tup(Str(s1), t2), rst) =>
-            val inner = instrsToString(t2, acc + s" ($s1 ")
+            var inner = instrsToString(t2, acc + s" ($s1 ")
             instrsToString(rst, inner + ") ")
         case Tup(Cst(n1), rst) => instrsToString(rst, acc + s" $n1 ")
-        case Tup(Str(s1), rst) => instrsToString(rst, acc + s" $s1 ")
-        case N => acc
-        case Str(s) => acc + s
-    }
+        case Tup(Str(s1), rst) =>
+            var str = s" $s1 "
+            if(s1 == "LDF" || s1 == "SEL") {
+                indent += 1
+                str += "\n" + "\t" * indent
+            }
+            instrsToString(rst, acc + str)
+        case N => indent = 0; acc
+        case Str(s) => indent = 0; acc + s
+    }).replace("  ", " ") // Make it more readable
 
     def tupToList(t: Val): List[Val] = t match {
         case Tup(t, N) => t::Nil
@@ -112,6 +119,9 @@ object EVMComp {
         case Tup(Str("eq?"), args) =>
             compileBuiltin(args, env, Tup(Str("EQ"), acc))
 
+        case Tup(Str("null?"), args) =>
+            compileBuiltin(args, env, Tup(Str("EMPTY? CONS"), acc))
+
         case Tup(Str("car"), args) =>
             compileBuiltin(args, env, Tup(Str("CAR"), acc))
 
@@ -158,7 +168,7 @@ object EVMComp {
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         // println(instrs)
         val instrSrc = instrsToString(instrs)
-        println("TESTING: " + instrSrc)
+        println("TESTING:\n" + instrSrc)
         deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
     }
 
@@ -166,7 +176,7 @@ object EVMComp {
     def evalOnVM(src: String, env: String) = {
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         val instrSrc = instrsToString(instrs)
-        println("TESTING: " + instrSrc)
+        println("TESTING:\n" + instrSrc)
         deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
     }
 

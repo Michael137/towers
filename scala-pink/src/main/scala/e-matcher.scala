@@ -49,7 +49,19 @@ object EMatcher {
 
         val evl = s"(let maybe-lift (lambda (e) e) $src)"
         val cmp = s"(let maybe-lift (lambda (e) (lift e)) $src)"
-        println(reifyc(ev(s"($cmp '(a b done))")))
+        println(ev(s"($cmp '(_ * a _ * done))"))
+
+        import java.io._
+        val out_file = new FileOutputStream(new File("trace.log"))
+        scala.Console.withOut(out_file) {
+        try{
+            println(ev(s"(run 0 ($cmp '(_ * a _ * done)))"))
+        } catch { case e: Throwable => }
+        }
+        println
+        println(Lisp.ev(s"(${Matcher.matcherc_src} '(_ * a _ * done))"))
+        println
+        println(Lisp.ev(s"(run 0 (${Matcher.matcherc_src} '(_ * a _ * done)))"))
     }
 
     def test() = {

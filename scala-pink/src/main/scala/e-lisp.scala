@@ -114,6 +114,7 @@ object ELisp {
         case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
         case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
         case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))
+        case Tup(Str("null?"),  Tup(a,N)) => IsNull(trans(a, env))
         case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
         case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
         case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))

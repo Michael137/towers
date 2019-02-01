@@ -10,16 +10,20 @@ object TestMain {
     // Pink_CPS.test()
     // Pink_clambda.test()
     // Matcher.test()
+
+    // EPink.test()
+    // EVM.test()
+    // EMatcher.test()
   
     // VM.test()
     // Bench.test()
 
+    /* Main Tests */
     // EBase.test()
-    // ELisp.test()
-    // PE.test()
-    EVMComp.test()
-    // EPink.test() // TODO
-    // EVM.test()
+    //ELisp.test()
+    PE.test() // VM staged
+    // EVMComp.test() // SECD compiler
+
     println("// ###### Full testsuite done ######")
   }
 }

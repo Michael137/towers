@@ -48,11 +48,19 @@ object EVMCompTests {
                                                     .)))))
                                             (eval (list mul 2 3)))""", "'()"))("Cst(6)")
 
-        check(runOnVM("""(letrec (eval) ((lambda (ops)
-                                            (if (eq? ops .)
-                                                .
+        check(evalOnVM("""(letrec (eval) ((lambda (ops)
+                                            (if (null? (cdr ops))
+                                                ops
                                                 (if (eq? (car ops) 'plus)
-                                                    (+ (cadr ops) (caddr ops))
+                                                    (+ (eval (cadr ops)) (eval (caddr ops)))
+                                                    (eval (cdr ops))))))
+                                            (eval (list plus 2 (plus 2 2))))""", "'()"))("Cst(6)")
+
+        check(evalOnVM("""(letrec (eval) ((lambda (ops)
+                                            (if (null? (cdr ops))
+                                                ops
+                                                (if (eq? (car ops) 'plus)
+                                                    (+ (eval (cadr ops)) (eval (caddr ops)))
                                                     (eval (cdr ops))))))
                                             (eval (list plus 2 (plus 2 2))))""", "'()"))("Cst(6)")
     }

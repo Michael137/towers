@@ -226,5 +226,29 @@ object EBaseTests {
                                                                 Times(Var("x"), Lit(1)))))), // Global list should be affected by local function changes
                   App(Var("f"), List(Var("x")))))
     check(inject(cellExp10))("Cst(1000)")
+
+    // Null
+    val nullExp = IsNull(Fst_(Snd_(Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3)))))))
+    check(inject(nullExp))("Cst(1)")
+    val nullExp2 = Let(Var("x"), Snd_(Snd_(Cons_(Lit(1), Cons_(Lit(2), Lit(3))))),
+                      IsNull(SetCar(Var("x"), Lit(4))))
+    check(inject(nullExp2))("Cst(1)")
+  }
+
+  def recursionTest() = {
+    val recExp = Letrec(List(
+                  (Var("ack"), 
+                    Lam(List(Var("m"), Var("n")),
+                      If(Equ(Var("m"), Lit(0)),
+                         Plus(Var("n"), Lit(1)),
+                      If(And(Equ(Var("n"), Lit(0)), Gt(Var("m"), Var("n"))),
+                         App(Var("ack"), List(Minus(Var("m"), Lit(1)), Lit(1))),
+                      If(And(Gt(Var("m"), Lit(0)), Gt(Var("n"), Lit(0))),
+                         App(Var("ack"), List(Minus(Var("m"), Lit(1)), App(Var("ack"), List(Var("m"), Minus(Var("n"), Lit(1)))))),
+                         Sym("ERROR")))))
+                  )), App(Var("ack"), List(Lit(2))))
+
+  println(ev(s"""((run 0 (letrec ((a (lambda (m) (lambda (n) (if (eq? m 0) (+ n 1) (if (eq? n 0) ((a (- m 1)) (lift 1)) ((a (- m 1)) ((a m) (- n (lift
+1)))))))))) (lift (a 2)))) 2)"""))
   }
 }

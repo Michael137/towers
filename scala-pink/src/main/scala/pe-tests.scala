@@ -252,7 +252,7 @@ object PETests {
     def curriedVMTest() = {
         // println(ev(s"((run 0 ($cmp_curried '(LDC 10 LDC 20 ADD STOP))) '())"))
 
-        check(ev(s"""((run 0 ($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
+        check(ev(s"""($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
                         (DUM NIL LDF
                             (LDC 0 LD (1 1) EQ SEL
                                 (LD (1 2) JOIN)
@@ -261,6 +261,6 @@ object PETests {
                             RTN)
                         CONS LDF
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-                        RTN) AP WRITEC))) '())"""))("Cst(3628800)")
+                        RTN) AP WRITEC))"""))("Cst(3628800)")
     }
 }

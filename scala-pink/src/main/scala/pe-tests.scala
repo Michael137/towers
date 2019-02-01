@@ -128,6 +128,12 @@ object PETests {
             ) AP
             WRITEC
         )) '())"""))("Cst(-1)")
+        check(ev(s"""(run 0 (($cmp '(
+            NIL LDC -1 CONS LDC -2 CONS LDC -3 CONS CONS LDF (
+                LD (1 1) CADDR RTN
+            ) AP
+            WRITEC
+        )) '()))"""))("Cst(-1)")
 
         check(ev(s"""(($evl '(
             NIL LDC -2 CONS LDC -3 CONS LDC + CONS CONS LDF (
@@ -138,6 +144,15 @@ object PETests {
             ) AP
             WRITEC
         )) '(()))"""))("Cst(-5)")
+        check(ev(s"""(run 0 (($cmp '(
+            NIL LDC -2 CONS LDC -3 CONS LDC + CONS CONS LDF (
+                LDC + LD (1 1) CAR EQ SEL
+                    (LD (1 1) CADDR LD (1 1) CADR ADD JOIN)
+                    (NIL JOIN)
+                RTN
+            ) AP
+            WRITEC
+        )) '(())))"""))("Cst(-5)")
 
         check(deref(ev(s"""(($evl '(
             DUM NIL LDF (
@@ -149,8 +164,32 @@ object PETests {
                     NIL LDC 2 CONS LDC 3 CONS LDC plus CONS CONS LD (1 1) AP RTN
                 ) RAP STOP
         )) '())""")))("Cst(5)")
+        check(deref(ev(s"""(run 0 (($cmp '(
+            DUM NIL LDF (
+                LDC plus LD (1 1) CAR EQ SEL
+                                    (LD (1 1) CADDR LD (1 1) CADR ADD JOIN)
+                                    (NIL JOIN)
+                RTN)
+                CONS LDF (
+                    NIL LDC 2 CONS LDC 3 CONS LDC plus CONS CONS LD (1 1) AP RTN
+                ) RAP STOP
+        )) '()))""")))("Cst(5)")
 
-        // TODO: add test for functions that read from unavailable point in environment
+        
+        check(ev(s"""(run 0 (($cmp '(
+            DUM NIL LDF
+                    (LDC plus LD (1 1) CAR EQ SEL
+                            (LD (1 1) CADDR LD (1 1) CADR ADD JOIN)
+                            (LDC mul LD (1 1) CAR EQ SEL
+                                (LD  (1 1) CADDR LD (1 1) CADR MPY JOIN)
+                                (LDC minus LD (1 1) CAR EQ SEL
+                                    (LD  (1 1) CADDR LD (1 1) CADR SUB JOIN)
+                                    (NIL JOIN)
+                                JOIN)
+                            JOIN)
+                        RTN) CONS LDF
+                    (NIL  LDC 3 CONS LDC 2 CONS LDC mul CONS CONS LD (1 1) AP RTN) RAP STOP
+        )) '()))"""))("Cst(6)")
     }
 
     def factorialTest() = {
@@ -165,15 +204,63 @@ object PETests {
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
                         RTN) AP WRITEC)) '(()))"""))("Cst(3628800)")
 
-        // check(ev(s"""(($cmp '(NIL LDC 1 CONS LDC 10 CONS LDF
-        //                 (DUM NIL LDF
-        //                     (LDC 0 LD (1 1) EQ SEL
-        //                         (LD (1 2) JOIN)
-        //                         (NIL LD (1 2) LD (1 1) MPY CONS
-        //                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-        //                     RTN)
-        //                 CONS LDF
-        //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-        //                 RTN) AP WRITEC)) '(()))"""))("Cst(3628800)")
+        check(ev(s"""((run 0 ($cmp '(NIL LDC 1 CONS LDC 10 CONS LDF
+                        (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                                (LD (1 2) JOIN)
+                                (NIL LD (1 2) LD (1 1) MPY CONS
+                                        LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+                            RTN)
+                        CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+                        RTN) AP WRITEC))) '())"""))("Cst(3628800)")
+    }
+
+    def recursionTests() = {
+        // (eval (plus 2 (plus 2 2)))
+        check(deref(ev(s"""(($evl '(
+            DUM NIL LDF
+                (LD (1 1) CDR EMPTY? CONS SEL
+                        (LD (1 1) JOIN)
+                        (LDC plus LD (1 1) CAR EQ SEL
+                                (NIL LD (1 1) CADDR CONS LD (2 1) AP NIL LD (1 1) CADR CONS LD (2 1) AP ADD JOIN)
+                                (NIL LD (1 1) CDR CONS LD (2 1) AP JOIN)
+                            JOIN)
+                    RTN) CONS LDF
+                        (NIL LDC (plus 2 2) CONS LDC 2 CONS LDC plus CONS CONS LD (1 1) AP RTN) RAP STOP
+        )) '())""")))("Cst(6)")
+
+        import java.io._
+        val out_file = new FileOutputStream(new File("trace.log"))
+        scala.Console.withOut(out_file) {
+        try{
+            check(reifyc(ev(s"""(run 0 (($cmp '(
+                DUM NIL LDF
+                    (LD (1 1) CDR DBG EMPTY? DBG CONS SEL
+                            (LD (1 1) JOIN)
+                            (LDC plus LD (1 1) CAR EQ SEL
+                                    (NIL LD (1 1) CADDR CONS LD (2 1) AP NIL LD (1 1) CADR CONS LD (2 1) AP ADD JOIN)
+                                    (NIL LD (1 1) CDR CONS LD (2 1) AP JOIN)
+                                JOIN)
+                        RTN) CONS LDF
+                            (NIL LDC 2 CONS LDC 2 CONS LDC plus CONS CONS LD (1 1) AP RTN) RAP STOP
+            )) '()))""")))("Cst(6)")
+        } catch { case e: Throwable => }
+        }
+    }
+
+    def curriedVMTest() = {
+        // println(ev(s"((run 0 ($cmp_curried '(LDC 10 LDC 20 ADD STOP))) '())"))
+
+        check(ev(s"""((run 0 ($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
+                        (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                                (LD (1 2) JOIN)
+                                (NIL LD (1 2) LD (1 1) MPY CONS
+                                        LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+                            RTN)
+                        CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+                        RTN) AP WRITEC))) '())"""))("Cst(3628800)")
     }
 }

@@ -105,6 +105,7 @@ object EBase {
   case class Code(e:Exp) extends Val
 
   // Staging operations
+  var stFun: List[(String, Env, Exp)] = Nil
   var stBlock: LinkedHashMap[String, Exp] = LinkedHashMap.empty
   def run[A](f: => A): A = {
     val sF = stFresh
@@ -175,6 +176,7 @@ object EBase {
     case Code(e) => reflect(Lift(e))
     case Clo(Lam(vs: List[Var], f), state) =>
       val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str(initStoreErrorStr)) v }).filter(_ != ())
+      println(missingVars)
       if(missingVars.size > 0) {
         val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
         val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
@@ -258,13 +260,11 @@ object EBase {
             val value = inject(exp, e, s, false)
             val updated = update(s, e(v.s), value)
             val ret = applyCont(k, value, updated, e)
-            // val ret = applyCont(k, null, updated, e)
             ret
 
           case SetCar(v: Var, exp) =>
             var value = inject(exp, e, s, false)
             inject(v, e, s, false) match {
-              // case Cell(k, idx) => println(deref(Cell(k, 1)));cells(k) = List(value, cells(k)(1));println(deref(cells(k)(1)));
               case Cell(k, idx) => cells(k) = List(value, cells(k)(1))
               case _ => value = Null(s"ERROR: $v does not have the correct list structure for a 'set-car!'")
             }
@@ -486,7 +486,7 @@ object EBase {
           
           case (Code(v1), s2) => reflectc(Equ(v1, lift(s2)))
           case (s1, Code(v2)) => reflectc(Equ(lift(s1), v2))
-          case _ => Null(s"Cannot perform == operation on expressions $ret1 and $ret2") // ? should be error instead
+          case _ => Null(s"Cannot perform == operation on expressions $ret1 and $ret2")
         }
 
       case Lt(e1,e2) =>
@@ -497,7 +497,7 @@ object EBase {
             Cst(if (n1 < n2) 1 else 0)
           case (Code(s1),Code(s2)) =>
             reflectc(Gt(s1,s2))
-          case _ => Null(s"Cannot perform < operation on expressions $ret1 and $ret2") // ? should be error instead
+          case _ => Null(s"Cannot perform < operation on expressions $ret1 and $ret2")
         }
 
       case Gt(e1,e2) =>
@@ -508,7 +508,7 @@ object EBase {
             Cst(if (n1 > n2) 1 else 0)
           case (Code(s1),Code(s2)) =>
             reflectc(Gt(s1,s2))
-          case _ => Str(s"Cannot perform > operation on expressions $ret1 and $ret2") // ? should be error instead
+          case _ => Null(s"Cannot perform > operation on expressions $ret1 and $ret2")
         }
 
       case And(e1,e2) =>
@@ -519,7 +519,7 @@ object EBase {
             Cst(if (n1 == 1 && n2 == 1) 1 else 0)
           case (Code(s1),Code(s2)) =>
             reflectc(And(s1,s2))
-          case _ => Str(s"Cannot perform && operation on expressions $ret1 and $ret2") // ? should be error instead
+          case _ => Null(s"Cannot perform && operation on expressions $ret1 and $ret2")
         }
     }
 
@@ -581,7 +581,7 @@ object EBase {
         // Evaluate body
         State(body, updatedEnv, updatedStore, k)
       } else {
-        State(Sym("ERROR: tried to apply closure to too many arguments"), null, null, Halt())
+        State(NullExp("ERROR: tried to apply closure to too many arguments"), null, null, Halt())
       }
 
     // TODO: check if all args are Code as well?

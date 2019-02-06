@@ -193,16 +193,16 @@ object PETests {
     }
 
     def factorialTest() = {
-        check(ev(s"""(($evl '(NIL LDC 1 CONS LDC 10 CONS LDF
-                        (DUM NIL LDF
-                            (LDC 0 LD (1 1) EQ SEL
-                                (LD (1 2) JOIN)
-                                (NIL LD (1 2) LD (1 1) MPY CONS
-                                        LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-                            RTN)
-                        CONS LDF
-                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-                        RTN) AP WRITEC)) '(()))"""))("Cst(3628800)")
+        // check(ev(s"""(($evl '(NIL LDC 1 CONS LDC 10 CONS LDF
+        //                 (DUM NIL LDF
+        //                     (LDC 0 LD (1 1) EQ SEL
+        //                         (LD (1 2) JOIN)
+        //                         (NIL LD (1 2) LD (1 1) MPY CONS
+        //                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+        //                     RTN)
+        //                 CONS LDF
+        //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+        //                 RTN) AP WRITEC)) '(()))"""))("Cst(3628800)")
 
         check(ev(s"""((run 0 ($cmp '(NIL LDC 1 CONS LDC 10 CONS LDF
                         (DUM NIL LDF
@@ -251,16 +251,25 @@ object PETests {
 
     def curriedVMTest() = {
         // println(ev(s"((run 0 ($cmp_curried '(LDC 10 LDC 20 ADD STOP))) '())"))
+        // println(Lisp.ev(s"""(${Pink.evalc_src} '(let f (lambda f x (f (+ 2 x))) (f 3)))"""))
+        // println(reifyc(ev(s"(letrec ((f (lift (lambda (x) (f (+ x x)))))) (f (lift 3)))")))
 
-        check(ev(s"""($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
-                        (DUM NIL LDF
-                            (LDC 0 LD (1 1) EQ SEL
-                                (LD (1 2) JOIN)
-                                (NIL LD (1 2) LD (1 1) MPY CONS
-                                        LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-                            RTN)
-                        CONS LDF
-                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-                        RTN) AP WRITEC))"""))("Cst(3628800)")
+        // check(reifyc(inject(trans(parseExp(s"""(run 0 ($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
+        //                 (DUM NIL LDF
+        //                     (LDC 0 LD (1 1) EQ SEL
+        //                         (LD (1 2) JOIN)
+        //                         (NIL LD (1 2) LD (1 1) MPY CONS
+        //                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+        //                     RTN)
+        //                 CONS LDF
+        //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+        //                 RTN) AP WRITEC)))"""), Nil))))("Cst(3628800)")
+
+        println(reifyc(ev(s"""($cmp_curried '(
+                DUM NIL LDF
+                    (LD (2 1) AP RTN) CONS LDF
+                            (NIL LD (1 1) AP RTN) RAP STOP
+        ))
+        """)))
     }
 }

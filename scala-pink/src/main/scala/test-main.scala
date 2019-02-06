@@ -13,14 +13,14 @@ object TestMain {
 
     // EPink.test()
     // EVM.test()
-    // EMatcher.test()
+    EMatcher.test()
   
     // VM.test()
     // Bench.test()
 
     /* Main Tests */
     // EBase.test()
-    //ELisp.test()
+    // ELisp.test()
     PE.test() // VM staged
     // EVMComp.test() // SECD compiler
 

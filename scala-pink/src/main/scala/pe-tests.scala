@@ -193,18 +193,7 @@ object PETests {
     }
 
     def factorialTest() = {
-        // check(ev(s"""(($evl '(NIL LDC 1 CONS LDC 10 CONS LDF
-        //                 (DUM NIL LDF
-        //                     (LDC 0 LD (1 1) EQ SEL
-        //                         (LD (1 2) JOIN)
-        //                         (NIL LD (1 2) LD (1 1) MPY CONS
-        //                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-        //                     RTN)
-        //                 CONS LDF
-        //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-        //                 RTN) AP WRITEC)) '(()))"""))("Cst(3628800)")
-
-        check(ev(s"""((run 0 ($cmp '(NIL LDC 1 CONS LDC 10 CONS LDF
+        check(ev(s"""(($evl '(NIL LDC 1 CONS LDC 10 CONS LDF
                         (DUM NIL LDF
                             (LDC 0 LD (1 1) EQ SEL
                                 (LD (1 2) JOIN)
@@ -213,7 +202,21 @@ object PETests {
                             RTN)
                         CONS LDF
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-                        RTN) AP WRITEC))) '())"""))("Cst(3628800)")
+                        RTN) AP WRITEC)) '())"""))("Cst(3628800)")
+    }
+    
+    def recTest() = {
+        // Factorial
+        check(ev(s"""(($evl_rec '(NIL LDC 1 CONS LDC 10 CONS LDF
+                        (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                                (LD (1 2) JOIN)
+                                (NIL LD (1 2) LD (1 1) MPY CONS
+                                        LD (3 2) LD (1 1) SUB CONS LDR (1 1) AP JOIN)
+                            RTN)
+                        CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LDR (1 1) AP RTN) RAP
+                        RTN) AP WRITEC)) '())"""))("Cst(3628800)")
     }
 
     def recursionTests() = {
@@ -229,24 +232,6 @@ object PETests {
                     RTN) CONS LDF
                         (NIL LDC (plus 2 2) CONS LDC 2 CONS LDC plus CONS CONS LD (1 1) AP RTN) RAP STOP
         )) '())""")))("Cst(6)")
-
-        import java.io._
-        val out_file = new FileOutputStream(new File("trace.log"))
-        scala.Console.withOut(out_file) {
-        try{
-            check(reifyc(ev(s"""(run 0 (($cmp '(
-                DUM NIL LDF
-                    (LD (1 1) CDR DBG EMPTY? DBG CONS SEL
-                            (LD (1 1) JOIN)
-                            (LDC plus LD (1 1) CAR EQ SEL
-                                    (NIL LD (1 1) CADDR CONS LD (2 1) AP NIL LD (1 1) CADR CONS LD (2 1) AP ADD JOIN)
-                                    (NIL LD (1 1) CDR CONS LD (2 1) AP JOIN)
-                                JOIN)
-                        RTN) CONS LDF
-                            (NIL LDC 2 CONS LDC 2 CONS LDC plus CONS CONS LD (1 1) AP RTN) RAP STOP
-            )) '()))""")))("Cst(6)")
-        } catch { case e: Throwable => }
-        }
     }
 
     def curriedVMTest() = {
@@ -265,14 +250,13 @@ object PETests {
                             (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
                         RTN) AP WRITEC))"""), Nil))))("Cst(3628800)")
 
-        // val exp = s"""($cmp_curried '(
-        //         DUM NIL LDF
-        //             (LD (2 1) AP RTN) CONS LDF
-        //                     (NIL LD (1 1) AP RTN) RAP STOP
-        // ))
-        // """
-        // println(parseExp(exp))
-        // println(trans(parseExp(exp), Nil))
-        // println(reifyc(ev(exp)))
+        val exp = s"""($cmp_curried '(
+                DUM NIL LDF
+                    (LD (2 1) AP RTN) CONS LDF
+                            (NIL LD (1 1) AP RTN) RAP STOP
+        ))
+        """
+
+        println(reifyc(ev(exp)))
     }
 }

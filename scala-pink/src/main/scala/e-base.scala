@@ -179,7 +179,7 @@ object EBase {
       val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str(initStoreErrorStr)) v }).filter(_ != ())
       // println(missingVars)
       if(missingVars.size > 0) {
-        println("MISSING VARS: " + missingVars)
+        // println("MISSING VARS: " + missingVars)
         val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
         val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
         val args = varNames.map({s: String => Code(Var(s))})

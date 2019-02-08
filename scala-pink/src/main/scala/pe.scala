@@ -153,7 +153,7 @@ object PE {
                                                 (if (eq? 'EMPTY? (car_ ops))
                                                     ((((machine (cons_ (null? (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)
 
-                                                (maybe-lift 'ERROR))))))))))))))))))))))))))
+                                                (maybe-lift `(ERROR ,(car_ ops))))))))))))))))))))))))))))
                                         ))))
                         ))
 
@@ -172,6 +172,82 @@ object PE {
     val evl_curried = s"(let maybe-lift (lambda (e) e) $src_curried)"
     val cmp_curried = s"(let maybe-lift (lambda (e) (lift e)) $src_curried)"
 
+    // Works with cells and without
+    val evl_rec_src =   """
+            (let dbgCtr 10
+                (letrec ((locate (lambda (i j env)
+                            (letrec ((loc (lambda (y lst) (if (eq? y 1) (car lst) (loc (- y 1) (cdr lst))))))
+                                    (loc j (loc i env))))
+                        )
+                        (machine (lambda (s d fns ops e)
+                                                (if (eq? 'STOP (car ops))
+                                                    s
+                                                    (let m (lambda (env)
+                                                                (if (eq? 'WRITEC (car ops))
+                                                                    (car s)
+                                                                (if (eq? 'LDC (car ops))
+                                                                    (machine (cons (maybe-lift (cadr ops)) s) d fns (cddr ops) env)
+                                                                (if (eq? 'ADD (car ops))
+                                                                    (machine (cons (+ (car s) (cadr s)) (cddr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'SUB (car ops))
+                                                                    (machine (cons (- (car s) (cadr s)) (cddr s)) d fns (cdr ops) env)
+                                                                (if (eq?  'LD (car ops))
+                                                                    (machine (cons (locate (car (cadr ops)) (cadr (cadr ops)) env) s) d fns (cddr ops) env)
+                                                                (if (eq?  'LDR (car ops))
+                                                                    (machine (cons (locate (car (cadr ops)) (cadr (cadr ops)) fns) s) d fns (cddr ops) env)
+                                                                (if (eq? 'LDF (car ops)) 
+                                                                    (machine (cons (cons (cadr ops) env) s) d fns (cddr ops) env)
+                                                                (if (eq?  'NIL (car ops))
+                                                                    (machine (cons (maybe-lift '()) s) d fns (cdr ops) env)
+                                                                (if (eq? 'AP (car ops))
+                                                                    (machine '() (cons (cddr s) (cons env (cons (cdr ops) d))) fns (caar s) (cons (cadr s) (cdr (car s))))
+                                                                (if (eq? 'RTN (car ops))
+                                                                    (let resume (caddr d)
+                                                                        (machine (cons (car s) (car d)) (cdddr d) fns resume (cadr d)))
+                                                                (if (eq?  'CONS (car ops)) (machine (cons (cons (car s) (cadr s)) (cddr s)) d fns (cdr ops) env)
+
+                                                                (if (eq? 'SEL (car ops))
+                                                                    (if (eq? (car s) (maybe-lift 0))
+                                                                        (machine (cdr s) (cons (cdddr ops) d) fns (caddr ops) env)
+                                                                        (machine (cdr s) (cons (cdddr ops) d) fns (cadr ops) env))
+                                                                (if (eq? 'JOIN (car ops))
+                                                                        (machine s (cdr d) fns (car d) env)
+                                                                (if (eq? 'MPY (car ops))
+                                                                    (machine (cons (* (car s) (cadr s)) (cddr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'EQ (car ops))
+                                                                    (machine (cons (eq? (car s) (cadr s)) (cddr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'DUM (car ops))
+                                                                    (machine s d fns (cdr ops) (cons '() env))
+                                                                (if (eq? 'RAP (car ops))
+                                                                    (machine '() (cons (cddr s) (cons env (cons (cdr ops) d))) (cons (cadr s) fns) (caar s) env)
+
+                                                                (if (eq? 'CAR (car ops)) (machine (cons (car (car s)) (cdr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'CDR (car ops)) (machine (cons (cdr (car s)) (cdr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'QUOTE (car ops)) (machine (cons `(,(car s)) (cdr s)) d fns (cdr ops) env)
+
+                                                                (if (eq? 'CADR (car ops)) (machine (cons (cadr (car s)) (cdr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'CADDR (car ops)) (machine (cons (caddr (car s)) (cdr s)) d fns (cdr ops) env)
+                                                                (if (eq? 'CADDDR (car ops)) (machine (cons (cadddr (car s)) (cdr s)) d fns (cdr ops) env)
+
+                                                                (if (eq? 'EMPTY? (car ops))
+                                                                    (machine (cons (null? (car s)) (cdr s)) d fns (cdr ops) env)
+
+                                                                (maybe-lift `(ERROR ,ops)))))))))))))))))))))))))))
+                                                        (m e)))
+                                        )
+                        ))
+
+                        (let match (lambda (ops)
+                                        (if (eq?  'STOP (car ops))
+                                            (maybe-lift (lambda (s) (maybe-lift '(Nothing to run))))
+                                            (maybe-lift (machine '() '() '() ops)))
+                                    )
+                            match)
+                    ))
+        """
+
+    val evl_rec = s"(let maybe-lift (lambda (e) e) $evl_rec_src)"
+
     def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true) = {
         if(runCopmiled)
             ev(s"(run 0 (($vmSrc $src) $env))")
@@ -182,11 +258,12 @@ object PE {
     def test() = {
         println("// ------- PE.test --------")
 
-        // PETests.basicTests
-        // PETests.listAccessTest
-        // PETests.recursionTests // TODO: @crash
-        // PETests.factorialTest // TODO: @crash
-        PETests.curriedVMTest // TODO: @crash
+        PETests.basicTests
+        PETests.listAccessTest
+        PETests.recursionTests
+        PETests.factorialTest
+        PETests.recTest
+        // PETests.curriedVMTest // TODO: @crash
 
         testDone()
     }

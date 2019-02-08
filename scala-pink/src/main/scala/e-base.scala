@@ -331,20 +331,20 @@ object EBase {
                           reflectc(Run(b1, reifyc(inject(exp, e, s, false)))),
                           s, e)
               case _ =>
-                var newEnv: Env = Map()
-                var newStore: Store = Map()
-                var newStFresh = 0
+                // var newEnv: Env = Map()
+                // var newStore: Store = Map()
+                // var newStFresh = 0
                 val code = reifyc({ // stFresh = env.length;
-                                    // inject(exp, e, s, false)
-                                    val ans = evalms(State(exp, initEnv, initStore, Halt())).asInstanceOf[Answer]
-                                    newEnv = ans.e
-                                    newStore = ans.s
-                                    newStFresh = stFresh
-                                    ans.v
+                                    inject(exp, e, s, false)
+                                    // val ans = evalms(State(exp, initEnv, initStore, Halt())).asInstanceOf[Answer]
+                                    // newEnv = ans.e
+                                    // newStore = ans.s
+                                    // newStFresh = stFresh
+                                    // ans.v
                                   })
-                stFresh = newStFresh
-                val reified = reifyv({inject(code, newEnv, newStore, false)})
-                // val reified = reifyv({inject(code, e, s, false)})
+                // stFresh = newStFresh
+                // val reified = reifyv({inject(code, newEnv, newStore, false)})
+                val reified = reifyv({inject(code, e, s, false)})
                 applyCont(k,
                           reified,
                           s, e)

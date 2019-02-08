@@ -140,7 +140,7 @@ object PE {
                                                 (if (eq? 'RAP (car_ ops))
                                                     (let _ (set-car!_ e (cadr_ s))
                                                         (let oldS s
-                                                            (rec (maybe-lift ((((machine '()) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) e)))))
+                                                            ((((machine '()) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) e)))
 
                                                 (if (eq? 'CAR (car_ ops)) ((((machine (cons_ (car_ (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)
                                                 (if (eq? 'CDR (car_ ops)) ((((machine (cons_ (cdr_ (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)

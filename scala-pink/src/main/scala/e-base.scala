@@ -230,7 +230,7 @@ object EBase {
             ret
 
           // Recursive application
-          case RecApp(f, es) =>
+          case AppRec(f) =>
             Null("???")
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)]

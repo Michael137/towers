@@ -182,8 +182,8 @@ object PE {
     def test() = {
         println("// ------- PE.test --------")
 
-        // PETests.basicTests
-        // PETests.listAccessTest
+        PETests.basicTests
+        PETests.listAccessTest
         // PETests.recursionTests // TODO: @crash
         // PETests.factorialTest // TODO: @crash
         PETests.curriedVMTest // TODO: @crash

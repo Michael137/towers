@@ -51,6 +51,7 @@ object EBase {
   case class App(f: Exp, arg: List[Exp]) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
+  case class AppRec(f: Exp) extends Exp
 
   // For mutation
   var cells = LinkedHashMap[String, List[Val]]()
@@ -176,7 +177,7 @@ object EBase {
     case Code(e) => reflect(Lift(e))
     case Clo(Lam(vs: List[Var], f), state) =>
       val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str(initStoreErrorStr)) v }).filter(_ != ())
-      println(missingVars)
+      // println(missingVars)
       if(missingVars.size > 0) {
         val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
         val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
@@ -227,6 +228,10 @@ object EBase {
             }
             val ret = applyProc(newProc, args, newStore, k)
             ret
+
+          // Recursive application
+          case RecApp(f, es) =>
+            Null("???")
 
           case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)]
             val (vs, es) = exps.unzip
@@ -279,7 +284,7 @@ object EBase {
           case Run(b,exp) =>
             // first argument decides whether to generate
             // `run` statement or run code directly
-            evalms(State(b, e, s, Halt())).asInstanceOf[Answer].v match {
+            inject(b, e, s, false) match {
               case Code(b1) =>
                 applyCont(k, 
                           reflectc(Run(b1, reifyc(inject(exp, e, s, false)))),
@@ -321,12 +326,10 @@ object EBase {
       case Sym(str) => Str(str)
       case NullExp(str) => Null(str)
 
-       // TODO: find a less difficult to debug way to do this.
-       //       This just to let unknown values at evaluation time be reflected
-       //       to code values instead
       case Var(str) =>
         val ret = s(e(str));
-        if(ret == Str(initStoreErrorStr)) Code(Var(str)) else ret
+        // if(ret == Str(initStoreErrorStr)) Code(Var(str)) else ret // TODO: might be needed
+        ret
       case Lit(num) => Cst(num)
       case IsNull(e1) =>
         inject(e1,e,s,false) match {
@@ -373,7 +376,8 @@ object EBase {
         val key = gensym("cell")
         cells += (key -> List(ret1, ret2))
         Cell(key, 0)
-      case lam: Lam => Clo(lam, State(null, e, s, null))
+      case lam: Lam => 
+            Clo(lam, State(null, e, s, null))
 
       /* The complexity is the price we pay for multi-argument
       ** lambda support in the EPink evaluator. We use
@@ -399,8 +403,8 @@ object EBase {
       }
 
       case Plus(e1, e2) =>
-        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
-        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret1 = deref(inject(e1, e, s, false))
+        val ret2 = deref(inject(e2, e, s, false))
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
           case (Code(n1),Code(n2)) => reflectc(Plus(n1, n2))
@@ -408,8 +412,8 @@ object EBase {
           case _ => Null(s"Cannot perform + operation on expressions $ret1 and $ret2")
         }
       case Minus(e1, e2) =>
-        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
-        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret1 = deref(inject(e1, e, s, false))
+        val ret2 = deref(inject(e2, e, s, false))
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
           case (Code(n1),Code(n2)) => reflectc(Minus(n1, n2))
@@ -417,8 +421,8 @@ object EBase {
           case _ => Null(s"Cannot perform - operation on expressions $e1 and $e2")
         }
       case Times(e1, e2) =>
-        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
-        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret1 = deref(inject(e1, e, s, false))
+        val ret2 = deref(inject(e2, e, s, false))
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
           case (Code(n1),Code(n2)) => reflectc(Times(n1, n2))
@@ -469,8 +473,8 @@ object EBase {
         }
         
       case Equ(e1, e2) =>
-        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        val ret1 = inject(e1, e, s, false)
+        val ret2 = inject(e2, e, s, false)
         (ret1, ret2) match {
           case (v1, v2) if !v1.isInstanceOf[Code] && !v2.isInstanceOf[Code] => Cst(if (v1 == v2) 1 else 0)
 
@@ -490,8 +494,8 @@ object EBase {
         }
 
       case Lt(e1,e2) =>
-        val ret1 = deref(evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v)
-        val ret2 = deref(evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v)
+        val ret1 = deref(inject(e1, e, s, false))
+        val ret2 = deref(inject(e2, e, s, false))
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) =>
             Cst(if (n1 < n2) 1 else 0)
@@ -501,8 +505,8 @@ object EBase {
         }
 
       case Gt(e1,e2) =>
-        val ret1 = evalms(State(e1, e, s, Halt())).asInstanceOf[Answer].v
-        val ret2 = evalms(State(e2, e, s, Halt())).asInstanceOf[Answer].v
+        val ret1 = inject(e1, e, s, false)
+        val ret2 = inject(e2, e, s, false)
         (ret1, ret2) match {
           case (Cst(n1), Cst(n2)) =>
             Cst(if (n1 > n2) 1 else 0)

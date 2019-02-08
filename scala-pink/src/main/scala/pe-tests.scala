@@ -265,11 +265,14 @@ object PETests {
         //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
         //                 RTN) AP WRITEC)))"""), Nil))))("Cst(3628800)")
 
-        println(reifyc(ev(s"""($cmp_curried '(
+        val exp = s"""($cmp_curried '(
                 DUM NIL LDF
                     (LD (2 1) AP RTN) CONS LDF
                             (NIL LD (1 1) AP RTN) RAP STOP
         ))
-        """)))
+        """
+        println(parseExp(exp))
+        println(trans(parseExp(exp), Nil))
+        // println(reifyc(ev(exp)))
     }
 }

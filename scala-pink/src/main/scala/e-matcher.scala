@@ -52,16 +52,9 @@ object EMatcher {
 
         val evl = s"(let maybe-lift (lambda (e) e) $src)"
         val cmp = s"(let maybe-lift (lambda (e) (lift e)) $src)"
-        println(ev(s"(($evl '(_ a _ * done)) '(b a done))"))
-        // println(Lisp.ev(s"((${Matcher.matcher_src} '(_ * a _ * done)) '(b a done))"))
+        println(ev(s"(($evl '(_ * a _ * done)) '(b a done))")) // TODO
 
-        // import java.io._
-        // val out_file = new FileOutputStream(new File("trace.log"))
-        // scala.Console.withOut(out_file) {
-        // try{
-        //     println(ev(s"(run 0 ($cmp '(_ * a _ * done)))"))
-        // } catch { case e: Throwable => }
-        // }
+        println(Lisp.ev(s"((${Matcher.matcher_src} '(_ * a _ * done)) '(b a done))"))
         println
         println(Lisp.ev(s"(${Matcher.matcherc_src} '(_ * a _ * done))"))
         println

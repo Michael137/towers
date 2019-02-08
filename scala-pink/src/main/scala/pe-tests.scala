@@ -254,25 +254,25 @@ object PETests {
         // println(Lisp.ev(s"""(${Pink.evalc_src} '(let f (lambda f x (f (+ 2 x))) (f 3)))"""))
         // println(reifyc(ev(s"(letrec ((f (lift (lambda (x) (f (+ x x)))))) (f (lift 3)))")))
 
-        // check(reifyc(inject(trans(parseExp(s"""(run 0 ($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
-        //                 (DUM NIL LDF
-        //                     (LDC 0 LD (1 1) EQ SEL
-        //                         (LD (1 2) JOIN)
-        //                         (NIL LD (1 2) LD (1 1) MPY CONS
-        //                                 LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
-        //                     RTN)
-        //                 CONS LDF
-        //                     (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
-        //                 RTN) AP WRITEC)))"""), Nil))))("Cst(3628800)")
+        check(reifyc(inject(trans(parseExp(s"""($cmp_curried '(NIL LDC 1 CONS LDC 10 CONS LDF
+                        (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                                (LD (1 2) JOIN)
+                                (NIL LD (1 2) LD (1 1) MPY CONS
+                                        LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+                            RTN)
+                        CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+                        RTN) AP WRITEC))"""), Nil))))("Cst(3628800)")
 
-        val exp = s"""($cmp_curried '(
-                DUM NIL LDF
-                    (LD (2 1) AP RTN) CONS LDF
-                            (NIL LD (1 1) AP RTN) RAP STOP
-        ))
-        """
-        println(parseExp(exp))
-        println(trans(parseExp(exp), Nil))
+        // val exp = s"""($cmp_curried '(
+        //         DUM NIL LDF
+        //             (LD (2 1) AP RTN) CONS LDF
+        //                     (NIL LD (1 1) AP RTN) RAP STOP
+        // ))
+        // """
+        // println(parseExp(exp))
+        // println(trans(parseExp(exp), Nil))
         // println(reifyc(ev(exp)))
     }
 }

@@ -49,13 +49,13 @@ object EBase {
   case class Letrec(p: List[(Var, Exp)], b: Exp) extends Exp
   case class VarargLet(e: Exp, vs: Exp) extends Exp
   case class App(f: Exp, arg: List[Exp]) extends Exp
-  case class Lift(e:Exp) extends Exp
+  case class AppRec(f: Exp) extends Exp // Anything wrapped by AppRec is a recursive call and will not be unfolded
+  case class Lift(e:Exp, rec: Boolean = false) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
-  case class AppRec(f: Exp) extends Exp
 
   // For mutation
   var cells = LinkedHashMap[String, List[Val]]()
-  case class Cell(key: String, ptr: Int) extends Val
+  case class Cell(key: String, ptr: Int) extends Val //TODO: ptr should be selector
   // case class Tup_(a: Val, b: Val) extends Val
   case class ListRef(a:Exp) extends Primitive
   case class Ref(a:Exp) extends Primitive
@@ -88,7 +88,7 @@ object EBase {
   type StoreFun[A, B] = (A => B)
   type Env = Map[String, Int] // StoreFun[String, Int] // Variable => Addr // ? should be [Var, Int]
   type Store = Map[Int, Val] // StoreFun[Int, Val] // Addr => Val
-  type Cont = Val // Halt | Letk
+  type Cont = Val // Halt | Letk // TODO: remove class hierarchy. cont should not be Val
 
   abstract class Val
   case class Cst(n:Int) extends Val
@@ -179,6 +179,7 @@ object EBase {
       val missingVars = vs.map({ v: Var => if(state.s(state.e(v.s)) == Str(initStoreErrorStr)) v }).filter(_ != ())
       // println(missingVars)
       if(missingVars.size > 0) {
+        println("MISSING VARS: " + missingVars)
         val addrs = missingVars.asInstanceOf[List[Var]].map({_: Var => fresh()})
         val varNames = missingVars.asInstanceOf[List[Var]].map({v: Var => v.s})
         val args = varNames.map({s: String => Code(Var(s))})
@@ -189,11 +190,15 @@ object EBase {
         val Code(r) = inject(f, state.e, state.s, false)
         reflect(Lam(vs, reify{ val Code(r) = inject(f, state.e, initStore, false); r }))
       }
+    case Null(_) => NullExp("lifted")
   }
 
+  var dbgCtr = 0
+  var stRec = false
   var recursionDepth = 0
   // multi-stage evaluation
-  def evalms(arg: Val): Val = {
+  def evalms(arg: Val, unfold: Boolean = true): Val = {
+    // println(arg)
     arg match {
       case st @ State(c: Exp, e: Env, s: Store, k: Cont) => {
         recursionDepth += 1;
@@ -207,8 +212,22 @@ object EBase {
                   println(s"ERROR: evalms If($c, $conseq, $alt) recursion limit reached...Exiting")
                   System.exit(1)
                 }
-                val reifConseq = reifyc(inject(conseq, e, s, false))
-                val reifAlt = reifyc(inject(alt, e, s, false))
+
+                val (toReifConseq, toReifAlt) = (conseq, alt) match {
+                  case (AppRec(App(proc1, es1)), AppRec(App(proc2, es2))) =>
+                    println("GOT HERE")
+                    val ret = inject(App(proc1, List(NullExp(""))), e, s, false)
+                    ret match {
+                      case Code(_) =>
+                        (Lift(es1.head, true),
+                         Lift(es2.head, true))
+                      case _ => (conseq, alt)
+                    }
+                  case _ => (conseq, alt)
+                }
+
+                val reifConseq = reifyc(inject(toReifConseq, e, s, false))
+                val reifAlt = reifyc(inject(toReifAlt, e, s, false))
                 recursionDepth = 0
                 applyCont(k, reflectc(If(c, reifConseq, reifAlt)), null, e)
             }
@@ -222,6 +241,7 @@ object EBase {
             val args = es.map({ x =>
                                 inject(x, newEnv, newStore, false)
                               })
+
             val newProc = proc match {
               case clo: Clo => Clo(clo.asInstanceOf[Clo].f, State(null, newEnv, newStore, null))
               case code: Code => proc
@@ -229,17 +249,44 @@ object EBase {
             val ret = applyProc(newProc, args, newStore, k)
             ret
 
-          // Recursive application
           case AppRec(f) =>
-            Null("???")
+            stRec = true
+            val App(proc, es) = f
+            val ret = inject(App(proc, List(NullExp(""))), e, s, false)
+            ret match {
+              case Code(_) => State(Lift(es.head, true), e, s, k)
+              case _ => State(f, e, s, k)
+            }
 
-          case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)]
+          case Lift(exp, rec) =>
+            if(rec) {
+              // Generate Letrec
+              // val evaled = inject(exp, e, s, unfold = true)
+              // val lifted = lift(evaled)
+              // applyCont(k, Code(lifted), s, e)
+
+              val ret = applyCont(k, reflectc(exp), s, e)
+              ret
+            } else {
+              val evaled = inject(exp, e, s, false)
+              val lifted = lift(evaled)
+              applyCont(k, Code(lifted), s, e)
+            }
+
+          case Letrec(exps, body) => // Letrec(List((v1, e1), (v2, e2) ..., (vn, en)), body)
             val (vs, es) = exps.unzip
             val addrs = vs.map({ _ => fresh() })
             val varNames = vs.map({x: Var => x.s})
             val updatedEnv = updateMany(e, varNames, addrs)
             val vals = es.map({ x => inject(x, updatedEnv, s, false) })
             val updatedStore = updateMany(s, addrs, vals)
+
+            for ((n, exp) <- varNames.zip(es)) {
+              exp match {
+                case l@Lam(_, f) => stFun = (n, updatedEnv, l) :: stFun
+                case _ =>
+              }
+            }
 
             State(body, updatedEnv, updatedStore, k)
 
@@ -275,12 +322,6 @@ object EBase {
             }
             applyCont(k, value, s, e)
 
-          case Lift(exp) =>
-            val trans = State(exp, e, s, Halt())
-            val evaled = evalms(trans).asInstanceOf[Answer].v
-            val lifted = lift(evaled)
-            applyCont(k, Code(lifted), s, e)
-
           case Run(b,exp) =>
             // first argument decides whether to generate
             // `run` statement or run code directly
@@ -290,9 +331,22 @@ object EBase {
                           reflectc(Run(b1, reifyc(inject(exp, e, s, false)))),
                           s, e)
               case _ =>
-                val code = reifyc({ /*stFresh = env.length;*/ inject(exp, e, s, false) })
+                var newEnv: Env = Map()
+                var newStore: Store = Map()
+                var newStFresh = 0
+                val code = reifyc({ // stFresh = env.length;
+                                    // inject(exp, e, s, false)
+                                    val ans = evalms(State(exp, initEnv, initStore, Halt())).asInstanceOf[Answer]
+                                    newEnv = ans.e
+                                    newStore = ans.s
+                                    newStFresh = stFresh
+                                    ans.v
+                                  })
+                stFresh = newStFresh
+                val reified = reifyv({inject(code, newEnv, newStore, false)})
+                // val reified = reifyv({inject(code, e, s, false)})
                 applyCont(k,
-                          reifyv(inject(code, e, s, false)),
+                          reified,
                           s, e)
             }
 
@@ -575,7 +629,8 @@ object EBase {
       val addrs = vs.map({_ => fresh()})
       val varNames = vs.map({x: Var => x.s})
       val updatedEnv = updateMany(env, varNames, addrs)
-      val updatedStore = updateMany(s, addrs, args)
+      // val updatedStore = updateMany(s, addrs, args)
+      val updatedStore = updateMany(store, addrs, args)
 
       val sizeDiff = vs.size - args.size
       if(sizeDiff > 0) {
@@ -601,15 +656,16 @@ object EBase {
   val initEnv: Env = Map().withDefaultValue(-1) // {arg: String => -1}
   val initStore: Store = Map().withDefaultValue(Str(initStoreErrorStr)) // {arg: Int => Str(initStoreErrorStr)}
 
-  def inject(e: Exp, env: Env = initEnv, store: Store = initStore, reset: Boolean = true) = {
+  def inject(e: Exp, env: Env = initEnv, store: Store = initStore, reset: Boolean = true, unfold: Boolean = true) = {
     if(reset) {
       recursionDepth = 0
       stFresh = 0
       stBlock = LinkedHashMap.empty
       cells = LinkedHashMap[String, List[Val]]()
+      stFun = Nil
     }
 
-    evalms(State(e, env, store, Halt())).asInstanceOf[Answer].v
+    evalms(State(e, env, store, Halt()), unfold).asInstanceOf[Answer].v
   }
 
   /*****************

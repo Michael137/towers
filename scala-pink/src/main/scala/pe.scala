@@ -95,11 +95,11 @@ object PE {
                         )
                         (machine (lambda (s) (lambda (d) (lambda (ops) (lambda (e)
                                                 (if (eq? 'STOP (car_ ops))
-                                                    s
+                                                    (maybe-lift s)
                                                 (if (eq? 'WRITEC (car_ ops))
                                                     (ref (car_ s))
                                                 (if (eq? 'DBG (car_ ops))
-                                                    (let toLog (let e s `(stack: ,(caar_ s) car: ,(car_ e) cdr: ,(cdr_ e) car->caddr: ,(caddr_ (car_ e))))
+                                                    (let toLog s
                                                         (if (eq? dbgCtr 0)
                                                             toLog
                                                             (let _ (log 0 toLog) (let _ (set! dbgCtr (- dbgCtr 1)) ((((machine s) d) (cdr_ ops)) e)))))
@@ -118,7 +118,7 @@ object PE {
                                                     ((((machine (cons_ (maybe-lift '()) s)) d) (cdr_ ops)) e)
                                                 (if (eq? 'AP (car_ ops))
                                                     (let oldS s
-                                                        ((((machine '()) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) (cons_ (cadr_ oldS) (cdr_ (car_ oldS)))))
+                                                        ((((machine (maybe-lift '())) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) (cons_ (cadr_ oldS) (cdr_ (car_ oldS)))))
                                                 (if (eq? 'RTN (car_ ops))
                                                     (let resume (ref (caddr_ d))
                                                         ((((machine (cons_ (car_ s) (car_ d))) (cdddr_ d)) resume) (cadr_ d)))
@@ -140,7 +140,7 @@ object PE {
                                                 (if (eq? 'RAP (car_ ops))
                                                     (let _ (set-car!_ e (cadr_ s))
                                                         (let oldS s
-                                                            (rec (maybe-lift ((((machine '()) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) e)))))))
+                                                            (rec (maybe-lift ((((machine '()) (cons_ (cddr_ oldS) (cons_ e (cons_ (cdr_ ops) d)))) (ref (caar_ oldS))) e)))))
 
                                                 (if (eq? 'CAR (car_ ops)) ((((machine (cons_ (car_ (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)
                                                 (if (eq? 'CDR (car_ ops)) ((((machine (cons_ (cdr_ (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)
@@ -182,8 +182,8 @@ object PE {
     def test() = {
         println("// ------- PE.test --------")
 
-        PETests.basicTests
-        PETests.listAccessTest
+        // PETests.basicTests
+        // PETests.listAccessTest
         // PETests.recursionTests // TODO: @crash
         // PETests.factorialTest // TODO: @crash
         PETests.curriedVMTest // TODO: @crash

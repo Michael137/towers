@@ -65,6 +65,7 @@ object Lisp {
     case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
     case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
+    case Tup(Str("code?"), Tup(a,N)) => IsCode(trans(a,env))
 
     // TODO: implement mutators and global state
     // case Tup(Str("set!"),   Tup(a,Tup(b,N))) => {

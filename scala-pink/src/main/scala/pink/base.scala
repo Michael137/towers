@@ -23,6 +23,7 @@ object Base {
   case class IsNum(a:Exp) extends Exp
   case class IsStr(a:Exp) extends Exp
   case class IsCons(a:Exp) extends Exp
+  case class IsCode(a:Exp) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
@@ -104,6 +105,8 @@ object Base {
       reflect(IsStr(anf(env,e)))
     case IsCons(e) =>
       reflect(IsCons(anf(env,e)))
+    case IsCode(e) =>
+      reflect(IsCode(anf(env,e)))
     case Fst(e) =>
       reflect(Fst(anf(env,e)))
     case Snd(e) =>
@@ -302,6 +305,12 @@ object Base {
           reflectc(IsCons(s1))
         case v => 
           Cst(if (v.isInstanceOf[Tup]) 1 else 0)
+      }
+
+     case IsCode(e1) =>
+      (evalms(env,e1)) match {
+        case v => 
+          Cst(if (v.isInstanceOf[Code]) 1 else 0)
       }
 
     // special forms: custom eval, ...

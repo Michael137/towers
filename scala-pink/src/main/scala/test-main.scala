@@ -21,8 +21,10 @@ object TestMain {
     /* Main Tests */
     // EBase.test()
     // ELisp.test()
-    PE.test() // VM staged
+    // PE.test() // VM staged
     // EVMComp.test() // SECD compiler
+
+    SECD.test() // Pink SECD Machine
 
     println("// ###### Full testsuite done ######")
   }

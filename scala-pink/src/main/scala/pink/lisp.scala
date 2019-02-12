@@ -49,33 +49,19 @@ object Lisp {
     case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
     case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
     case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))
+    case Tup(Str("code?"),  Tup(a,N)) => IsCode(trans(a,env))
     case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
     case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
-    case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))
     case Tup(Str("cdr"),    Tup(a,N)) => Snd(trans(a,env))
-    case Tup(Str("cddr"),   Tup(a,N)) => Snd(Snd(trans(a,env)))
-    case Tup(Str("cdddr"),  Tup(a,N)) => Snd(Snd(Snd(trans(a,env))))
     case Tup(Str("cadr"),   Tup(a,N)) => Fst(Snd(trans(a,env)))
     case Tup(Str("caddr"),  Tup(a,N)) => Fst(Snd(Snd(trans(a,env))))
     case Tup(Str("cadddr"), Tup(a,N)) => Fst(Snd(Snd(Snd(trans(a,env)))))
     case Tup(Str("lift"),   Tup(a,N)) => Lift(trans(a,env))
     case Tup(Str("nolift"), Tup(a,N)) => trans(a,env)
     case Tup(Str("eq?"),    Tup(a,Tup(b,N))) => Equ(trans(a,env),trans(b,env))
-    case Tup(Str(">"),    Tup(a,Tup(b,N))) => Gt(trans(a,env),trans(b,env))
     case Tup(Str("run"),    Tup(b,Tup(a,N))) => Run(trans(b,env),trans(a,env))
     case Tup(Str("log"),    Tup(b,Tup(a,N))) => Log(trans(b,env),trans(a,env))
     case Tup(Str("quote"),  Tup(a,N)) => Special(benv => a)
-    case Tup(Str("code?"), Tup(a,N)) => IsCode(trans(a,env))
-
-    // TODO: implement mutators and global state
-    // case Tup(Str("set!"),   Tup(a,Tup(b,N))) => {
-    //   val i = env.lastIndexOf(a);
-    //   val new_env = env.updated(i, trans(b, env))
-    //   Var(i)
-    // }
-    // case Tup(Str("set-car!"),  Tup(a,N)) => SetCar(benv => a)
-    // case Tup(Str("define"),  Tup(a,N)) => SetCar(benv => a)
-
     case Tup(Str("trans"),  Tup(a,N)) =>
       Special(benv => Code(trans(evalms(benv, trans(a,env)), env)))
     case Tup(Str("lift-ref"),Tup(a,N)) =>
@@ -139,7 +125,6 @@ object Lisp {
     // The present-stage variable `code` will be bound to 
     // expression Code(Var(0)). Whole-program evaluation
     // assembles all generated bindings into a nested let:
-    
     checkrun(s"""
       (let code (lift (lambda f x x))
         code)
@@ -211,23 +196,12 @@ object Lisp {
     // declare a (closed) piece of code, then evaluate it?
 
     // Simple, we just wrap it in a function:
-    
+
     checkrun(s"""
       (let code (lambda _ _ (lift (lambda f x x)))
         (run 0 (code 'dummy)))
-    ""","""Clo(List(Clo(List(),Lift(Lam(Var(3))))),Var(2))""")
+    ""","Clo(_, Var(2))")
 
-    /*
-      Clo(
-        List(
-          Clo(List(),
-              Lift(Lam(Var(3)))
-          )
-        ),
-        Var(2)
-      )
-    */
-    
     // Disregarding the embedded closure environment that 
     // includes the value of `code`, the result can be 
     // read more conveniently as:

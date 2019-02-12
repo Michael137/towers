@@ -1,3 +1,5 @@
+// Thanks to Dr. Nada Amin
+
 import Base._
 import Lisp._
 
@@ -11,14 +13,15 @@ object SECD {
 (let null? (lambda _ x (eq? '() x))
 (let map (lambda map f (lambda mapf xs (if (null? xs) xs (cons (f (car xs)) (mapf (cdr xs))))))
 (let mla (lambda mla xs (if (code? xs) xs (if (pair? xs) (maybe-lift (cons (mla (car xs)) (mla (cdr xs)))) (maybe-lift xs))))
+(let atom? (lambda atom? a (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0))))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst
 (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ ops (lambda _ env
-(let _ '(debug (car ops))
-(if (eq? 'STOP (car ops)) s
+(let _ _
+(if (eq? 'STOP (car ops)) (mla s)
 (if (eq? 'WRITEC (car ops)) (car s)
 (if (eq? 'LDC (car ops))
 (((((machine (cons (maybe-lift (cadr ops)) s)) d) fns) (cddr ops)) env)
@@ -77,13 +80,17 @@ object SECD {
 (((((machine (cons (cadddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
 (if (eq? 'EMPTY (car ops))
 (((((machine (cons (null? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+(if (eq? 'ATOM? (car ops))
+  (((((machine (cons (atom? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+(if (eq? 'DBG (car ops))
+  (let _ _ (log 0 (cons 'breakpoint: s)))
 (maybe-lift (cons 'ERROR ops))
-)))))))))))))))))))))))))
+)))))))))))))))))))))))))))
 )
 )))))
 (lambda _ ops (maybe-lift ((((machine '()) '()) '()) ops)))
 ))
-))))))))
+)))))))))
 """
   val evl = s"(let maybe-lift (lambda _ e e) $src)"
   val cmp = s"(let maybe-lift (lambda _ e (lift e)) $src)"
@@ -127,6 +134,40 @@ WRITEC))"""))) // TODO: STOP doesn't work
     println(reifyc(ev(s"(($cmp $factorialProg) (lift '()))")))
     println("running...")
     check(ev(s"((run 0 ($cmp $factorialProg)) '())"))("Cst(3628800)")
+
+    val instrs = EVMComp.compile(ELisp.parseExp("""
+      (letrec (eval) ((lambda (ops)
+          (if (null? (cdr ops))
+              ops
+              (if (eq? (car ops) 'plus)
+                  (+ (eval (cadr ops)) (eval (caddr ops)))
+                  (eval (cdr ops))))))
+          (eval (list plus 2 (plus 2 2))))"""), Nil, EBase.Tup(EBase.Str("STOP"), EBase.Str(".")))
+    println(instrs)
+    var instrSrc = EVMComp.instrsToString(instrs)
+    // instrSrc = """'(
+    //   DUM NIL LDF
+    //       (LDC 5 LD (1 1) CAR EQ SEL
+    //               (LDC 5 JOIN )
+    //               (LDC 6 LD (1 1) CAR EQ SEL
+    //                 (LDC 6 JOIN )
+    //                 (NIL LD (1 1) CAR EQ SEL
+    //                   (NIL JOIN )
+    //                   (NIL  LD (1 1) CDR CONS LDR (1 1) AP JOIN ) JOIN ) JOIN ) RTN ) CONS LDF
+    //       (NIL NIL LDC 6 CONS LDC 9 CONS LDC 8 CONS LDC 7 CONS CONS LDR (1 1) AP RTN ) RAP STOP
+    // )"""
+    instrSrc = """'(
+     DUM NIL LDF
+         (LD (1 1) ATOM? SEL
+                 (LD (1 1) JOIN ) (LDC plus LD (1 1) CAR EQ SEL
+         (NIL LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 1) CADR CONS LDR (1 1) AP ADD JOIN ) (NIL LD (1 1) CDR CONS LDR (1 1) AP JOIN ) JOIN ) RTN ) CONS LDF
+         (NIL NIL LDC (plus 2 2 ) CONS LDC 2 CONS LDC plus CONS CONS LDR (1 1) AP RTN ) RAP STOP
+      )"""
+    println("TESTING:\n" + instrSrc)
+    println(ev(s"(($cmp $instrSrc) (lift '()))"))
+    println(ev(s"((run 0 ($cmp $instrSrc)) '())"))
+
+    println(prettycode(reifyc(ev(s"(($cmp $instrSrc) (lift '()))"))))
 
     testDone()
   }

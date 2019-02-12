@@ -16,7 +16,6 @@ object Base {
   case class Minus(a:Exp,b:Exp) extends Exp
   case class Times(a:Exp,b:Exp) extends Exp
   case class Equ(a:Exp,b:Exp) extends Exp
-  case class Gt(a:Exp,b:Exp) extends Exp
   case class Cons(a:Exp,b:Exp) extends Exp
   case class Fst(a:Exp) extends Exp
   case class Snd(a:Exp) extends Exp
@@ -39,7 +38,9 @@ object Base {
   abstract class Val
   case class Cst(n:Int) extends Val
   case class Str(s:String) extends Val
-  case class Clo(env:Env,e:Exp) extends Val
+  case class Clo(env:Env,e:Exp) extends Val {
+    override def toString = s"Clo(_, $e)"
+  }
   case class Tup(v1:Val,v2:Val) extends Val
 
   case class Code(e:Exp) extends Val
@@ -52,22 +53,16 @@ object Base {
     val sF = stFresh
     val sB = stBlock
     val sN = stFun
-    //println(s"DEBUGGING f arg in run")
-    try { /*println("DEBUGGING calling f in run");*/ val ret = f; /*println(s"DEBUGGING finished calling f in run: $ret");*/ret } finally { stFresh = sF; stBlock = sB; stFun = sN }
+    try f finally { stFresh = sF; stBlock = sB; stFun = sN }
   }
 
   def fresh() = {
     stFresh += 1; Var(stFresh-1)
   }
-  def reify(f: => Exp) = {
-      //println("REIFY CALLED");
-      run {
-        stBlock = Nil
-        //println(s"DEBUGGING f arg in reify")
-        val last = f
-        // println(s"DEBUGGING last in reify $last")
-        (stBlock foldRight last)(Let)
-      }
+  def reify(f: => Exp) = run {
+    stBlock = Nil
+    val last = f
+    (stBlock foldRight last)(Let)
   }
   def reflect(s:Exp) = {
     stBlock :+= s
@@ -95,8 +90,6 @@ object Base {
       reflect(Minus(anf(env,e1),anf(env,e2)))
     case Equ(e1,e2) =>
       reflect(Equ(anf(env,e1),anf(env,e2)))
-    case Gt(e1,e2) =>
-      reflect(Equ(anf(env,e1),anf(env,e2)))
     case Cons(e1,e2) =>
       reflect(Cons(anf(env,e1),anf(env,e2)))
     case IsNum(e) =>
@@ -122,13 +115,7 @@ object Base {
   }
 
 
-  def reifyc(f: => Val) = reify {
-    //println(s"DEBUGGING reifyc pre-code")
-    f match {
-      case Code(e) => /*println(s"DEBUGGING reifyc: $e");*/ e
-      case Tup(Code(e1), Code(e2)) => Cons(e1, e2) // TODO: double check this behaviour is sound w.r.t reify semantics
-    }
-  }
+  def reifyc(f: => Val) = reify { val Code(e) = f; e }
   def reflectc(s: Exp) = Code(reflect(s))
 
   def reifyv(f: => Val) = run {
@@ -153,9 +140,10 @@ object Base {
       Lit(n)
     case Str(s) => // string
       Sym(s)
-    case Tup(a,b) =>
-      val (Code(u),Code(v)) = (a,b)
-      reflect(Cons(u,v))
+    case Tup(a,b) => (a, b) match {
+      case (Code(u),Code(v)) => reflect(Cons(u,v))
+      case (u,v) => reflect(Cons(lift(u),lift(v)))
+    }
     case Clo(env2,e2) => // function
       // NOTE: We memoize functions here. This is not essential, and 
       // could be removed, yielding exactly the code shown in the paper.
@@ -170,19 +158,17 @@ object Base {
   }
 
   // multi-stage evaluation
-  // import scala.annotation.tailrec
-  // @tailrec
   def evalms(env: Env, e: Exp): Val = e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
-    case Var(n) => /*println(env);*/env(n)
+    case Var(n) => env(n)
     case Lam(e) => Clo(env,e)
     case Let(e1,e2) => 
       val v1 = evalms(env,e1)
       evalms(env:+v1,e2)
 
     case Lift(e) => 
-      /*print(env);*/Code(lift(evalms(env,e)))
+      Code(lift(evalms(env,e)))
 
     case Run(b,e) =>
       // first argument decides whether to generate
@@ -210,7 +196,7 @@ object Base {
         case (Clo(env3,e3), v2) => 
           evalms(env3:+Clo(env3,e3):+v2,e3)
         case (Code(s1), Code(s2)) =>
-          reflectc(App(s1,s2))
+          Code(reflect(App(s1,s2)))
         case (r1, r2) =>
           val r2s = r2 match {
             case Clo(_, _) => r2.getClass.toString
@@ -220,15 +206,11 @@ object Base {
       }
 
     case If(c,a,b) =>
-      //println(s"DEBUGGING $c $a $b");
       evalms(env,c) match {
         case Cst(n) => 
           if (n != 0) evalms(env,a) else evalms(env,b)
         case (Code(c1)) =>
-          //println(s"DEBUGGING if: $c $a $b");
-          reflectc(If(c1,
-            reifyc(evalms(env,a)),
-            reifyc(evalms(env,b))))
+          reflectc(If(c1, reifyc(evalms(env,a)), reifyc(evalms(env,b))))
       }
 
     case Plus(e1,e2) =>
@@ -259,13 +241,6 @@ object Base {
         case (Code(s1),Code(s2)) =>
           reflectc(Equ(s1,s2))
       }
-    case Gt(e1,e2) =>
-      (evalms(env,e1), evalms(env,e2)) match {
-        case (Cst(n1), Cst(n2)) =>
-          Cst(if (n1 > n2) 1 else 0)
-        case (Code(s1),Code(s2)) =>
-          reflectc(Gt(s1,s2))
-      }
     case Cons(e1,e2) =>
       // introduction form, needs explicit lifting
       // (i.e. don't match on args)
@@ -275,26 +250,26 @@ object Base {
         case (Tup(a,b)) => 
           a
         case (Code(s1)) =>
-          reflectc(Fst(s1))
+          Code(reflect(Fst(s1)))
       }
     case Snd(e1) =>
       (evalms(env,e1)) match {
         case (Tup(a,b)) => 
           b
         case (Code(s1)) =>
-          reflectc(Snd(s1))
+          Code(reflect(Snd(s1)))
       }
     case IsNum(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          reflectc(IsNum(s1))
+          Code(reflect(IsNum(s1)))
         case v => 
           Cst(if (v.isInstanceOf[Cst]) 1 else 0)
       }
     case IsStr(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          reflectc(IsStr(s1))
+          Code(reflect(IsStr(s1)))
         case v => 
           Cst(if (v.isInstanceOf[Str]) 1 else 0)
       }
@@ -302,7 +277,7 @@ object Base {
     case IsCons(e1) =>
       (evalms(env,e1)) match {
         case (Code(s1)) =>
-          reflectc(IsCons(s1))
+          Code(reflect(IsCons(s1)))
         case v => 
           Cst(if (v.isInstanceOf[Tup]) 1 else 0)
       }
@@ -335,7 +310,6 @@ object Base {
     case Fst(a)     => s"(car ${pretty(a,env)})"
     case Snd(a)     => s"(cdr ${pretty(a,env)})"
     case Equ(a,b)   => s"(eq? ${pretty(a,env)} ${pretty(b,env)})"
-    case Gt(a,b)   => s"(> ${pretty(a,env)} ${pretty(b,env)})"
     case Plus(a,b)  => s"(+ ${pretty(a,env)} ${pretty(b,env)})"
     case Minus(a,b) => s"(- ${pretty(a,env)} ${pretty(b,env)})"
     case Times(a,b) => s"(* ${pretty(a,env)} ${pretty(b,env)})"
@@ -372,7 +346,6 @@ object Base {
     def f = fun { n => if (n != 0) f(n-1) else 1 }
   corresponds to:
     val f = { () => lift({ n => if (n != 0) f()(n-1) else 1 }) }
-
 */
     val f_self = App(Var(0),Lit(99))
     val n = Var(3)

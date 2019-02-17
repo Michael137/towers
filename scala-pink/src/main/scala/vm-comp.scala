@@ -87,10 +87,13 @@ object EVMComp {
         case Tup(hd, tl) => compileList(tl, env, Tup(Str("LDC"), Tup(hd, Tup(Str("CONS"), acc))))
     }
 
+    var fnEnv: CompEnv = Nil
+    var inRec = false
+    var hasLDR = false
     def compile(e: Val, env: CompEnv, acc: Val): Val = e match {
         // Null, Number or Identifier
         case N => Tup(Str("NIL"), acc)
-        case s: Str => {
+        case s: Str => {        
             val ij = index(s, env)
             Tup(Str("LD"), Tup(ij, acc))
         }
@@ -102,7 +105,8 @@ object EVMComp {
             compileLambda(body, tupToList(args)::env, acc)
 
         case Tup(Str(s), args) if(s == "list" || s == "quote") =>
-            compileList(args, env, Tup(Str(""), acc))
+            // compileList(args, env, Tup(Str(""), acc))
+            Tup(Str("NIL"), compileList(args, env, Tup(Str(""), acc)))
 
         case Tup(Str("+"), args) =>
             compileBuiltin(args, env, Tup(Str("ADD"), acc))
@@ -121,6 +125,9 @@ object EVMComp {
 
         case Tup(Str("null?"), args) =>
             compileBuiltin(args, env, Tup(Str("EMPTY? CONS"), acc))
+
+        case Tup(Str("atom?"), args) =>
+            compileBuiltin(args, env, Tup(Str("ATOM?"), acc))
 
         case Tup(Str("car"), args) =>
             compileBuiltin(args, env, Tup(Str("CAR"), acc))
@@ -149,14 +156,19 @@ object EVMComp {
         }
 
         case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
-            val newEnv = tupToList(vs)::env
+            val newEnv = if(hasLDR) { fnEnv = tupToList(vs)::fnEnv; fnEnv } else tupToList(vs)::env
+            inRec = true
             Tup(Str("DUM"), Tup(Str("NIL"),
                     compileApp(vals, newEnv, compileLambda(body, newEnv, Tup(Str("RAP"), acc)))))
         }
 
         // Variable
         case Tup(v: Str, args) =>
-            Tup(Str("NIL"), compileApp(args, env, Tup(Str("LD"), Tup(index(v, env), Tup(Str("AP"), acc)))))
+            val isRecFn = hasLDR && inRec && fnEnv.flatten.exists( x => x == v)
+            val ij = if(isRecFn) index(v, fnEnv) else index(v, env)
+            val appStr = if(isRecFn) "LDR" else "LD"
+            val app = Tup(Str(appStr), Tup(ij, Tup(Str("AP"), acc)))
+            Tup(Str("NIL"), compileApp(args, env, app))
 
         // Application
         case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))
@@ -169,15 +181,25 @@ object EVMComp {
         // println(instrs)
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
-        deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
+
+        hasLDR = true
+        // val ret = EBase.deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
+        val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
+        inRec = false
+        ret
     }
 
     // Evaluation
-    def evalOnVM(src: String, env: String) = {
+    def evalOnVM(src: String, env: String, vm: Any = Nil) = {
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
-        deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
+
+        hasLDR = true
+        // val ret = EBase.deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
+        val ret = Base.deref(SECD.runVM(SECD.evl, s"'($instrSrc)", env, false))
+        inRec = false
+        ret
     }
 
     def test() = {
@@ -186,7 +208,7 @@ object EVMComp {
 
         EVMCompTests.basicTests
         EVMCompTests.evalTest
-        // EVMCompTests.factorialTest
+        EVMCompTests.factorialTest
 
         testDone()
     }

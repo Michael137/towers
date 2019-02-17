@@ -69,6 +69,11 @@ object Base {
     fresh()
   }
 
+  def deref(a: Val): Val = a match {
+    case Tup(a, _) => a
+    case other => other
+  }
+
   // anf conversion: for checking generated against expected code
   def anf(env: List[Exp], e: Exp): Exp = e match {
     case Lit(n) => Lit(n)

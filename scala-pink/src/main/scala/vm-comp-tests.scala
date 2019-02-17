@@ -49,7 +49,7 @@ object EVMCompTests {
                                             (eval (list mul 2 3)))""", "'()"))("Cst(6)")
 
         check(evalOnVM("""(letrec (eval) ((lambda (ops)
-                                            (if (null? (cdr ops))
+                                            (if (atom? ops)
                                                 ops
                                                 (if (eq? (car ops) 'plus)
                                                     (+ (eval (cadr ops)) (eval (caddr ops)))
@@ -57,7 +57,7 @@ object EVMCompTests {
                                             (eval (list plus 2 (plus 2 2))))""", "'()"))("Cst(6)")
 
         check(evalOnVM("""(letrec (eval) ((lambda (ops)
-                                            (if (null? (cdr ops))
+                                            (if (atom? ops)
                                                 ops
                                                 (if (eq? (car ops) 'plus)
                                                     (+ (eval (cadr ops)) (eval (caddr ops)))
@@ -66,11 +66,10 @@ object EVMCompTests {
     }
 
     def factorialTest() = {
-        // check(
-        //     runOnVM(
-        //         """(let (x one) (10 1)
-        //             (letrec (fact)
-        //                 ((lambda (n m) (if (eq? n 0) one (fact (- n one) (* n m)))))
-        //                 (fact x one)))""", "'()"))("Cst(1)") // TODO: revise result
+        check(
+            runOnVM(
+                """(letrec (fact)
+                        ((lambda (n m) (if (eq? n 0) m (fact (- n 1) (* n m)))))
+                            (fact 10 1))""", "'()"))("Cst(3628800)")
     }
 }

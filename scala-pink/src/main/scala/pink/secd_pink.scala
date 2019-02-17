@@ -78,7 +78,7 @@ object SECD {
 (((((machine (cons (caddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
 (if (eq? 'CADDDR (car ops))
 (((((machine (cons (cadddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
-(if (eq? 'EMPTY (car ops))
+(if (eq? 'EMPTY? (car ops))
 (((((machine (cons (null? (car s)) (cdr s))) d) fns) (cdr ops)) env)
 (if (eq? 'ATOM? (car ops))
   (((((machine (cons (atom? (car s)) (cdr s))) d) fns) (cdr ops)) env)
@@ -95,23 +95,29 @@ object SECD {
   val evl = s"(let maybe-lift (lambda _ e e) $src)"
   val cmp = s"(let maybe-lift (lambda _ e (lift e)) $src)"
 
+  def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true) = {
+      if(runCopmiled)
+          ev(s"((run 0 ($vmSrc $src)) (lift $env))")
+      else
+          ev(s"(($vmSrc $src) $env)")
+  }
+
   def test() = {
     println("// ------- SECD.test --------")
 
     val prog1 = "'(LDC 10 LDC 15 ADD WRITEC)"
     val prog2 = "'(LDC 10 LDC 15 LD (1 1) ADD WRITEC)"
     val arg2 = "'((5 6 7 8 9))"
-    val factorialProg = """
-'(NIL LDC 1 CONS LDC 10 CONS LDF
-(DUM NIL LDF
-(LDC 0 LD (1 1) EQ SEL
-(LD (1 2) JOIN)
-(NIL LD (1 2) LD (1 1) MPY CONS
-LD (3 2) LD (1 1) SUB CONS LDR (1 1) AP JOIN)
-RTN)
-CONS LDF
-(NIL LD (2 2) CONS LD (2 1) CONS LDR (1 1) AP RTN) RAP
-RTN) AP WRITEC)"""
+    val factorialProg = """'(NIL LDC 1 CONS LDC 10 CONS LDF
+                            (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                            (LD (1 2) JOIN)
+                            (NIL LD (1 2) LD (1 1) MPY CONS
+                            LD (3 2) LD (1 1) SUB CONS LDR (1 1) AP JOIN)
+                            RTN)
+                            CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LDR (1 1) AP RTN) RAP
+                            RTN) AP WRITEC)"""
 
     check(ev(s"(($evl $prog1) '())"))("Cst(25)")
 
@@ -123,9 +129,9 @@ RTN) AP WRITEC)"""
     check(ev(s"((run 0 ($cmp $prog2)) $arg2)"))("Cst(20)")
 
     println(reifyc(ev(s"""($cmp '(NIL LDC 135 CONS
-LDF (LDC 10 LD (1 1) ADD RTN)
-AP
-WRITEC))"""))) // TODO: STOP doesn't work
+                                    LDF (LDC 10 LD (1 1) ADD RTN)
+                                    AP
+                                    STOP))""")))
 
     println("evaluating factorial")
     check(ev(s"(($evl $factorialProg) '())"))("Cst(3628800)")
@@ -135,39 +141,7 @@ WRITEC))"""))) // TODO: STOP doesn't work
     println("running...")
     check(ev(s"((run 0 ($cmp $factorialProg)) '())"))("Cst(3628800)")
 
-    val instrs = EVMComp.compile(ELisp.parseExp("""
-      (letrec (eval) ((lambda (ops)
-          (if (null? (cdr ops))
-              ops
-              (if (eq? (car ops) 'plus)
-                  (+ (eval (cadr ops)) (eval (caddr ops)))
-                  (eval (cdr ops))))))
-          (eval (list plus 2 (plus 2 2))))"""), Nil, EBase.Tup(EBase.Str("STOP"), EBase.Str(".")))
-    println(instrs)
-    var instrSrc = EVMComp.instrsToString(instrs)
-    // instrSrc = """'(
-    //   DUM NIL LDF
-    //       (LDC 5 LD (1 1) CAR EQ SEL
-    //               (LDC 5 JOIN )
-    //               (LDC 6 LD (1 1) CAR EQ SEL
-    //                 (LDC 6 JOIN )
-    //                 (NIL LD (1 1) CAR EQ SEL
-    //                   (NIL JOIN )
-    //                   (NIL  LD (1 1) CDR CONS LDR (1 1) AP JOIN ) JOIN ) JOIN ) RTN ) CONS LDF
-    //       (NIL NIL LDC 6 CONS LDC 9 CONS LDC 8 CONS LDC 7 CONS CONS LDR (1 1) AP RTN ) RAP STOP
-    // )"""
-    instrSrc = """'(
-     DUM NIL LDF
-         (LD (1 1) ATOM? SEL
-                 (LD (1 1) JOIN ) (LDC plus LD (1 1) CAR EQ SEL
-         (NIL LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 1) CADR CONS LDR (1 1) AP ADD JOIN ) (NIL LD (1 1) CDR CONS LDR (1 1) AP JOIN ) JOIN ) RTN ) CONS LDF
-         (NIL NIL LDC (plus 2 2 ) CONS LDC 2 CONS LDC plus CONS CONS LDR (1 1) AP RTN ) RAP STOP
-      )"""
-    println("TESTING:\n" + instrSrc)
-    println(ev(s"(($cmp $instrSrc) (lift '()))"))
-    println(ev(s"((run 0 ($cmp $instrSrc)) '())"))
-
-    println(prettycode(reifyc(ev(s"(($cmp $instrSrc) (lift '()))"))))
+    println(prettycode(reifyc(ev(s"(($cmp $factorialProg) (lift '()))"))))
 
     testDone()
   }

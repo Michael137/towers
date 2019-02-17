@@ -73,7 +73,12 @@ object PE {
                                                                 (if (eq? 'EMPTY? (car_ ops))
                                                                     (machine (cons_ (null? (car_ s)) (cdr_ s)) d (cdr_ ops) env)
 
-                                                                (maybe-lift 'ERROR)))))))))))))))))))))))))))
+                                                                (if (eq? 'ATOM? (car ops))
+                                                                    (let a (car_ s)
+                                                                        (let isAtom (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0)))
+                                                                            (machine (cons_ isAtom (cdr_ s)) d (cdr_ ops) env)))
+
+                                                                (maybe-lift 'ERROR))))))))))))))))))))))))))))
                                                         (m e)))
                                         )
                         ))
@@ -152,8 +157,13 @@ object PE {
 
                                                 (if (eq? 'EMPTY? (car_ ops))
                                                     ((((machine (cons_ (null? (car_ s)) (cdr_ s))) d) (cdr_ ops)) e)
+                                                                    
+                                                (if (eq? 'ATOM? (car ops))
+                                                    (let a (car_ s)
+                                                        (let isAtom (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0)))
+                                                            ((((machine (cons_ isAtom (cdr_ s))) d) (cdr_ ops)) e)))
 
-                                                (maybe-lift `(ERROR ,(car_ ops))))))))))))))))))))))))))))
+                                                (maybe-lift `(ERROR ,(car_ ops)))))))))))))))))))))))))))))
                                         ))))
                         ))
 
@@ -231,8 +241,13 @@ object PE {
 
                                                                 (if (eq? 'EMPTY? (car ops))
                                                                     (machine (cons (null? (car s)) (cdr s)) d fns (cdr ops) env)
+                                                                    
+                                                                (if (eq? 'ATOM? (car ops))
+                                                                    (let a (car_ s)
+                                                                        (let isAtom (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0)))
+                                                                            (machine (cons isAtom (cdr s)) d fns (cdr ops) env)))
 
-                                                                (maybe-lift `(ERROR ,ops)))))))))))))))))))))))))))
+                                                                (maybe-lift `(ERROR ,ops))))))))))))))))))))))))))))
                                                         (m e)))
                                         )
                         ))

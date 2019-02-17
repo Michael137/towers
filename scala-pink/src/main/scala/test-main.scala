@@ -11,7 +11,6 @@ object TestMain {
     EBase.test()
     ELisp.test()
     PE.test() // VM staged
-
     SECD.test() // Pink SECD Machine
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD

@@ -16,6 +16,7 @@ object Base {
   case class Minus(a:Exp,b:Exp) extends Exp
   case class Times(a:Exp,b:Exp) extends Exp
   case class Equ(a:Exp,b:Exp) extends Exp
+  case class Or(a:Exp,b:Exp) extends Exp
   case class Cons(a:Exp,b:Exp) extends Exp
   case class Fst(a:Exp) extends Exp
   case class Snd(a:Exp) extends Exp
@@ -95,6 +96,8 @@ object Base {
       reflect(Minus(anf(env,e1),anf(env,e2)))
     case Equ(e1,e2) =>
       reflect(Equ(anf(env,e1),anf(env,e2)))
+    case Or(e1,e2) =>
+      reflect(Or(anf(env,e1),anf(env,e2)))
     case Cons(e1,e2) =>
       reflect(Cons(anf(env,e1),anf(env,e2)))
     case IsNum(e) =>
@@ -245,6 +248,13 @@ object Base {
           Cst(if (v1 == v2) 1 else 0)
         case (Code(s1),Code(s2)) =>
           reflectc(Equ(s1,s2))
+      }
+    case Or(e1,e2) =>
+      (evalms(env,e1), evalms(env,e2)) match {
+        case (Cst(n1), Cst(n2)) =>
+          Cst(if (n1 == 1 || n2 == 1) 1 else 0)
+        case (Code(s1),Code(s2)) =>
+          reflectc(Or(s1,s2))
       }
     case Cons(e1,e2) =>
       // introduction form, needs explicit lifting

@@ -104,8 +104,10 @@ object EVMComp {
         case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
             compileLambda(body, tupToList(args)::env, acc)
 
-        case Tup(Str(s), args) if(s == "list" || s == "quote") =>
-            // compileList(args, env, Tup(Str(""), acc))
+        case Tup(Str("list"), Tup(args, _)) => // TODO: quote and list should be merged
+            Tup(Str("NIL"), compileList(args, env, Tup(Str(""), acc)))
+
+        case Tup(Str("quote"), args) =>
             Tup(Str("NIL"), compileList(args, env, Tup(Str(""), acc)))
 
         case Tup(Str("+"), args) =>
@@ -129,6 +131,12 @@ object EVMComp {
         case Tup(Str("atom?"), args) =>
             compileBuiltin(args, env, Tup(Str("ATOM?"), acc))
 
+        case Tup(Str("sym?"), args) =>
+            compileBuiltin(args, env, Tup(Str("SYM?"), acc))
+
+        case Tup(Str("num?"), args) =>
+            compileBuiltin(args, env, Tup(Str("NUM?"), acc))
+
         case Tup(Str("car"), args) =>
             compileBuiltin(args, env, Tup(Str("CAR"), acc))
 
@@ -140,6 +148,12 @@ object EVMComp {
 
         case Tup(Str("caddr"), args) =>
             compileBuiltin(args, env, Tup(Str("CADDR"), acc))
+
+        case Tup(Str("cadddr"), args) =>
+            compileBuiltin(args, env, Tup(Str("CADDDR"), acc))
+
+        case Tup(Str("cdddr"), args) =>
+            compileBuiltin(args, env, Tup(Str("CDDDR"), acc))
 
         case Tup(Str("cons"), args) =>
             compileBuiltin(args, env, Tup(Str("CONS"), acc))
@@ -186,6 +200,7 @@ object EVMComp {
         // val ret = EBase.deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
         val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
         inRec = false
+        fnEnv = Nil
         ret
     }
 
@@ -199,6 +214,7 @@ object EVMComp {
         // val ret = EBase.deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
         val ret = Base.deref(SECD.runVM(SECD.evl, s"'($instrSrc)", env, false))
         inRec = false
+        fnEnv = Nil
         ret
     }
 

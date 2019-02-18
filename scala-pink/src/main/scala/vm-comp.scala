@@ -191,12 +191,12 @@ object EVMComp {
     // env and src are passed to PE.runVM in quotes
     // Compilation
     def runOnVM(src: String, env: String, run: Boolean = true) = {
+        hasLDR = true
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         // println(instrs)
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
 
-        hasLDR = true
         // val ret = EBase.deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
         val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
         inRec = false
@@ -206,11 +206,12 @@ object EVMComp {
 
     // Evaluation
     def evalOnVM(src: String, env: String, vm: Any = Nil) = {
+        hasLDR = true
+
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
 
-        hasLDR = true
         // val ret = EBase.deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
         val ret = Base.deref(SECD.runVM(SECD.evl, s"'($instrSrc)", env, false))
         inRec = false

@@ -41,7 +41,7 @@ object VMEval {
         check(evalOnVM(meta_eval("(let y 1 (* y 2))"), "'()"))("Cst(2)") // TODO: runOnVM instead
         check(evalOnVM(meta_eval("(let x 2 (let y 3 (+ x y)))"), "'()"))("Cst(5)")
         check(evalOnVM(meta_eval("""(let x0 1 (eq? x0 2))"""), "'()"))("Cst(0)")
-        check(evalOnVM(meta_eval("""(let x0 1 (> x0 -2))"""), "'()"))("Cst(1)")
+        check(evalOnVM(meta_eval("""(let x0 3 (> x0 2))"""), "'()"))("Cst(1)")
 
         // check(evalOnVM(meta_eval("(let y (* 3 2) (+ y 1))"), "'()"))("Cst(7)") // TODO: @crash
         // check(evalOnVM(meta_eval("(let y (lambda (x) (- x 15)) (y 1))"), "'()"))("Cst(-14)") // TODO: @crash

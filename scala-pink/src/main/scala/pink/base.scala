@@ -65,7 +65,7 @@ object Base {
   def reify(f: => Exp) = run {
     stBlock = Nil
     val last = f
-    // println(Optimizer.optimizeListAccess(stBlock))
+    //println(Optimizer.optimizeListAccess(stBlock))
     (stBlock foldRight last)(Let)
   }
   def reflect(s:Exp) = {
@@ -257,7 +257,7 @@ object Base {
     case Gt(e1,e2) =>
       (evalms(env,e1), evalms(env,e2)) match {
         case (Cst(n1), Cst(n2)) =>
-          Cst(if (n1 > 1 || n2 == 1) 1 else 0)
+          Cst(if (n1 > n2) 1 else 0)
         case (Code(s1),Code(s2)) =>
           reflectc(Gt(s1,s2))
       }
@@ -334,6 +334,7 @@ object Base {
     case IsNum(a)   => s"(num? ${pretty(a,env)})"
     case IsStr(a)   => s"(sym? ${pretty(a,env)})"
     case Lift(a)    => s"(lift ${pretty(a,env)})"
+    case Cons(a, b)     => s"(cons ${pretty(a,env)} ${pretty(b,env)})"
     case Fst(a)     => s"(car ${pretty(a,env)})"
     case Snd(a)     => s"(cdr ${pretty(a,env)})"
     case Equ(a,b)   => s"(eq? ${pretty(a,env)} ${pretty(b,env)})"

@@ -61,7 +61,7 @@ object SECD {
 (if (eq? 'EQ (car ops))
 (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
 (if (eq? 'GT (car ops))
-(((((machine (cons (> (cadr s) (car s)) (cddr s))) d) fns) (cdr ops)) env)
+(((((machine (cons (> (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
 (if (eq? 'DUM (car ops))
 (((((machine s) d) fns) (cdr ops)) (cons '() env))
 (if (eq? 'RAP (car ops))
@@ -110,6 +110,8 @@ object SECD {
 
   def test() = {
     println("// ------- SECD.test --------")
+    stBlock = Nil;
+    stFresh = 0;
 
     val prog1 = "'(LDC 10 LDC 15 ADD WRITEC)"
     val prog2 = "'(LDC 10 LDC 15 LD (1 1) ADD WRITEC)"

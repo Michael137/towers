@@ -17,6 +17,10 @@ object VMEval {
                         (- (eval (cadr exp) env) (eval (caddr exp) env))
                     (if (eq? (car exp) '*)
                         (* (eval (cadr exp) env) (eval (caddr exp) env))
+                    (if (eq? (car exp) 'eq?)
+                        (eq? (eval (cadr exp) env) (eval (caddr exp) env))
+                    (if (eq? (car exp) '>)
+                        (> (eval (cadr exp) env) (eval (caddr exp) env))
                     (if (eq? (car exp) 'if)
                         (if (eval (cadr exp) env) (eval (caddr exp) env) (eval (cadddr exp) env))
                     (if (eq? (car exp) 'let)
@@ -26,7 +30,7 @@ object VMEval {
                     (if (eq? (car exp) 'lambda)
                         (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (cadr exp)) x (env y)))))
                         
-                    (eval (cdr exp) env)))))))))))
+                    (eval (cdr exp) env)))))))))))))
                 (eval (list $p) '()))
     """
 
@@ -35,8 +39,13 @@ object VMEval {
         check(evalOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
         check(evalOnVM(meta_eval("(if (+ 2 -2) (* 1 -1) (* -1 (* -1 1)))"), "'()"))("Cst(1)")
         check(evalOnVM(meta_eval("(let y 1 (* y 2))"), "'()"))("Cst(2)") // TODO: runOnVM instead
-        //check(evalOnVM(meta_eval("(let y (lambda (x) (- x 15)) (y 1))"), "'()"))("Cst(-14)") // TODO: @crash
-        //check(evalOnVM(meta_eval("((lambda (x) (- x 15)) 1)"), "'()"))("Cst(-14)") // TODO: @crash
+        check(evalOnVM(meta_eval("(let x 2 (let y 3 (+ x y)))"), "'()"))("Cst(5)")
+        check(evalOnVM(meta_eval("""(let x0 1 (eq? x0 2))"""), "'()"))("Cst(0)")
+        check(evalOnVM(meta_eval("""(let x0 1 (> x0 -2))"""), "'()"))("Cst(1)")
+
+        // check(evalOnVM(meta_eval("(let y (* 3 2) (+ y 1))"), "'()"))("Cst(7)") // TODO: @crash
+        // check(evalOnVM(meta_eval("(let y (lambda (x) (- x 15)) (y 1))"), "'()"))("Cst(-14)") // TODO: @crash
+        // check(evalOnVM(meta_eval("(lambda (x) (- x 15))"), "'()"))("Cst(-14)") // TODO: @crash
 
         testDone()
     }

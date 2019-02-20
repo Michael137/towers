@@ -50,7 +50,7 @@ object Base {
 
   // interpreter state and mechanics
   var stFresh = 0
-  var stBlock: List[Exp] = Nil
+  var stBlock: List[(Int, Exp)] = Nil
   var stFun: List[(Int,Env,Exp)] = Nil
   def run[A](f: => A): A = {
     val sF = stFresh
@@ -66,11 +66,23 @@ object Base {
     stBlock = Nil
     val last = f
     //println(Optimizer.optimizeListAccess(stBlock))
-    (stBlock foldRight last)(Let)
+    (stBlock.map(_._2) foldRight last)(Let)
   }
   def reflect(s:Exp) = {
-    stBlock :+= s
-    fresh()
+    // for now, this CSE trick assumes all operations are side-effect free
+    // we could add a black list
+    stBlock.find(_._2 == s) match {
+      case Some ((i,_)) => Var(i)
+      case None =>
+        s match {
+          // smart constructors
+          case Fst(Cons(a, b)) => a
+          case Snd(Cons(a, b)) => a
+          case _ =>
+            stBlock :+= (stFresh, s)
+            fresh()
+        }
+    }
   }
 
   def deref(a: Val): Val = a match {
@@ -138,7 +150,7 @@ object Base {
       // if we are generating code at all,
       // the result must be code
       val Code(last) = res
-      Code((stBlock foldRight last)(Let))
+      Code((stBlock.map(_._2) foldRight last)(Let))
     } else {
       res
     }

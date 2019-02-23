@@ -15,6 +15,12 @@ object TestMain {
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD
 
+    /* Uncomment to run benchmarks of
+       original framework */
+    // Base.test()
+    // Lisp.test()
+    // Pink.test()
+
     println("// ###### Full testsuite done ######")
   }
 }

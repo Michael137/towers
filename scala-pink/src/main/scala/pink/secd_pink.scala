@@ -92,8 +92,13 @@ object SECD {
   (((((machine (cons (num? (car s)) (cdr s))) d) fns) (cdr ops)) env)
 (if (eq? 'DBG (car ops))
   (let _ _ (log 0 (cons 'breakpoint: env)))
+
+(if (eq? 'SAVE (car ops))
+  (((((machine s) (cons s d)) fns) (cdr ops)) env)
+(if (eq? 'RSTR (car ops))
+  (((((machine (cons (car d) s)) (cdr d)) fns) (cdr ops)) env)
 (maybe-lift (cons 'ERROR ops))
-)))))))))))))))))))))))))))))))))))))
+)))))))))))))))))))))))))))))))))))))))
 (lambda _ ops (maybe-lift ((((machine '()) '()) '()) ops)))
 ))
 )))))))))
@@ -150,6 +155,8 @@ object SECD {
     check(ev(s"((run 0 ($cmp $factorialProg)) '())"))("Cst(3628800)")
 
     println(prettycode(reifyc(ev(s"(($cmp $factorialProg) (lift '()))"))))
+
+    // println(prettycode(PinkBase.fac_exp_anf)) // Factorial without SECD for comparison
 
     testDone()
   }

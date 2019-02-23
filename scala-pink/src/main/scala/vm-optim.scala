@@ -40,7 +40,7 @@ object Optimizer {
             case l if(l != ListBuffer()) =>
                 var acc +: rst = lst
                 var folded = rst.foldLeft(acc)({ (acc, e) => (acc, e) match {
-                    // TODO: generecize to simplye ListOp
+                    // TODO: generecize to simply ListOp
                     case ((i, v: Base.Exp), (_, l: Base.Fst)) => (i, Base.Fst(v))
                     case ((i, v: Base.Exp), (_, l: Base.Snd)) => (i, Base.Snd(v))
                 }})

@@ -54,6 +54,8 @@ object Lisp {
     case Tup(Str("code?"),  Tup(a,N)) => IsCode(trans(a,env))
     case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
     case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
+    case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))
+    case Tup(Str("cddr"),   Tup(a,N)) => Snd(Snd(trans(a,env)))
     case Tup(Str("cdr"),    Tup(a,N)) => Snd(trans(a,env))
     case Tup(Str("cadr"),   Tup(a,N)) => Fst(Snd(trans(a,env)))
     case Tup(Str("caddr"),  Tup(a,N)) => Fst(Snd(Snd(trans(a,env))))

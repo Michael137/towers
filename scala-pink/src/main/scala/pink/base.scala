@@ -50,7 +50,8 @@ object Base {
 
   // interpreter state and mechanics
   var stFresh = 0
-  var stBlock: List[Exp] = Nil
+  var stBlock: List[(Int, Exp)] = Nil
+  // var stBlock: List[Exp] = Nil
   var stFun: List[(Int,Env,Exp)] = Nil
   def run[A](f: => A): A = {
     val sF = stFresh
@@ -65,12 +66,25 @@ object Base {
   def reify(f: => Exp) = run {
     stBlock = Nil
     val last = f
+    // Currently wouldn't work since stBlock signature has changed
     //println(Optimizer.optimizeListAccess(stBlock))
-    (stBlock foldRight last)(Let)
+    (stBlock.map(_._2) foldRight last)(Let)
   }
   def reflect(s:Exp) = {
-    stBlock :+= s
-    fresh()
+    // CSE trick would optimize out side-effecting operations
+    // Thus create a match guard to avoid this
+    stBlock.find(_._2 == s) match {
+      case Some ((i, exp)) if(!exp.isInstanceOf[Log]) => Var(i)
+      case _ =>
+        s match {
+          // smart constructors
+          case Fst(Cons(a, b)) => a
+          case Snd(Cons(a, b)) => a
+          case _ =>
+            stBlock :+= (stFresh, s)
+            fresh()
+        }
+    }
   }
 
   def deref(a: Val): Val = a match {
@@ -138,7 +152,7 @@ object Base {
       // if we are generating code at all,
       // the result must be code
       val Code(last) = res
-      Code((stBlock foldRight last)(Let))
+      Code((stBlock.map(_._2) foldRight last)(Let))
     } else {
       res
     }
@@ -318,7 +332,6 @@ object Base {
     // special forms: custom eval, ...
     case Special(f) => f(env)
   }
-
 
   // pretty printing
   var indent = "\n"

@@ -23,6 +23,29 @@
 }
 \urlstyle{same}
 
+\usepackage{listings}
+\usepackage{color}
+ 
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    numberstyle=\tiny\color{codegray},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+	morekeywords={car, cdr, caar, caaar, cddr, cdddr, cadr, caddr, cadddr, lambda}
+}
+\lstset{style=mystyle}
+
 \begin{document}
 \maketitle
 \frenchspacing
@@ -226,7 +249,7 @@ Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
 \subsection{Benchmarks}
 We extended the benchmarks provided as part of the original framework \cite{amin2017collapsing} with timings for staging the stack machine with respect to a user factorial program and timings for evaluating said program.
 The compilation output yielded and is essentially a loop unrolling of the (non-recursive SECD) factorial program without traces of the SECD emulator left:
-\begin{verbatim}
+\begin{lstlisting}[language=Scala]
 	Let(
 		Gt(Lit(3),Lit(1)),
 		Let(
@@ -266,7 +289,7 @@ The compilation output yielded and is essentially a loop unrolling of the (non-r
 																				Times(Var(18),Lit(-1)),
 																				Var(17))))))))))))))))),
 					Var(5))))
-\end{verbatim}
+\end{lstlisting}
 Generalization: because we sacrifice the fact input is static and mark them as dynamic (code) values
 PE technique is more like a translation then evaluation. The result of evluation is a new IR in terms of the base language
 
@@ -283,7 +306,100 @@ Varying degrees of generalization:
 	\item Interpreter: VM, Static input: Evaluator, further input: User program => need to decide where to stage
 \end{enumerate}
 
-Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features
+Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features, non-termination when performing recursive calls from within SECD machine (no differentiation between a function being recursive or not)
+
+Following is the generated code without the SECD machine
+\begin{lstlisting}[language=Lisp]
+	(lambda f0 x1
+	  (let x2 (eq? x1 0)
+	  (if x2 1
+	
+		(let x3 (- x1 1)
+		(let x4 (f0 x3) (* x1 x4))))))
+\end{lstlisting}
+
+Following is the generated code with the SECD machine:
+\begin{lstlisting}[language=Lisp]
+	(let x0
+		(lambda f0 x1
+			(let x2
+			(lambda f2 x3
+				(let x4 (car x3)
+				(let x5 (car x4)
+				(let x6 (eq? x5 0)
+				(let x7 (eq? x6 0)
+				(if x7
+				(let x8 (car x3)
+				(let x9 (cdr x8)
+				(let x10 (car x9)
+				(let x11 (car x3)
+				(let x12 (car x11)
+				(let x13 (* x12 x10)
+				(let x14 (cdr x3)
+				(let x15 (cdr x14)
+				(let x16 (car x15)
+				(let x17 (cdr x16)
+				(let x18 (car x17)
+				(let x19 (car x3)
+				(let x20 (car x19)
+				(let x21 (- x20 x18)
+				(let x22 (cons x13 '.)
+				(let x23 (cons x21 x22)
+				(let x24 (cons 1 '.)
+				(let x25 (cons 10 x24)
+				(let x26 (cons x25 x1)
+				(let x27 (cons '. x26)
+				(let x28 (cons x23 x27) (f2 x28))))))))))))))))))))))
+
+				(let x8 (car x3)
+				(let x9 (cdr x8) (car x9)))))))))
+			(let x3 (cons 1 '.)
+			(let x4 (cons 10 x3)
+			(let x5 (cons 1 '.)
+			(let x6 (cons 10 x5)
+			(let x7 (cons x6 x1)
+			(let x8 (cons '. x7)
+			(let x9 (cons x4 x8) (x2 x9)))))))))) (x0 '.))
+\end{lstlisting}
+
+With a simple ``smart constructor'' optimization we can reduce the generated code size to:
+\begin{lstlisting}[language=Lisp]
+(let x0
+  (lambda f0 x1
+    (let x2
+      (lambda f2 x3
+        (let x4 (car x3)
+        (let x5 (car x4)
+        (let x6 (eq? x5 0)
+        (let x7 (eq? x6 0)
+        (if x7
+          (let x8 (car x3)
+          (let x9 (cdr x8)
+          (let x10 (car x9)
+          (let x11 (car x8)
+          (let x12 (* x11 x10)
+          (let x13 (cdr x3)
+          (let x14 (cdr x13)
+          (let x15 (car x14)
+          (let x16 (cdr x15)
+          (let x17 (car x16)
+          (let x18 (- x11 x17)
+          (let x19 (cons x12 '.)
+          (let x20 (cons x18 x19)
+          (let x21 (cons 1 '.)
+          (let x22 (cons 10 x21)
+          (let x23 (cons x22 x1)
+          (let x24 (cons '. x23)
+          (let x25 (cons x20 x24) (f2 x25)))))))))))))))))))
+
+          (let x8 (car x3)
+          (let x9 (cdr x8) (car x9)))))))))
+    (let x3 (cons 1 '.)
+    (let x4 (cons 10 x3)
+    (let x5 (cons x4 x1)
+    (let x6 (cons '. x5)
+	(let x7 (cons x4 x6) (x2 x7)))))))) (x0 '.))
+\end{lstlisting}
 
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...

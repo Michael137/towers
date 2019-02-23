@@ -401,6 +401,59 @@ With a simple ``smart constructor'' optimization we can reduce the generated cod
 	(let x7 (cons x4 x6) (x2 x7)))))))) (x0 '.))
 \end{lstlisting}
 
+Ackermann (with optimizations):
+\begin{lstlisting}[language=Lisp]
+	(let x0
+	(lambda f0 x1
+	  (let x2
+		(lambda f2 x3
+		  (let x4 (car x3)
+		  (let x5 (car x4)
+		  (let x6 (eq? x5 0)
+		  (let x7 (eq? x6 0)
+		  (if x7
+			(let x8 (car x3)
+			(let x9 (cdr x8)
+			(let x10 (car x9)
+			(let x11 (eq? x10 0)
+			(let x12 (eq? x11 0)
+			(if x12
+			  (let x13 (car x3)
+			  (let x14 (cdr x13)
+			  (let x15 (car x14)
+			  (let x16 (- x15 1)
+			  (let x17 (car x13)
+			  (let x18 (cons x16 '.)
+			  (let x19 (cons x17 x18)
+			  (let x20 (cons '. x1)
+			  (let x21 (cons x19 x20)
+			  (let x22 (f2 x21)
+			  (let x23 (- x17 1)
+			  (let x24 (cons x22 '.)
+			  (let x25 (cons x23 x24)
+			  (let x26 (cons x25 x20) (f2 x26)))))))))))))))
+  
+			  (let x13 (car x3)
+			  (let x14 (car x13)
+			  (let x15 (- x14 1)
+			  (let x16 (cons 1 '.)
+			  (let x17 (cons x15 x16)
+			  (let x18 (cons '. x1)
+			  (let x19 (cons x17 x18) (f2 x19))))))))))))))
+  
+			(let x8 (car x3)
+			(let x9 (cdr x8)
+			(let x10 (car x9) (+ x10 1))))))))))
+	  (let x3 (car x1)
+	  (let x4 (car x3)
+	  (let x5 (cdr x3)
+	  (let x6 (car x5)
+	  (let x7 (cons x4 '.)
+	  (let x8 (cons x6 x7)
+	  (let x9 (cons '. x1)
+	  (let x10 (cons x8 x9) (x2 x10))))))))))) (x0 '.))
+\end{lstlisting}
+
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 

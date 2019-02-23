@@ -76,4 +76,34 @@ object EVMCompTests {
                         ((lambda (n m) (if (eq? n 0) m (fact (- n 1) (* n m)))))
                             (fact 10 1))""", "'()"))("Cst(3628800)")
     }
+
+    def nestedLambdaTest() = {
+        check(
+            runOnVM("""
+                (let (sum)
+                        ((lambda (m)
+                            (lambda (n)
+                                (+ m n))))
+                        ((sum 2) 2))""", "'()"))("Cst(4)")
+
+        check(
+            runOnVM("""
+                (letrec (sum)
+                        ((lambda (m n)
+                                (+ m n)))
+                        (sum 2 2))""", "'()"))("Cst(4)")
+    }
+
+    def ackermannTest() = {
+        check(
+            runOnVM("""
+                (letrec (ack)
+                        ((lambda (m n)
+                            (if (eq? m 0)
+                                (+ n 1)
+                                (if (eq? n 0)
+                                    (ack (- m 1) 1)
+                                    (ack (- m 1) (ack m (- n 1)))))))
+                            (ack 3 4))""", "'()"))("Cst(125)")
+    }
 }

@@ -91,7 +91,7 @@ object SECD {
 (if (eq? 'NUM? (car ops))
   (((((machine (cons (num? (car s)) (cdr s))) d) fns) (cdr ops)) env)
 (if (eq? 'DBG (car ops))
-  (let _ _ (log 0 (cons 'breakpoint: env)))
+  (let _ _ (log 0 (cons 'breakpoint: s)))
 
 (if (eq? 'SAVE (car ops))
   (((((machine s) (cons s d)) fns) (cdr ops)) env)
@@ -157,6 +157,16 @@ object SECD {
     println(prettycode(reifyc(ev(s"(($cmp $factorialProg) (lift '()))"))))
 
     // println(prettycode(PinkBase.fac_exp_anf)) // Factorial without SECD for comparison
+
+    val ack_prog = """'(
+      DUM NIL LDF
+          (LDC 0 LD (1 1) EQ SEL
+                  (LDC 1 LD (1 2) ADD JOIN ) (LDC 0 LD (1 2) EQ SEL
+          (NIL LDC 1 CONS LDC 1 LD (1 1) SUB CONS LDR (1 1) AP JOIN ) (NIL NIL LDC 1 LD (1 2) SUB CONS LD (1 1) CONS LDR (1 1) AP CONS LDC 1 LD (1 1) SUB CONS LDR (1 1) AP JOIN ) JOIN ) RTN ) CONS LDF
+          (NIL LD (2 1) CONS LD (2 2) CONS LDR (1 1) AP RTN ) RAP WRITEC
+    )"""
+    check(ev(s"((run 0 ($cmp $ack_prog)) '((2 2)))"))("Cst(7)")
+    println(prettycode(reifyc(ev(s"(($cmp $ack_prog) (lift '()))"))))
 
     testDone()
   }

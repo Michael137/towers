@@ -226,6 +226,8 @@ object EVMComp {
         EVMCompTests.basicTests
         EVMCompTests.evalTest
         EVMCompTests.factorialTest
+        EVMCompTests.nestedLambdaTest
+        EVMCompTests.ackermannTest
 
         testDone()
     }

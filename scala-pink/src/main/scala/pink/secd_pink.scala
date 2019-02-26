@@ -53,7 +53,7 @@ object SECD {
       ((((((machine newStack) newDump) fns) bt) newOps) newEnv)
   )))))))
 (if (eq? 'RTN (car ops))
-  (let _ (log 0 'rtn)
+  (let _ _
   (if (eq? 'ret d)
     (mla (car s))
     ((((((machine (cons (car s) (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
@@ -70,10 +70,7 @@ object SECD {
 (if (eq? 'EQ (car ops))
 ((((((machine (cons (eq? (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'GT (car ops))
-(let _ (log 0 (cons 'COMPARING: (cons (car s) (cadr s))))
-((((((machine (cons (> (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env))
-(if (eq? 'LT (car ops))
-((((((machine (cons (< (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
+((((((machine (cons (> (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'DUM (car ops))
 ((((((machine s) d) fns) bt) (cdr ops)) (cons '() env))
 (if (eq? 'RAP (car ops))
@@ -116,16 +113,16 @@ object SECD {
   (let closure (car s)
     ((((((machine '()) state) fns) bt) (car closure)) (cons (cons 'cc state) (cdr closure)))))
 (if (eq? 'TRY (car ops))
-  (let _ (log 0 'try)
+  (let _ _
   (let instrsToTry (cadr ops)
   (let cc (cons 'cc (cons s (cons env (cons (cddr ops) d))))
     ((((((machine s) d) fns) (cons cc bt)) instrsToTry) env))))
 (if (eq? 'FAIL (car ops))
   (let cc (car bt)
-  (let _ (log 0 'fail)
+  (let _ _
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
 (maybe-lift (cons 'ERROR ops))
-)))))))))))))))))))))))))))))))))))))))))))
+))))))))))))))))))))))))))))))))))))))))))
 (lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))
 """
   val evl = s"(let maybe-lift (lambda _ e e) $src)"
@@ -197,7 +194,6 @@ object SECD {
       LDF (LD (1 1) LD (1 2) ADD RTN) AP0 STOP
     )"""
     check(ev(s"(($evl $ap0) '((2 2)))"))("Tup(Cst(4),Str(.))")
-    check(ev(s"((run 0 ($cmp $ap0)) '((2 2)))"))("Tup(Cst(4),Str(.))")
 
     val tryFail = """'(
       LDC 3 LDF (TRY (LDC 4 RTN)

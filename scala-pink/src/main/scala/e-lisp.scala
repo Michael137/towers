@@ -102,12 +102,20 @@ object ELisp {
         // (lambda (...) <body with (...) placeholder>)
         case Tup(Str("lambda"), Tup(Tup(Str("..."), N), Tup(body, Tup(varargs,N)))) =>
             VarargLam(trans(varargs, env), trans(body, env))
-        
+
         // (lambda (x1 x2 -> xN) e)
-        case Tup(Str("lambda"), Tup(a, Tup(e,N))) =>
-            val varnames = tupToList(a)
-            val vars = varnames.map({ x: String => Var(x) })
-            Lam(vars, trans(e,env:::varnames))
+        case Tup(Str("lambda"), Tup(a, Tup(e,N))) => a match {
+            case Str(".") =>
+                Lam(List(Var(".")), trans(e,env))
+            case _ =>
+                val varnames = tupToList(a)
+                val vars = varnames.map({ x: String => Var(x) })
+                Lam(vars, trans(e,env:::varnames))
+        }
+
+        // (rlambda f x e)
+        case Tup(Str("rlambda"), Tup(Str(f),Tup(Str(x),Tup(e,N)))) =>
+            RLam(f, Var(x), trans(e,env:+f:+x))
 
         case Tup(Str("if"),     Tup(c,Tup(a,Tup(b,N)))) => If(trans(c,env),trans(a,env),trans(b,env))
         case Tup(Str("and"),    Tup(a,Tup(b,N))) => And(trans(a,env),trans(b,env))
@@ -115,6 +123,7 @@ object ELisp {
         case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
         case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))
         case Tup(Str("null?"),  Tup(a,N)) => IsNull(trans(a, env))
+        case Tup(Str("code?"),  Tup(a,N)) => IsCode(trans(a,env))
         case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
         case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
         case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))

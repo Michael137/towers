@@ -263,6 +263,103 @@ object PE {
 
     val evl_rec = s"(let maybe-lift (lambda (e) e) $evl_rec_src)"
 
+  val evl_secd_src = """
+(let debug (lambda (x) (log 0 x))
+    (let cdar (lambda (x) (cdr (car x)))
+    (let cddr (lambda (x) (cdr (cdr x)))
+    (let cdddr (lambda (x) (cdr (cddr x)))
+    (let caar (lambda (x) (car (car x)))
+    (let null? (lambda (x) (eq? '() x))
+    (let map (lambda (f) (letrec ((mapf (lambda (xs) (if (null? xs) xs (cons (f (car xs)) (mapf (cdr xs))))))) mapf))
+    (letrec ((mla (lambda (xs) (if (code? xs) xs (if (pair? xs) (maybe-lift (cons (mla (car xs)) (mla (cdr xs)))) (maybe-lift xs))))))
+    (let atom? (lambda (a) (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0))))
+    (letrec ((locate (lambda (i) (lambda (j) (lambda (env)
+                (letrec ((loc (lambda (y) (lambda (lst) (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))))
+                        ((loc j) ((loc i) env))))))))
+    (letrec ((machine (lambda (s) (lambda (d) (lambda (fns) (lambda (ops) (lambda (env)
+    (if (eq? 'STOP (car ops)) (mla s)
+    (if (eq? 'WRITEC (car ops)) (car s)
+    (if (eq? 'LDC (car ops))
+    (((((machine (cons (maybe-lift (cadr ops)) s)) d) fns) (cddr ops)) env)
+    (if (eq? 'ADD (car ops))
+    (((((machine (cons (+ (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'SUB (car ops))
+    (((((machine (cons (- (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'LD (car ops))
+    (((((machine (cons (((locate (car (cadr ops))) (cadr (cadr ops))) env) s)) d) fns) (cddr ops)) env)
+    (if (eq? 'LDR (car ops))
+    (((((machine (cons (lambda (.) (((locate (car (cadr ops))) (cadr (cadr ops))) fns)) s)) d) fns) (cddr ops)) env)
+    (if (eq? 'LDF (car ops))
+    (((((machine (cons (cons (cadr ops) env) s)) d) fns) (cddr ops)) env)
+    (if (eq? 'NIL (car ops))
+    (((((machine (cons (maybe-lift '()) s)) d) fns) (cdr ops)) env)
+    (if (eq? 'AP (car ops))
+    (if (pair? (car s))
+    (((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) (caar s)) (cons (cadr s) (cdr (car s))))
+    (let s1 ((car s) 1)
+    (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+    (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+    (((((machine (cons s0 (car d))) (cdddr d)) fns) (caddr d)) (cadr d))))))
+    (if (eq? 'RTN (car ops))
+    (if (eq? 'ret d)
+    (mla (car s))
+    (((((machine (cons (car s) (car d))) (cdddr d)) fns) (caddr d)) (cadr d)))
+    (if (eq? 'CONS (car ops))
+    (((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'SEL (car ops))
+    (if (eq? (car s) (maybe-lift 0))
+        (((((machine (cdr s)) (cons (cdddr ops) d)) fns) (caddr ops)) env)
+        (((((machine (cdr s)) (cons (cdddr ops) d)) fns) (cadr ops)) env))
+    (if (eq? 'JOIN (car ops))
+    (((((machine s) (cdr d)) fns) (car d)) env)
+    (if (eq? 'MPY (car ops))
+    (((((machine (cons (* (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'EQ (car ops))
+    (((((machine (cons (eq? (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'GT (car ops))
+    (((((machine (cons (> (car s) (cadr s)) (cddr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'DUM (car ops))
+    (((((machine s) d) fns) (cdr ops)) (cons '() env))
+    (if (eq? 'RAP (car ops))
+    (let s1 (cadr s)
+    (letrec ((rec (maybe-lift (lambda (env) (((((machine '()) 'ret) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) (caar s1)) env)))))
+    (((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) (caar s)) env)))
+    (if (eq? 'CAR (car ops))
+    (((((machine (cons (car (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'CDR (car ops))
+    (((((machine (cons (cdr (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'QUOTE (car ops))
+    (((((machine (cons (cons (car s) '()) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'CADR (car ops))
+    (((((machine (cons (cadr (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'CADDR (car ops))
+    (((((machine (cons (caddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'CADDDR (car ops))
+    (((((machine (cons (cadddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'CDDDR (car ops))
+    (((((machine (cons (cdddr (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'EMPTY? (car ops))
+    (((((machine (cons (null? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'ATOM? (car ops))
+    (((((machine (cons (atom? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'SYM? (car ops))
+    (((((machine (cons (sym? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'NUM? (car ops))
+    (((((machine (cons (num? (car s)) (cdr s))) d) fns) (cdr ops)) env)
+    (if (eq? 'DBG (car ops))
+        (cons 'breakpoint: s)
+
+    (if (eq? 'SAVE (car ops))
+    (((((machine s) (cons s d)) fns) (cdr ops)) env)
+    (if (eq? 'RSTR (car ops))
+    (((((machine (cons (car d) s)) (cdr d)) fns) (cdr ops)) env)
+    (maybe-lift (cons 'ERROR ops))
+    ))))))))))))))))))))))))))))))))))))))))
+    (lambda (ops) (maybe-lift ((((machine '()) '()) '()) ops)))
+    )))))))))))
+            """
+    val secd_src = s"(let maybe-lift (lambda (e) e) $evl_secd_src)"
+
     def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true) = {
         if(runCopmiled)
             ev(s"(run 0 (($vmSrc $src) $env))")
@@ -279,6 +376,17 @@ object PE {
         PETests.factorialTest
         PETests.recTest
         // PETests.curriedVMTest // TODO: @crash
+
+        /*check(ev(s"""(($secd_src '(NIL LDC 1 CONS LDC 10 CONS LDF
+                        (DUM NIL LDF
+                            (LDC 0 LD (1 1) EQ SEL
+                                (LD (1 2) JOIN)
+                                (NIL LD (1 2) LD (1 1) MPY CONS
+                                        LD (3 2) LD (1 1) SUB CONS LDR (1 1) AP JOIN)
+                            RTN)
+                        CONS LDF
+                            (NIL LD (2 2) CONS LD (2 1) CONS LDR (1 1) AP RTN) RAP
+                        RTN) AP WRITEC)) '())"""))("Cst(3628800)")*/
 
         testDone()
     }

@@ -106,4 +106,17 @@ object EVMCompTests {
                                     (ack (- m 1) (ack m (- n 1)))))))
                             (ack 3 4))""", "'()"))("Cst(125)")
     }
+
+    def tryFailTest() = {
+        check(
+            evalOnVM("""(let (x) ((try 1 2 3))
+                            (if (< (x) 2)
+                                (fail)
+                                1))""", "'()"))("Cst(1)") // Note: (x) to force evaluation of try()
+
+        check(
+            evalOnVM("""(let (x) ((try 0 1 2 -20))
+                            (let (y) ((try 7 8 9))
+                                (- (x) (y))))""", "'()"))("Cst(-7)")
+    }
 }

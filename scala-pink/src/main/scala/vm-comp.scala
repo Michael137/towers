@@ -87,6 +87,13 @@ object EVMComp {
         case Tup(hd, tl) => compileList(tl, env, Tup(Str("LDC"), Tup(hd, Tup(Str("CONS"), acc))))
     }
 
+    def compileTry(args: Val, env: CompEnv, acc: Val): Val = args match {
+        // Syntax: (LDF (TRY (exp1* RTN) TRY (exp2* RTN) ... TRY (expN* RTN) FAIL))
+        case N => acc
+        // case Tup(hd, tl) => Tup(Str("TRY"), compile(hd, env, Tup(Str("RTN"), compileTry(tl, env, acc))))
+        case Tup(hd, tl) => Tup(Str("TRY"), Tup(compile(hd, env, Str("RTN")), compileTry(tl, env, acc)))
+    }
+
     var fnEnv: CompEnv = Nil
     var inRec = false
     var hasLDR = false
@@ -121,6 +128,9 @@ object EVMComp {
 
         case Tup(Str(">"), args) =>
             compileBuiltin(args, env, Tup(Str("GT"), acc))
+
+        case Tup(Str("<"), args) =>
+            compileBuiltin(args, env, Tup(Str("LT"), acc))
 
         case Tup(Str("eq?"), args) =>
             compileBuiltin(args, env, Tup(Str("EQ"), acc))
@@ -161,6 +171,9 @@ object EVMComp {
         case Tup(Str("debug"), args) =>
             compileBuiltin(args, env, Tup(Str("DBG"), acc))
 
+        case Tup(Str("fail"), args) =>
+            compileBuiltin(args, env, Tup(Str("FAIL"), acc))
+
         case Tup(Str("if"), Tup(c,Tup(a,Tup(b,N)))) =>
             compileIf(c, a, b, env, acc)
 
@@ -168,6 +181,10 @@ object EVMComp {
             val newEnv = tupToList(vs)::env
             Tup(Str("NIL"), compileApp(vals, env, compileLambda(body, newEnv, Tup(Str("AP"), acc))))
         }
+
+        case Tup(Str("try"), args) =>
+            // Tup(Str("LDF"), Tup(compile(body, env, Tup(Str("RTN"), N)), acc))
+            Tup(Str("LDF"), Tup(compileTry(args, env, Tup(Str("FAIL"), N)), acc))
 
         case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
             val newEnv = if(hasLDR) { fnEnv = tupToList(vs)::fnEnv; fnEnv } else tupToList(vs)::env
@@ -228,6 +245,7 @@ object EVMComp {
         EVMCompTests.factorialTest
         EVMCompTests.nestedLambdaTest
         EVMCompTests.ackermannTest
+        EVMCompTests.tryFailTest
 
         testDone()
     }

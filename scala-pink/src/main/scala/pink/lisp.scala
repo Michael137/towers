@@ -42,6 +42,7 @@ object Lisp {
     case Tup(Str("-"),      Tup(a,Tup(b,N))) => Minus(trans(a,env),trans(b,env))
     case Tup(Str("*"),      Tup(a,Tup(b,N))) => Times(trans(a,env),trans(b,env))
     case Tup(Str(">"),      Tup(a,Tup(b,N))) => Gt(trans(a,env),trans(b,env))
+    case Tup(Str("<"),      Tup(a,Tup(b,N))) => Lt(trans(a,env),trans(b,env))
     // (let x a b)
     case Tup(Str("let"),    Tup(Str(x),Tup(a,Tup(b,N)))) => Let(trans(a,env),trans(b,env:+x))
     // (lambda f x e)

@@ -18,6 +18,7 @@ object Base {
   case class Times(a:Exp,b:Exp) extends Exp
   case class Equ(a:Exp,b:Exp) extends Exp
   case class Gt(a:Exp,b:Exp) extends Exp
+  case class Lt(a:Exp,b:Exp) extends Exp
   case class Or(a:Exp,b:Exp) extends Exp
   case class Cons(a:Exp,b:Exp) extends Exp
   case class Fst(a:Exp) extends Exp with ListOp
@@ -116,6 +117,8 @@ object Base {
       reflect(Equ(anf(env,e1),anf(env,e2)))
     case Gt(e1,e2) =>
       reflect(Gt(anf(env,e1),anf(env,e2)))
+    case Lt(e1,e2) =>
+      reflect(Lt(anf(env,e1),anf(env,e2)))
     case Or(e1,e2) =>
       reflect(Or(anf(env,e1),anf(env,e2)))
     case Cons(e1,e2) =>
@@ -277,6 +280,13 @@ object Base {
           Cst(if (n1 > n2) 1 else 0)
         case (Code(s1),Code(s2)) =>
           reflectc(Gt(s1,s2))
+      }
+    case Lt(e1,e2) =>
+      (evalms(env,e1), evalms(env,e2)) match {
+        case (Cst(n1), Cst(n2)) =>
+          Cst(if (n1 < n2) 1 else 0)
+        case (Code(s1),Code(s2)) =>
+          reflectc(Lt(s1,s2))
       }
     case Or(e1,e2) =>
       (evalms(env,e1), evalms(env,e2)) match {

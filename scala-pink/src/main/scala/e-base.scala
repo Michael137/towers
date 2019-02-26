@@ -14,13 +14,11 @@ object EBase {
   // expressions
   abstract class Exp
   abstract class Primitive extends Exp
-  abstract class Lambda extends Exp
   // Atomic exp
   case class Lit(n:Int) extends Exp
   case class Sym(s:String) extends Exp
   case class Var(s:String) extends Exp
-  case class Lam(vs: List[Var], e:Exp) extends Lambda
-  case class RLam(name: String, v: Var, e:Exp) extends Lambda
+  case class Lam(vs: List[Var], e:Exp) extends Exp
   case class VarargLam(e: Exp, vs: Exp) extends Exp
   case class NullExp(msg: String) extends Exp
   // Primitives
@@ -36,7 +34,6 @@ object EBase {
   case class IsCons(a:Exp) extends Primitive
   case class IsCell(a:Exp) extends Primitive
   case class IsNull(a:Exp) extends Primitive
-  case class IsCode(a:Exp) extends Primitive
   case class Fst(a:Exp) extends Primitive
   case class Snd(a:Exp) extends Primitive
 
@@ -96,7 +93,7 @@ object EBase {
   abstract class Val
   case class Cst(n:Int) extends Val
   case class Str(s:String) extends Val
-  case class Clo(f: Lambda, state: State) extends Val
+  case class Clo(f: Lam, state: State) extends Val
   case class Tup(v1:Val,v2:Val) extends Val
   // Continuation types
   case class LetK(v: Var, c: Exp, e: Env, k: Cont) extends Val // ? var, v, is de Bruijn Level
@@ -376,7 +373,7 @@ object EBase {
 
   // Helper functions
   def isAtom(c: Exp) = c match {
-    case NullExp(_) | Lit(_) | Sym(_) | Lam(_, _) | RLam(_, _, _) | VarargLam(_, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
+    case NullExp(_) | Lit(_) | Sym(_) | Lam(_, _) | VarargLam(_, _) | Cons(_, _) | Var(_) | Cons_(_, _) | _: Primitive => true
   }
 
   def evalAtom(c: Exp, e: Env, s: Store): Val = c match {
@@ -435,14 +432,6 @@ object EBase {
         Cell(key, 0)
       case lam: Lam => 
             Clo(lam, State(null, e, s, null))
-
-      case lam@RLam(name, arg, body) =>
-            val addr = fresh()
-            val updatedEnv = update(e, name, addr)
-            val evaledBody = inject(body, updatedEnv, s, false)
-            val updatedStore = update(s, addr, evaledBody)
-
-            Clo(lam, State(null, updatedEnv, updatedStore, null))
 
       /* The complexity is the price we pay for multi-argument
       ** lambda support in the EPink evaluator. We use
@@ -636,31 +625,23 @@ object EBase {
   }
 
   def applyProc(proc: Val, args: List[Val], s: Store, k: Cont) = proc match {
-    case Clo(lambda, State(_, env, store, _)) => lambda match {
-      case Lam(vs, body) =>
-        val addrs = vs.map({_ => fresh()})
-        val varNames = vs.map({x: Var => x.s})
-        val updatedEnv = updateMany(env, varNames, addrs)
-        // val updatedStore = updateMany(s, addrs, args)
-        val updatedStore = updateMany(store, addrs, args)
+    case Clo(Lam(vs, body), State(_, env, store, _)) =>
+      val addrs = vs.map({_ => fresh()})
+      val varNames = vs.map({x: Var => x.s})
+      val updatedEnv = updateMany(env, varNames, addrs)
+      // val updatedStore = updateMany(s, addrs, args)
+      val updatedStore = updateMany(store, addrs, args)
 
-        val sizeDiff = vs.size - args.size
-        if(sizeDiff > 0) {
-          // Curry function
-          State(Lam(vs.drop(args.size), body), updatedEnv, updatedStore, k)
-        } else if(args.size == vs.size) {
-          // Evaluate body
-          State(body, updatedEnv, updatedStore, k)
-        } else {
-          State(NullExp("ERROR: tried to apply closure to too many arguments"), null, null, Halt())
-        }
-      case RLam(name, Var(vr), body) =>
-        val addr = fresh()
-        val updatedEnv = update(env, vr, addr)
-        val updatedStore = update(s, addr, args(0))
-        println(updatedStore(updatedEnv("f")))
+      val sizeDiff = vs.size - args.size
+      if(sizeDiff > 0) {
+        // Curry function
+        State(Lam(vs.drop(args.size), body), updatedEnv, updatedStore, k)
+      } else if(args.size == vs.size) {
+        // Evaluate body
         State(body, updatedEnv, updatedStore, k)
-    }
+      } else {
+        State(NullExp("ERROR: tried to apply closure to too many arguments"), null, null, Halt())
+      }
 
     // TODO: check if all args are Code as well?
     case Code(s1) =>

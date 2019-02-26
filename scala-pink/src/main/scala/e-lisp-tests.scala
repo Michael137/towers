@@ -19,9 +19,6 @@ object ELispTests {
 
         checkrun("((lambda (x) x) 4)", "Cst(4)")
         checkrun("(let y 2 ((lambda (x) y) 4))", "Cst(2)")
-
-        // checkrun("((rlambda f x x) 4)", "Cst(4)")
-        // checkrun("((rlambda fn x (if (eq? x 0) 4 (fn 0))) 4)", "Cst(4)")
     }
 
     def cellTests() = {

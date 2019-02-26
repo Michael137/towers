@@ -26,6 +26,7 @@ object Base {
   case class IsStr(a:Exp) extends Exp
   case class IsCons(a:Exp) extends Exp
   case class IsCode(a:Exp) extends Exp
+  case class IsClosure(a:Exp) extends Exp
   case class Lift(e:Exp) extends Exp
   case class Run(b:Exp,e:Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
@@ -127,6 +128,8 @@ object Base {
       reflect(IsCons(anf(env,e)))
     case IsCode(e) =>
       reflect(IsCode(anf(env,e)))
+    case IsClosure(e) =>
+      reflect(IsClosure(anf(env,e)))
     case Fst(e) =>
       reflect(Fst(anf(env,e)))
     case Snd(e) =>
@@ -327,6 +330,14 @@ object Base {
       (evalms(env,e1)) match {
         case v => 
           Cst(if (v.isInstanceOf[Code]) 1 else 0)
+      }
+
+     case IsClosure(e1) =>
+      (evalms(env,e1)) match {
+        case (Code(s1)) =>
+          Code(reflect(IsClosure(s1)))
+        case v =>
+          Cst(if (v.isInstanceOf[Clo]) 1 else 0)
       }
 
     // special forms: custom eval, ...

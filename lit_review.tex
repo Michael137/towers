@@ -593,6 +593,10 @@ In order to achieve the collapsing effect in Pink \cite{amin2017collapsing}, the
 
 To achieve the same effect under constraints imposed by heterogeneity, we address both requirements first by showing heterogeneous towers are a special case of a generalized model for reflective towers and then providing a framework that uses the concept of a meta-controller from previous work on towers of interpreters to encapsulate staging information and pass it between stages.
 
+Kogge's extensive study of machines for symbolic computation \cite{kogge1990architecture} and Diehl et al.'s survey of abstract machines provide several attractive opportunities for future investigations. The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}, MultiLisp
+
+We implement some of the extensions to SECD described in \cite{kogge1990architecture} that permit non-deterministic computation and backtracking. The machine itself still remains purely functional. Abstract machines that aim to model specific real system behaviour require the capability of the underlying machinery to provide mechanisms to manipulate cell locations and permit some form of store. For this purpose we extended the original \mslang with the ability to create cells and mutate these. We then implement MultiLisp and the demand-driven evaluation extensions to the SECD machine and present our findings below.
+
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}
 

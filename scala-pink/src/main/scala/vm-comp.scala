@@ -80,11 +80,16 @@ object EVMComp {
         case Tup(hd, tl) => compileApp(tl, env, compile(hd, env, Tup(Str("CONS"), acc)))
     }
 
-    def compileList(args: Val, env: CompEnv, acc: Val): Val = args match {
-        case N => acc
-        case Tup(s: Str, N) => Tup(Str("LDC"), Tup(s, acc))
-//      case Tup(fst, (Tup(snd, N))) => Tup(Str("LDC"), Tup(snd, Tup(Str("LDC"), Tup(fst, Tup(Str("CONS"), acc)))))
-        case Tup(hd, tl) => compileList(tl, env, Tup(Str("LDC"), Tup(hd, Tup(Str("CONS"), acc))))
+    def compileList(args: Val): List[Val] = args match {
+      case Tup(hd, tl) => compileList(tl) ++ compileList(hd) ++ List(Str("CONS"))
+      case s => List(Str("LDC"), s)
+    }
+    def toTup(xs: List[Val], acc: Val): Val = xs match {
+      case Nil => acc
+      case x::xs => Tup(x, toTup(xs, acc))
+    }
+    def compileList(args: Val, env: CompEnv, acc: Val): Val = {
+      toTup(compileList(args), acc)
     }
 
     def compileTry(args: Val, env: CompEnv, acc: Val): Val = args match {
@@ -111,11 +116,8 @@ object EVMComp {
         case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
             compileLambda(body, tupToList(args)::env, acc)
 
-        case Tup(Str("list"), Tup(args, _)) => // TODO: quote and list should be merged
-            Tup(Str("NIL"), compileList(args, env, Tup(Str(""), acc)))
-
-        case Tup(Str("quote"), args) =>
-            Tup(Str("NIL"), compileList(args, env, Tup(Str(""), acc)))
+        case Tup(Str("quote"), Tup(args, _)) =>
+            compileList(args, env, Tup(Str(""), acc))
 
         case Tup(Str("+"), args) =>
             compileBuiltin(args, env, Tup(Str("ADD"), acc))
@@ -210,7 +212,6 @@ object EVMComp {
     def runOnVM(src: String, env: String, run: Boolean = true) = {
         hasLDR = true
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
-        // println(instrs)
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
 

@@ -22,7 +22,7 @@ object SECD {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
-(let _ (log 0 (car ops))
+(let _ _
 (if (eq? 'STOP (car ops)) (mla s)
 (if (eq? 'WRITEC (car ops)) (car s)
 (if (eq? 'LDC (car ops))
@@ -41,7 +41,7 @@ object SECD {
 ((((((machine (cons (maybe-lift '()) s)) d) fns) bt) (cdr ops)) env)
 (if (eq? 'AP (car ops))
   (if (pair? (car s))
-    (let _ (log 0 (car s))
+    (let _ _
       (if (eq? 'try (caaar s))
         (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
         (let wrapInstrs (lambda wrapInstrs xs
@@ -50,7 +50,7 @@ object SECD {
             (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
                   (wrapInstrs (cddr xs)))))
         (let wrapped (wrapInstrs (cdr (caar s)))
-        (let _ (log 0 (cons 'WRAPPED: wrapped))
+        (let _ _
          ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env))))) ;Should merge wrapped and bt instead of pushing cons
         ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))))
   (if (lambda? (car s))
@@ -68,7 +68,7 @@ object SECD {
 (if (eq? 'RTN (car ops))
   (if (eq? 'ret d)
     (mla (car s))
-    (let _ (log 0 (cons 'rtn (caddr d)))
+    (let _ _
       ((((((machine (cons (car s) (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
 (if (eq? 'CONS (car ops))
 ((((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
@@ -83,7 +83,7 @@ object SECD {
 (if (eq? 'EQ (car ops))
 ((((((machine (cons (eq? (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'GT (car ops))
-(let _ (log 0 (cons 'COMPARING: (cons (car s) (cadr s))))
+(let _ _
 ((((((machine (cons (> (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env))
 (if (eq? 'LT (car ops))
 ((((((machine (cons (< (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
@@ -129,23 +129,23 @@ object SECD {
   (let closure (car s)
     ((((((machine '()) state) fns) bt) (car closure)) (cons (cons 'cc state) (cdr closure)))))
 (if (eq? 'TRY (car ops))
-  (let _ (log 0 'try)
+  (let _ _
   (let instrsToTry (cadr ops)
   (let cc (cons 'cc (cons s (cons env (cons (cddr ops) d))))
     ((((((machine s) d) fns) (cons cc bt)) instrsToTry) env))))
 (if (eq? 'FAIL (car ops))
   (let cc (car bt)
-  (let _ (log 0 'fail)
+  (let _ _
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
 
 (if (eq? 'LDT (car ops))
 ((((((machine (cons (cons (cons 'try (cadr ops)) env) s)) d) fns) bt) (cddr ops)) env)
 (if (eq? 'TRY_ (car ops))
-  (let _ (log 0 'try)
-  (let _ (log 0 (cons 'BTREG: bt))
+  (let _ _
+  (let _ _
   (((caar bt) env) bt))) ;Should be "(car bt)"
 (if (eq? 'FAIL_ (car ops))
-  (let _ (log 0 (cons 'fail bt))
+  (let _ _
     ((((((machine s) d) fns) (cons (cdar bt) bt)) '(TRY_)) env)) ;Should be simply "(cdr bt)""
 
 (maybe-lift (cons 'ERROR ops))

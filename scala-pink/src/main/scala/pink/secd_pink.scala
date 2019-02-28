@@ -4,8 +4,10 @@ import Base._
 import Lisp._
 
 object SECD {
-  val src ="""
+  val src = """
 (let debug (lambda _ x (log 0 x))
+(let caaar (lambda _ x (car (caar x)))
+(let caaaar (lambda _ x (car (caaar x)))
 (let cdar (lambda _ x (cdr (car x)))
 (let cddr (lambda _ x (cdr (cdr x)))
 (let cdddr (lambda _ x (cdr (cddr x)))
@@ -20,7 +22,7 @@ object SECD {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
-(let _ _
+(let _ (log 0 (car ops))
 (if (eq? 'STOP (car ops)) (mla s)
 (if (eq? 'WRITEC (car ops)) (car s)
 (if (eq? 'LDC (car ops))
@@ -39,24 +41,35 @@ object SECD {
 ((((((machine (cons (maybe-lift '()) s)) d) fns) bt) (cdr ops)) env)
 (if (eq? 'AP (car ops))
   (if (pair? (car s))
-    ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))
+    (let _ (log 0 (car s))
+      (if (eq? 'try (caaar s))
+        (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
+        (let wrapInstrs (lambda wrapInstrs xs
+          (if (null? (cdr xs))
+            (car xs)
+            (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
+                  (wrapInstrs (cddr xs)))))
+        (let wrapped (wrapInstrs (cdr (caar s)))
+        (let _ (log 0 (cons 'WRAPPED: wrapped))
+         ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env))))) ;Should merge wrapped and bt instead of pushing cons
+        ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))))
   (if (lambda? (car s))
       (let s1 ((car s) 1)
         (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
           (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
           ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
-  (let cc (car s)
+  (let cc (car s) ;;; Purely for the CC instr
     (let newStack (cons (cadr s) (cadr cc))
     (let newEnv (caddr cc)
     (let newOps (cadddr cc)
     (let newDump (cadddr (cdr cc))
-      ((((((machine newStack) newDump) fns) bt) newOps) newEnv)
-  )))))))
+      ((((((machine newStack) newDump) fns) bt) newOps) newEnv))))))
+    ))
 (if (eq? 'RTN (car ops))
-  (let _ (log 0 'rtn)
   (if (eq? 'ret d)
     (mla (car s))
-    ((((((machine (cons (car s) (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
+    (let _ (log 0 (cons 'rtn (caddr d)))
+      ((((((machine (cons (car s) (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
 (if (eq? 'CONS (car ops))
 ((((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'SEL (car ops))
@@ -124,9 +137,20 @@ object SECD {
   (let cc (car bt)
   (let _ (log 0 'fail)
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
+
+(if (eq? 'LDT (car ops))
+((((((machine (cons (cons (cons 'try (cadr ops)) env) s)) d) fns) bt) (cddr ops)) env)
+(if (eq? 'TRY_ (car ops))
+  (let _ (log 0 'try)
+  (let _ (log 0 (cons 'BTREG: bt))
+  (((caar bt) env) bt))) ;Should be "(car bt)"
+(if (eq? 'FAIL_ (car ops))
+  (let _ (log 0 (cons 'fail bt))
+    ((((((machine s) d) fns) (cons (cdar bt) bt)) '(TRY_)) env)) ;Should be simply "(cdr bt)""
+
 (maybe-lift (cons 'ERROR ops))
-)))))))))))))))))))))))))))))))))))))))))))
-(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))
+))))))))))))))))))))))))))))))))))))))))))))))
+(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))))
 """
   val evl = s"(let maybe-lift (lambda _ e e) $src)"
   val cmp = s"(let maybe-lift (lambda _ e (lift e)) $src)"
@@ -221,6 +245,15 @@ object SECD {
     //                   (FAIL JOIN ) (LDC 1 JOIN ) RTN ) AP STOP
     // )"""
     // check(ev(s"($cmp $tryFail2)"))("Str(done)")
+
+    val ldtTest = """'(
+      NIL LDT
+         (TRY_ (LDC 0 RTN) TRY_ (LDC 2 RTN) TRY_ (LDC 3 RTN) FAIL_ ) CONS LDF
+         (LDC 2 NIL LD (1 1) AP LT SEL
+                 (FAIL_ JOIN ) (LDC 1 JOIN ) RTN ) AP WRITEC
+    )"""
+    check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
+    // check(ev(s"(($cmp $ldtTest) '())"))("Cst(1)")
 
     testDone()
   }

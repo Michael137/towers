@@ -23,7 +23,7 @@ object SECD {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
-(let _ (debug (car ops))
+(let _ _
 (if (eq? 'STOP (car ops)) (mla s)
 (if (eq? 'WRITEC (car ops)) (car s)
 (if (eq? 'LDC (car ops))
@@ -133,7 +133,7 @@ object SECD {
   (let _ _
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
 (if (eq? 'AP_ (car ops))
-  (if (pair? (debug (car s)))
+  (if (pair? (car s))
     (let _ (log 0 s)
       (if (eq? ((liftIfCode 'try) (caaar s)) (caaar s))
         (let _ (log 0 (cons 'FROMPREWRAP (caaar s)))

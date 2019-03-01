@@ -215,7 +215,8 @@ object EVMComp {
         val instrSrc = instrsToString(instrs)
         println("TESTING:\n" + instrSrc)
 
-        // val ret = EBase.deref(PE.runVM(PE.cmp, s"'($instrSrc)", env, run))
+        println(Base.pretty(Base.reifyc(Lisp.ev(s"((${SECD.cmp} '($instrSrc)) (lift '()))")), Nil))
+
         val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
         inRec = false
         fnEnv = Nil

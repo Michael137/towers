@@ -16,6 +16,7 @@ object SECD {
 (let null? (lambda _ x (eq? ((liftIfCode '()) x) x))
 (let map (lambda map f (lambda mapf xs (if (null? xs) xs (cons (f (car xs)) (mapf (cdr xs))))))
 (let mla (lambda mla xs (if (code? xs) xs (if (pair? xs) (maybe-lift (cons (mla (car xs)) (mla (cdr xs)))) (maybe-lift xs))))
+(let pla (lambda pla xs (if (code? xs) xs (if (pair? xs) (possible-lift (cons (pla (car xs)) (mla (cdr xs)))) (possible-lift xs))))
 (let atom? (lambda atom? a (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0))))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst
@@ -24,8 +25,13 @@ object SECD {
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
 (let _ _
-(if (eq? 'STOP (car ops)) (mla s)
-(if (eq? 'WRITEC (car ops)) (car s)
+(if (eq? 'LIFT (car ops))
+ (let r (if (num? (car s))
+      (lift (car s))
+      (lift (lambda _ x ((((((machine '()) 'ret) fns) bt) (car (cdr (car s)))) (cons (cons x '()) (cdr (cdar s)))))))
+ ((((((machine (cons r (cdr s))) d) fns) bt) (cdr ops)) env))
+(if (eq? 'STOP (car ops)) (pla (mla s))
+(if (eq? 'WRITEC (car ops)) (pla (car s))
 (if (eq? 'LDC (car ops))
 ((((((machine (cons (maybe-lift (cadr ops)) s)) d) fns) bt) (cddr ops)) env)
 (if (eq? 'ADD (car ops))
@@ -42,11 +48,15 @@ object SECD {
 ((((((machine (cons (maybe-lift '()) s)) d) fns) bt) (cdr ops)) env)
 (if (eq? 'AP (car ops))
   (if (code? (car s))
+    (if lifting?
+    (let s0 ((car s) (car (cadr s)))
+    (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
     (let fun (caar s)
     (let s (cons (cdr (car s)) (cdr s))
     (let s0 (fun (mla (cons (cadr s) (cdr (car s)))))
     (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
-      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
+      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))))
   (if (pair? (car s))
     (let fun (caar s)
     (let s (cons (cdr (car s)) (cdr s))
@@ -67,9 +77,9 @@ object SECD {
 (if (eq? 'CONS (car ops))
 ((((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'SEL (car ops))
-  (if (eq? (car s) (maybe-lift 0))
-    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (caddr ops)) env)
-    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (cadr ops)) env))
+  (if (car s)
+    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (cadr ops)) env)
+    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (caddr ops)) env))
 (if (eq? 'JOIN (car ops))
 ((((((machine s) (cdr d)) fns) bt) (car d)) env)
 (if (eq? 'MPY (car ops))
@@ -172,11 +182,12 @@ object SECD {
 
 
 (maybe-lift (cons 'ERROR ops))
-)))))))))))))))))))))))))))))))))))))))))))))))
-(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops)))))))))))))))))
+))))))))))))))))))))))))))))))))))))))))))))))))
+(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))))))
 """
-  val evl = s"(let maybe-lift (lambda _ e e) $src)"
-  val cmp = s"(let maybe-lift (lambda _ e (lift e)) $src)"
+  val evl = s"(let lifting? 0 (let possible-lift (lambda _ e e) (let maybe-lift (lambda _ e e) $src)))"
+  val cmp = s"(let lifting? 0 (let possible-lift (lambda _ e e) (let maybe-lift (lambda _ e (lift e)) $src)))"
+  val evg = s"(let lifting? 1 (let possible-lift (lambda _ e (lift e)) (let maybe-lift (lambda _ e e) $src)))"
 
   def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true) = {
       if(runCopmiled)

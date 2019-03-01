@@ -119,6 +119,9 @@ object EVMComp {
         case Tup(Str("quote"), Tup(args, _)) =>
             compileList(args, env, Tup(Str(""), acc))
 
+        case Tup(Str("lift"), args) =>
+            compileBuiltin(args, env, Tup(Str("LIFT"), acc))
+
         case Tup(Str("+"), args) =>
             compileBuiltin(args, env, Tup(Str("ADD"), acc))
 
@@ -233,6 +236,18 @@ object EVMComp {
 
         // val ret = EBase.deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
         val ret = Base.deref(SECD.runVM(SECD.evl, s"'($instrSrc)", env, false))
+        inRec = false
+        fnEnv = Nil
+        ret
+    }
+
+    def genOnVM(src: String, env: String, vm: Any = Nil) = {
+        hasLDR = true
+
+        val instrs = compile(parseExp(src), Nil, Tup(Str("WRITEC"), N))
+        val instrSrc = instrsToString(instrs)
+
+        val ret = Base.deref(SECD.runVM(SECD.evg, s"'($instrSrc)", env, false))
         inRec = false
         fnEnv = Nil
         ret

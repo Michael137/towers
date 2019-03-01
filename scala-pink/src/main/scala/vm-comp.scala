@@ -246,7 +246,7 @@ object EVMComp {
         EVMCompTests.factorialTest
         EVMCompTests.nestedLambdaTest
         EVMCompTests.ackermannTest
-        EVMCompTests.tryFailTest
+        //TODO: EVMCompTests.tryFailTest
 
         testDone()
     }

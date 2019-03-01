@@ -34,24 +34,30 @@ object VMEval {
                 (eval (quote $p) '()))
     """
 
+  def evalAndRunOnVM(s: String, env: String) = {
+    val r1 = evalOnVM(s, env)
+    val r2 = runOnVM(s, env)
+    check(r1.toString)(r2.toString)
+    r1
+  }
     def test() = {
         println("// ------- VMEVal.test --------")
-        check(evalOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
-        check(evalOnVM(meta_eval("(if (+ 2 -2) (* 1 -1) (* -1 (* -1 1)))"), "'()"))("Cst(1)")
-        check(evalOnVM(meta_eval("(let y 1 (* y 2))"), "'()"))("Cst(2)") // TODO: runOnVM instead
-        check(evalOnVM(meta_eval("(let x 2 (let y 3 (+ x y)))"), "'()"))("Cst(5)")
-        check(evalOnVM(meta_eval("""(let x0 1 (eq? x0 2))"""), "'()"))("Cst(0)")
-        check(evalOnVM(meta_eval("""(let x0 3 (> x0 2))"""), "'()"))("Cst(1)")
+        check(evalAndRunOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
+        check(evalAndRunOnVM(meta_eval("(if (+ 2 -2) (* 1 -1) (* -1 (* -1 1)))"), "'()"))("Cst(1)")
+        check(evalAndRunOnVM(meta_eval("(let y 1 (* y 2))"), "'()"))("Cst(2)")
+        check(evalAndRunOnVM(meta_eval("(let x 2 (let y 3 (+ x y)))"), "'()"))("Cst(5)")
+        check(evalAndRunOnVM(meta_eval("""(let x0 1 (eq? x0 2))"""), "'()"))("Cst(0)")
+        check(evalAndRunOnVM(meta_eval("""(let x0 3 (> x0 2))"""), "'()"))("Cst(1)")
 
-        check(evalOnVM(meta_eval("(let y (* 3 2) (+ y 1))"), "'()"))("Cst(7)")
-        check(evalOnVM(meta_eval("(let y (lambda (x) (- x 15)) (y 1))"), "'()"))("Cst(-14)")
-        check(evalOnVM(meta_eval("((lambda (x) (- x 15)) 1)"), "'()"))("Cst(-14)")
+        check(evalAndRunOnVM(meta_eval("(let y (* 3 2) (+ y 1))"), "'()"))("Cst(7)")
+        check(evalAndRunOnVM(meta_eval("(let y (lambda (x) (- x 15)) (y 1))"), "'()"))("Cst(-14)")
+        check(evalAndRunOnVM(meta_eval("((lambda (x) (- x 15)) 1)"), "'()"))("Cst(-14)")
 
-        check(evalOnVM(meta_eval("""((lambda (b) b) 2)"""), "'()"))("Cst(2)")
-        check(evalOnVM(meta_eval("""((lambda (b) ((lambda (a) b) 1)) 2)"""), "'()"))("Cst(2)")
-        check(evalOnVM(meta_eval("""(((lambda (a) (lambda (b) b)) 1) 2)"""), "'()"))("Cst(2)")
+        check(evalAndRunOnVM(meta_eval("""((lambda (b) b) 2)"""), "'()"))("Cst(2)")
+        check(evalAndRunOnVM(meta_eval("""((lambda (b) ((lambda (a) b) 1)) 2)"""), "'()"))("Cst(2)")
+        check(evalAndRunOnVM(meta_eval("""(((lambda (a) (lambda (b) b)) 1) 2)"""), "'()"))("Cst(2)")
 
-        check(evalOnVM(meta_eval("""
+        check(evalAndRunOnVM(meta_eval("""
        (((lambda (fun)
           ((lambda (F)
              (F F))
@@ -66,6 +72,7 @@ object VMEval {
 
        ) 6)"""), "'()"))("Cst(720)")
 
+      /* TODO
       // check(runOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
       check(ev(s"""((${SECD.cmp} '(
                DUM NIL LDF
@@ -75,7 +82,7 @@ object VMEval {
                       CONS LDC 0
                       CONS LDR (1 1) AP
                     RTN) RAP STOP)) '())"""))("")
-
+       */
         testDone()
     }
 }

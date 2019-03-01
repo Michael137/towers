@@ -12,7 +12,8 @@ object SECD {
 (let cddr (lambda _ x (cdr (cdr x)))
 (let cdddr (lambda _ x (cdr (cddr x)))
 (let caar (lambda _ x (car (car x)))
-(let null? (lambda _ x (eq? '() x))
+(let liftIfCode (lambda _ a (lambda _ b (if (code? b) (maybe-lift a) a)))
+(let null? (lambda _ x (eq? ((liftIfCode '()) x) x))
 (let map (lambda map f (lambda mapf xs (if (null? xs) xs (cons (f (car xs)) (mapf (cdr xs))))))
 (let mla (lambda mla xs (if (code? xs) xs (if (pair? xs) (maybe-lift (cons (mla (car xs)) (mla (cdr xs)))) (maybe-lift xs))))
 (let atom? (lambda atom? a (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0))))
@@ -22,7 +23,7 @@ object SECD {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
-(let _ _
+(let _ (log 0 (car ops))
 (if (eq? 'STOP (car ops)) (mla s)
 (if (eq? 'WRITEC (car ops)) (car s)
 (if (eq? 'LDC (car ops))
@@ -41,30 +42,12 @@ object SECD {
 ((((((machine (cons (maybe-lift '()) s)) d) fns) bt) (cdr ops)) env)
 (if (eq? 'AP (car ops))
   (if (pair? (car s))
-    (let _ _
-      (if (eq? 'try (caaar s))
-        (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
-        (let wrapInstrs (lambda wrapInstrs xs
-          (if (null? (cdr xs))
-            (car xs)
-            (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
-                  (wrapInstrs (cddr xs)))))
-        (let wrapped (wrapInstrs (cdr (caar s)))
-        (let _ _
-         ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env))))) ;Should merge wrapped and bt instead of pushing cons
-        ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))))
-  (if (lambda? (car s))
+    (let _ (log 0 s)
+      ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s)))))
       (let s1 ((car s) 1)
         (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
           (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
-          ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
-  (let cc (car s) ;;; Purely for the CC instr
-    (let newStack (cons (cadr s) (cadr cc))
-    (let newEnv (caddr cc)
-    (let newOps (cadddr cc)
-    (let newDump (cadddr (cdr cc))
-      ((((((machine newStack) newDump) fns) bt) newOps) newEnv))))))
-    ))
+          ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
 (if (eq? 'RTN (car ops))
   (if (eq? 'ret d)
     (mla (car s))
@@ -138,6 +121,34 @@ object SECD {
   (let _ _
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
 
+(if (eq? 'AP_ (car ops))
+  (if (pair? (car s))
+    (let _ (log 0 s)
+      (if (eq? ((liftIfCode 'try) (caaar s)) (caaar s))
+        (let _ (log 0 (cons 'FROMPREWRAP (caaar s)))
+        (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
+        (let wrapInstrs (lambda wrapInstrs xs
+          (if (null? (cdr xs))
+            (car xs)
+            (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
+                  (wrapInstrs (cddr xs)))))
+        (let wrapped (wrapInstrs (cdr (caar s)))
+        (let _ (log 0 'GOTTOWRAP)
+         ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env)))))) ;Should merge wrapped and bt instead of pushing cons
+        (let _ (log 0 'GOTHERE)
+           ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s)))))))
+  (if (lambda? (car s))
+      (let s1 ((car s) 1)
+        (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+          (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+          ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
+  (let cc (car s) ;;; Purely for the CC instr
+    (let newStack (cons (cadr s) (cadr cc))
+    (let newEnv (caddr cc)
+    (let newOps (cadddr cc)
+    (let newDump (cadddr (cdr cc))
+      ((((((machine newStack) newDump) fns) bt) newOps) newEnv))))))
+    ))
 (if (eq? 'LDT (car ops))
 ((((((machine (cons (cons (cons 'try (cadr ops)) env) s)) d) fns) bt) (cddr ops)) env)
 (if (eq? 'TRY_ (car ops))
@@ -148,9 +159,10 @@ object SECD {
   (let _ _
     ((((((machine s) d) fns) (cons (cdar bt) bt)) '(TRY_)) env)) ;Should be simply "(cdr bt)""
 
+
 (maybe-lift (cons 'ERROR ops))
-))))))))))))))))))))))))))))))))))))))))))))))
-(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))))
+)))))))))))))))))))))))))))))))))))))))))))))))
+(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops)))))))))))))))))
 """
   val evl = s"(let maybe-lift (lambda _ e e) $src)"
   val cmp = s"(let maybe-lift (lambda _ e (lift e)) $src)"
@@ -249,8 +261,8 @@ object SECD {
     val ldtTest = """'(
       NIL LDT
          (TRY_ (LDC 0 RTN) TRY_ (LDC 2 RTN) TRY_ (LDC 3 RTN) FAIL_ ) CONS LDF
-         (LDC 2 NIL LD (1 1) AP LT SEL
-                 (FAIL_ JOIN ) (LDC 1 JOIN ) RTN ) AP WRITEC
+         (LDC 2 NIL LD (1 1) AP_ LT SEL
+                 (FAIL_ JOIN ) (LDC 1 JOIN ) RTN ) AP_ WRITEC
     )"""
     check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
     // check(ev(s"(($cmp $ldtTest) '())"))("Cst(1)")

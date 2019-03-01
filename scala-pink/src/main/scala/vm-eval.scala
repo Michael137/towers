@@ -66,6 +66,16 @@ object VMEval {
 
        ) 6)"""), "'()"))("Cst(720)")
 
+      // check(runOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
+      check(ev(s"""((${SECD.cmp} '(
+               DUM NIL LDF
+                 (NIL LD (1 1) CONS LD (1 2) AP RTN ) CONS LDF
+                   (NIL LDF
+                     (LD (1 1) RTN)
+                      CONS LDC 0
+                      CONS LDR (1 1) AP
+                    RTN) RAP STOP)) '())"""))("")
+
         testDone()
     }
 }

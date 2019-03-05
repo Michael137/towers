@@ -10,6 +10,8 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 
@@ -454,6 +456,47 @@ Ackermann (with optimizations):
 	  (let x10 (cons x8 x9) (x2 x10))))))))))) (x0 '.))
 \end{lstlisting}
 
+New method of lifting recursive applications:
+\begin{lstlisting}[language=Lisp]
+	(let x0
+	(lambda f0 x1
+	  (let x2 (cons 1 '.)
+	  (let x3 (cons 10 x2)
+	  (let x4 (cons x3 x1)
+	  (let x5
+		(lambda f5 x6
+		  (let x7 (car x6)
+		  (let x8 (car x7)
+		  (let x9 (eq? x8 0)
+		  (if x9
+			(let x10 (car x6)
+			(let x11 (cdr x10) (car x11)))
+  
+			(let x10 (car x6)
+			(let x11 (cdr x10)
+			(let x12 (car x11)
+			(let x13 (car x10)
+			(let x14 (* x13 x12)
+			(let x15 (cdr x6)
+			(let x16 (cdr x15)
+			(let x17 (car x16)
+			(let x18 (cdr x17)
+			(let x19 (car x18)
+			(let x20 (- x13 x19)
+			(let x21 (cons x14 '.)
+			(let x22 (cons x20 x21)
+			(let x23 (cons '. x4)
+			(let x24 (cons x22 x23) (f5 x24)))))))))))))))))))))
+	  (let x6 (car x4)
+	  (let x7 (cdr x6)
+	  (let x8 (car x7)
+	  (let x9 (car x6)
+	  (let x10 (cons x8 '.)
+	  (let x11 (cons x9 x10)
+	  (let x12 (cons '. x4)
+	  (let x13 (cons x11 x12) (x5 x13)))))))))))))) (x0 '.))
+\end{lstlisting}
+
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 
@@ -596,6 +639,38 @@ To achieve the same effect under constraints imposed by heterogeneity, we addres
 Kogge's extensive study of machines for symbolic computation \cite{kogge1990architecture} and Diehl et al.'s survey of abstract machines provide several attractive opportunities for future investigations. The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}, MultiLisp
 
 We implement some of the extensions to SECD described in \cite{kogge1990architecture} that permit non-deterministic computation and backtracking. The machine itself still remains purely functional. Abstract machines that aim to model specific real system behaviour require the capability of the underlying machinery to provide mechanisms to manipulate cell locations and permit some form of store. For this purpose we extended the original \mslang with the ability to create cells and mutate these. We then implement MultiLisp and the demand-driven evaluation extensions to the SECD machine and present our findings below.
+
+Figure \ref{fig:tombestone} shows a representation of our tower in terms of ``sideways-stacked'' tombstone diagrams. Although here the tower grows upwards and to the left this does not necessarily be. The compilers, or \textit{translators} labelled LABEL and LABEL have been implemented in scala for convenience. To realize a vertical tower structure our Lisp-to-\mslang translator, which converts Lisp source to Scala ASTs, could be ommitted letting the base-evaluator evaluate s-expressions directly. Similarly, the $\mu$-to-SECD translator could be implemented in SECD instructions itself, possibly through generating such instructions using LABEL in a bootstrapping fashion.
+
+\subsubsection{Tying the Knot}
+
+% https://tex.stackexchange.com/questions/181366/drawing-tombstone-diagrams
+% https://proglang.informatik.uni-freiburg.de/teaching/compilerbau/2004/T-diagrams.pdf
+\begin{figure}[t]
+\centering
+\includegraphics[scale=2]{tombstone_tower.png}
+\label{fig:tombestone}
+\caption{A tombstone digram representation of our framework}
+\end{figure}
+
+\section{Problems in Partial Evaluation}
+\cite{jones1993partial}: page 26. Only recently has partial evaluation seen growing adoption with frameworks such as Scala's LMS \cite{rompf2010lightweight} or Oracle's GraalVM \cite{wurthinger2013one}. The design space of partial evaluators is multi-faceted and considerations include:
+\begin{itemize}
+	\item use of mixed languages (Futamura's mix for compilation requires same PE input language as mix is written in)
+	\item accept different types of interpreters with different semantics (this is what we partly address) (and what GraalVM addresses?)
+	\item performance
+	\item BTA strategy: automatic or manual? offline or online? how to deal with non-termination?
+	\item Heuristics for guiding PE to produce efficient/desirable code (e.g. you cannot say of a compiler that it doesn't produce more valuable program transformation. But PE's accept that some applications do not warrant it. How to detect such situations?)
+\end{itemize}
+
+Chapter 17: specifcies partial evaluation in the context of general program transformation and outlines PE research areas
+
+TODO:
+staging vs pe
+partial evaluatability of SECD (and other linear interpreters/small step semantics vs denotational/big step/recursive descent parsers)
+retaining info in PE of TDPE style (our strategy is thunks)
+contribution: was natural to start with EBASE but uncovered problems BLANK
+tying the knot in the code instead of data
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

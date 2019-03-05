@@ -58,16 +58,21 @@ object SECD {
     (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
       ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))))
   (if (pair? (car s))
-    (let fun (caar s)
-    (let s (cons (cdr (car s)) (cdr s))
-        ;((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))
-        (let s0 (fun (mla (cons (cadr s) (cdr (car s)))))
-          (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
-          ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
-    (let s1 ((car s) 1)
-    (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
-      (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
-      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))))
+    (if (lambda? (caar s))
+      (let fun (caar s)
+      (let s (cons (cdr (car s)) (cdr s))
+          ;((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))
+          (let s0 (fun (mla (cons (cadr s) (cdr (car s)))))
+            (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+            ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
+    (if (eq? 'try (caaar s))
+      'ERROR
+    'ERROR))
+  (let s1 ((car s) 1)
+  (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+    (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+    ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
+  ))
 
 (if (eq? 'RTN (car ops))
   (if (eq? 'ret d)
@@ -142,34 +147,6 @@ object SECD {
   (let cc (car bt)
   (let _ _
     ((((((machine (cadr cc)) (cddddr cc)) fns) (cdr cc)) (cadddr cc)) (caddr cc))))
-(if (eq? 'AP_ (car ops))
-  (if (pair? (car s))
-    (let _ (log 0 s)
-      (if (eq? ((liftIfCode 'try) (caaar s)) (caaar s))
-        (let _ (log 0 (cons 'FROMPREWRAP (caaar s)))
-        (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
-        (let wrapInstrs (lambda wrapInstrs xs
-          (if (null? (cdr xs))
-            (car xs)
-            (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
-                  (wrapInstrs (cddr xs)))))
-        (let wrapped (wrapInstrs (cdr (caar s)))
-        (let _ (log 0 'GOTTOWRAP)
-         ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env)))))) ;Should merge wrapped and bt instead of pushing cons
-        (let _ (log 0 'GOTHERE)
-           ((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s)))))))
-  (if (lambda? (car s))
-      (let s1 ((car s) 1)
-        (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
-          (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
-          ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
-  (let cc (car s) ;;; Purely for the CC instr
-    (let newStack (cons (cadr s) (cadr cc))
-    (let newEnv (caddr cc)
-    (let newOps (cadddr cc)
-    (let newDump (cadddr (cdr cc))
-      ((((((machine newStack) newDump) fns) bt) newOps) newEnv))))))
-    ))
 (if (eq? 'LDT (car ops))
 ((((((machine (cons (cons (cons 'try (cadr ops)) env) s)) d) fns) bt) (cddr ops)) env)
 (if (eq? 'TRY_ (car ops))
@@ -180,6 +157,49 @@ object SECD {
   (let _ _
     ((((((machine s) d) fns) (cons (cdar bt) bt)) '(TRY_)) env)) ;Should be simply "(cdr bt)""
 
+(if (eq? 'AP_ (car ops))
+  (if (code? (car s))
+    (if lifting?
+    (let s0 ((car s) (car (cadr s)))
+    (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
+    (let fun (caar s)
+    (let s (cons (cdr (car s)) (cdr s))
+    (let s0 (fun (mla (cons (cadr s) (cdr (car s)))))
+    (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))))
+  (if (pair? (car s))
+    (if (lambda? (caar s))
+      (let fun (caar s)
+      (let s (cons (cdr (car s)) (cdr s))
+          ;((((((machine '()) (cons (cddr s) (cons env (cons (cdr ops) d)))) fns) bt) (caar s)) (cons (cadr s) (cdr (car s))))
+          (let s0 (fun (mla (cons (cadr s) (cdr (car s)))))
+            (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+            ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
+    (if (eq? 'try (caaar s))
+        (let _ (log 0 (cons 'FROMPREWRAP (caaar s)))
+        (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
+        (let wrapInstrs (lambda wrapInstrs xs
+          (if (null? (cdr xs))
+            (car xs)
+            (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
+                  (wrapInstrs (cddr xs)))))
+        (let wrapped (wrapInstrs (cdr (caar s)))
+        (let _ (log 0 'GOTTOWRAP)
+         ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env)))))) ;Should merge wrapped and bt instead of pushing cons
+    'ERROR))
+  (if (lambda? (car s))
+    (let s1 ((car s) 1)
+    (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+      (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
+      ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
+  (let cc (car s) ;;; Purely for the CC instr
+    (let newStack (cons (cadr s) (cadr cc))
+    (let newEnv (caddr cc)
+    (let newOps (cadddr cc)
+    (let newDump (cadddr (cdr cc))
+      ((((((machine newStack) newDump) fns) bt) newOps) newEnv))))))
+  )))
 
 (maybe-lift (cons 'ERROR ops))
 ))))))))))))))))))))))))))))))))))))))))))))))))
@@ -270,24 +290,17 @@ object SECD {
     check(ev(s"(($evl $tryFail) '())"))("Str(done)")
     // check(ev(s"($cmp $tryFail)"))("") // TODO: @crash because staging of try/fail is not yet implemented
 
-    // val tryFail2 = """'(
-    // NIL LDF
-    //         (TRY (LDC 1 RTN)
-    //          TRY (LDC 2 RTN)
-    //          TRY (LDC 3 RTN) FAIL) CONS LDF
-    //           (LDC 2 NIL LD (1 1) AP LT SEL
-    //                   (FAIL JOIN ) (LDC 1 JOIN ) RTN ) AP STOP
-    // )"""
-    // check(ev(s"($cmp $tryFail2)"))("Str(done)")
-
     val ldtTest = """'(
       NIL LDT
-         (TRY_ (LDC 0 RTN) TRY_ (LDC 2 RTN) TRY_ (LDC 3 RTN) FAIL_ ) CONS LDF
-         (LDC 2 NIL LD (1 1) AP_ LT SEL
-                 (FAIL_ JOIN ) (LDC 1 JOIN ) RTN ) AP_ WRITEC
+         (TRY_ (LDC 0 RTN)
+          TRY_ (LDC 2 RTN)
+          TRY_ (LDC 3 RTN) FAIL_ )
+            CONS LDF (LDC 2 NIL LD (1 1) AP_ LT SEL
+                 (FAIL_ JOIN )
+                 (LDC 1 JOIN ) RTN ) AP_ WRITEC
     )"""
-    //TODO: can't fix this one
-    // check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
+
+     check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
     // check(ev(s"(($cmp $ldtTest) '())"))("Cst(1)")
 
     testDone()

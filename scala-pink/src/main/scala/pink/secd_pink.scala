@@ -261,6 +261,7 @@ object SECD {
 
     // println(prettycode(PinkBase.fac_exp_anf)) // Factorial without SECD for comparison
 
+    println("compiling and running ackerman...")
     val ack_prog = """'(
       DUM NIL LDF
           (LDC 0 LD (1 1) EQ SEL

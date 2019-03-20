@@ -24,7 +24,7 @@ object SECD {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ d (lambda _ fns (lambda _ bt (lambda _ ops (lambda _ env
-(let _ _
+(let _ _ ;(log 0 ops)
 (if (eq? 'LIFT (car ops))
  (let r (if (num? (car s))
       (lift (car s))
@@ -76,17 +76,20 @@ object SECD {
 
 (if (eq? 'RTN (car ops))
   (if (eq? 'ret d)
-    (mla (car s))
-    (let _ _
+    (let _ _ ;(log 0 (cons 'FROMret: ops))
+      (mla (car s)))
+    (let _ _ ;(log 0 (cons 'FROMRTN: d))
       ((((((machine (cons (car s) (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))
 (if (eq? 'CONS (car ops))
 ((((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'SEL (car ops))
+(let _ _ ;(log 0 (cons 'FROMSEL (cddr ops)))
   (if (car s)
     ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (cadr ops)) env)
-    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (caddr ops)) env))
+    ((((((machine (cdr s)) (cons (cdddr ops) d)) fns) bt) (caddr ops)) env)))
 (if (eq? 'JOIN (car ops))
-((((((machine s) (cdr d)) fns) bt) (car d)) env)
+(let _ _ ;(log 0 (cons 'FROMJOIN d))
+((((((machine s) (cdr d)) fns) bt) (car d)) env))
 (if (eq? 'MPY (car ops))
 ((((((machine (cons (* (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'EQ (car ops))
@@ -154,7 +157,7 @@ object SECD {
   (let _ _
   (((caar bt) env) bt))) ;Should be "(car bt)"
 (if (eq? 'FAIL_ (car ops))
-  (let _ _
+  (let _ _ ;(log 0 (cons 'FROMFAIL: bt))
     ((((((machine s) d) fns) (cons (cdar bt) bt)) '(TRY_)) env)) ;Should be simply "(cdr bt)""
 
 (if (eq? 'AP_ (car ops))
@@ -177,7 +180,7 @@ object SECD {
             (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
             ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d))))))
     (if (eq? 'try (caaar s))
-        (let _ (log 0 (cons 'FROMPREWRAP (caaar s)))
+        (let _ _ ;(log 0 (cons 'FROMPREWRAP (caaar s)))
         (let newDump (cons (cddr s) (cons env (cons (cdr ops) d)))
         (let wrapInstrs (lambda wrapInstrs xs
           (if (null? (cdr xs))
@@ -185,7 +188,7 @@ object SECD {
             (cons (maybe-lift (lambda _ env (lambda _ bt ((((((machine '()) newDump) fns) bt) (cadr xs)) env))))
                   (wrapInstrs (cddr xs)))))
         (let wrapped (wrapInstrs (cdr (caar s)))
-        (let _ (log 0 'GOTTOWRAP)
+        (let _ _ ;(log 0 'GOTTOWRAP)
          ((((((machine '()) newDump) fns) (cons wrapped bt)) '(TRY_)) env)))))) ;Should merge wrapped and bt instead of pushing cons
     'ERROR))
   (if (lambda? (car s))
@@ -213,7 +216,7 @@ object SECD {
       if(runCopmiled)
           ev(s"((run 0 ($vmSrc $src)) (lift $env))")
       else
-          ev(s"(($vmSrc $src) $env)")
+          ev(s"(($vmSrc $src) (lift $env))")
   }
 
   def test() = {
@@ -297,11 +300,11 @@ object SECD {
           TRY_ (LDC 2 RTN)
           TRY_ (LDC 3 RTN) FAIL_ )
             CONS LDF (LDC 2 NIL LD (1 1) AP_ LT SEL
-                 (FAIL_ JOIN )
-                 (LDC 1 JOIN ) RTN ) AP_ WRITEC
+                 (LDC 1 JOIN )
+                 (FAIL_ JOIN ) RTN ) AP_ WRITEC
     )"""
 
-     check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
+    check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
     // check(ev(s"(($cmp $ldtTest) '())"))("Cst(1)")
 
     testDone()

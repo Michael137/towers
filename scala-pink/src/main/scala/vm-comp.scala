@@ -106,15 +106,17 @@ object EVMComp {
     def compile(e: Val, env: CompEnv, acc: Val): Val = e match {
         // Null, Number or Identifier
         case N => Tup(Str("NIL"), acc)
-        case s: Str => {        
-            val ij = index(s, env)
-            Tup(Str("LD"), Tup(ij, acc))
+        case v: Str => {
+            val isRecFn = hasLDR && inRec && fnEnv.flatten.exists( x => x == v)
+            val ij = if(isRecFn) index(v, fnEnv) else index(v, env)
+            val appStr = if(isRecFn) "LDR" else "LD"
+            Tup(Str(appStr), Tup(ij, acc))
         }
         case n: Cst => Tup(Str("LDC"), Tup(n, acc))
 
         // Builtin, Lambda, Special form
 
-        case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
+      case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
             compileLambda(body, tupToList(args)::env, acc)
 
         case Tup(Str("quote"), Tup(args, _)) =>
@@ -192,21 +194,20 @@ object EVMComp {
             // Tup(Str("LDF"), Tup(compile(body, env, Tup(Str("RTN"), N)), acc))
             Tup(Str("LDF"), Tup(compileTry(args, env, Tup(Str("FAIL"), N)), acc))
 
-        case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
-            // TODO: Filter out duplicates in fnEnv?
-            val newEnv = if(hasLDR) { fnEnv = (tupToList(vs)::fnEnv):::env; fnEnv } else tupToList(vs)::env
-            inRec = true
-            Tup(Str("DUM"), Tup(Str("NIL"),
-                    compileApp(vals, newEnv, compileLambda(body, newEnv, Tup(Str("RAP"), acc)))))
+      case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
+           val fnEnvBackup = fnEnv
+           val inRecBackup = inRec
+           try {
+               val newEnv = Nil::env
+               inRec = true
+               fnEnv = tupToList(vs)::fnEnv
+               Tup(Str("DUM"), Tup(Str("NIL"),
+                 compileApp(vals, newEnv, compileLambda(body, newEnv, Tup(Str("RAP"), acc)))))
+           } finally {
+               fnEnv = fnEnvBackup
+               inRec = inRecBackup
+           }
         }
-
-        // Variable
-        case Tup(v: Str, args) =>
-            val isRecFn = hasLDR && inRec && fnEnv.flatten.exists( x => x == v)
-            val ij = if(isRecFn) index(v, fnEnv) else index(v, env)
-            val appStr = if(isRecFn) "LDR" else "LD"
-            val app = Tup(Str(appStr), Tup(ij, Tup(Str("AP"), acc)))
-            Tup(Str("NIL"), compileApp(args, env, app))
 
         // Application
         case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))

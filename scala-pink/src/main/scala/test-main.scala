@@ -14,6 +14,7 @@ object TestMain {
     SECD.test() // Pink SECD Machine
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD
+    VMMatcher.test()
 
     /* Uncomment to run benchmarks of
        original framework */

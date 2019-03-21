@@ -5,6 +5,22 @@ import Pink._
 
 object VMMatcher {
 
+    def matcher1(p: String, str: String, lift: String = "(lambda (x) x)") = s"""
+(letrec (match) ((lambda (r s)
+(if (eq? 'done (car r))
+    'yes
+(if (eq? '_ (car r))
+  (if (eq? 'done (car s))
+      'no
+      (match (cdr r) (cdr s))
+      )
+(if (eq? 'done (car s))
+  'no
+(if (eq? (car r) (car s))
+    (match (cdr r) (cdr s))
+    'no))))))
+(match $p $str))
+    """
     def matcher(p: String, str: String, lift: String = "(lambda (x) x)") = s"""
     (letrec (star_loop) ((lambda (m c) (letrec (inner_loop)
                                             ((lambda (s)
@@ -27,13 +43,13 @@ object VMMatcher {
                                         'no)))))
                                 (if (eq? 'done (car (cdr r))) (m s)
                                 (if (eq? '* (car (cdr r)))
-                                    'random
+                                    (lambda (x) 'random)
                                     (m s)))))))
                         (let (match) ((lambda (r)
                             (if (eq? 'done (car r))
                                 (lambda (s) 'yes)
                                 (match_here r))))
-                                ((match (quote $p)) (quote $str)))))
+                                ((match $p) $str))))
     """
 
     def evalAndRunOnVM(pattern: String, str: String, env: String) = {
@@ -47,14 +63,17 @@ object VMMatcher {
     }
     def test() = {
         println("// ------- VMMatcher.test --------")
-        
-        // evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()")
-        // evalOnVM(matcher("'(done)", "'(done)"), "'()")
-        check(runOnVM(
+
+        check(evalOnVM(
             """(letrec (rec) ((lambda (arg)
                                 (letrec (rec2)
                                     ((lambda (arg2)
-                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(1)")
+                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
+
+        println(evalOnVM(matcher1("'(done)", "'(done)"), "'()"))
+        println(evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
+        println(evalOnVM(matcher("'(done)", "'(done)"), "'()"))
+
         testDone()
     }
 }

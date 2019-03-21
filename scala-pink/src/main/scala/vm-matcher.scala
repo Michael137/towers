@@ -54,7 +54,7 @@ object VMMatcher {
             """(letrec (rec) ((lambda (arg)
                                 (letrec (rec2)
                                     ((lambda (arg2)
-                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(1)") // TODO: fails because innermost lambda uses "arg" from outer scope
+                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(1)")
         testDone()
     }
 }

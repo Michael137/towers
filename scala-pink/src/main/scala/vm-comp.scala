@@ -60,8 +60,9 @@ object EVMComp {
 
     def index(exp: Val, env: CompEnv) = idx(exp, env, 1)
 
-    def compileLambda(body: Val, env: CompEnv, acc: Val) = 
+    def compileLambda(body: Val, env: CompEnv, acc: Val) = {
         Tup(Str("LDF"), Tup(compile(body, env, Tup(Str("RTN"), N)), acc))
+    }
 
     def compileBuiltin(args: Val, env: CompEnv, acc: Val): Val = 
         args match {
@@ -192,7 +193,8 @@ object EVMComp {
             Tup(Str("LDF"), Tup(compileTry(args, env, Tup(Str("FAIL"), N)), acc))
 
         case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
-            val newEnv = if(hasLDR) { fnEnv = tupToList(vs)::fnEnv; fnEnv } else tupToList(vs)::env
+            // TODO: Filter out duplicates in fnEnv?
+            val newEnv = if(hasLDR) { fnEnv = (tupToList(vs)::fnEnv):::env; fnEnv } else tupToList(vs)::env
             inRec = true
             Tup(Str("DUM"), Tup(Str("NIL"),
                     compileApp(vals, newEnv, compileLambda(body, newEnv, Tup(Str("RAP"), acc)))))

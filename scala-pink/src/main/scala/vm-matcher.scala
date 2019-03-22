@@ -5,46 +5,30 @@ import Pink._
 
 object VMMatcher {
 
-    def matcher1(p: String, str: String, lift: String = "(lambda (x) x)") = s"""
-(letrec (match) ((lambda (r s)
-(if (eq? 'done (car r))
-    'yes
-(if (eq? '_ (car r))
-  (if (eq? 'done (car s))
-      'no
-      (match (cdr r) (cdr s))
-      )
-(if (eq? 'done (car s))
-  'no
-(if (eq? (car r) (car s))
-    (match (cdr r) (cdr s))
-    'no))))))
-(match $p $str))
-    """
     def matcher(p: String, str: String, lift: String = "(lambda (x) x)") = s"""
-    (letrec (star_loop) ((lambda (m c) (letrec (inner_loop)
+    (letrec (star_loop) ((lambda (m) (lambda (c) (letrec (inner_loop)
                                             ((lambda (s)
                                                 (if (eq? 'yes (m s)) 'yes
                                                 (if (eq? 'done (car s)) 'no
                                                 (if (eq? '_ c) (inner_loop (cdr s))
                                                 (if (eq? c (car s)) (inner_loop (cdr s)) 'no))))))
-                                            inner_loop)))
-            (letrec (match_here) ((lambda (r s)
+                                            inner_loop))))
+            (letrec (match_here) ((lambda (r) (lambda (s)
                         (if (eq? 'done (car r))
                             'yes
                             (let (m) ((lambda (s)
                                 (if (eq? '_ (car r))
                                     (if (eq? 'done (car s))
                                         'no
-                                        (match_here (cdr r) (cdr s)))
+                                        ((match_here (cdr r)) (cdr s)))
                                     (if (eq? 'done (car s)) 'no
                                     (if (eq? (car r) (car s))
-                                        (match_here (cdr r) (cdr s))
+                                        ((match_here (cdr r)) (cdr s))
                                         'no)))))
                                 (if (eq? 'done (car (cdr r))) (m s)
                                 (if (eq? '* (car (cdr r)))
-                                    (lambda (x) 'random)
-                                    (m s)))))))
+                                    (((star_loop (match_here (cdr (cdr r)))) (car r)) s)
+                                    (m s))))))))
                         (let (match) ((lambda (r)
                             (if (eq? 'done (car r))
                                 (lambda (s) 'yes)
@@ -64,20 +48,16 @@ object VMMatcher {
     def test() = {
         println("// ------- VMMatcher.test --------")
 
-        check(evalOnVM(
+        println(evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
+        check(runOnVM(
             """(letrec (rec) ((lambda (arg)
                                 (letrec (rec2)
                                     ((lambda (arg2)
-                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
-
-        println(evalOnVM(matcher1("'(done)", "'(done)"), "'()"))
-        println(evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
-        println(evalOnVM(matcher("'(done)", "'(done)"), "'()"))
+                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)") // TODO: crashes when staging
 
         testDone()
     }
 }
-
 
 // TODO: progress with matcher
 // TODO: note down try/fail logic

@@ -1,0 +1,18 @@
+TODO: matcher, cesk on metaeval
+
+The SECD machine due to Landin CITE is a mature stack-based abstract machine initially developed in order to provide a machine model capable of interpreting LISP programs. 
+
+- Quick description of semantics
+The SECD operational semantics are shown in TABLE. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). SHOW EXAMPLE
+- Why is it a good machine for our tower?
+	* Mature
+	* Semantic gap
+	* Extensions exist
+Numerous extensions exist that show promising candidates for experimentations with collapsing through the SECD machine. We describe a subsection of them in this section.
+	* Straightforward Semantics Compared to WAM
+	* Interprets Lisp style programs and allowed to reuse components
+- Full description of semantics
+- Problem with model as is for our implementation
+MENTION TYING THE KNOT One of the requirements in the implementation of a complete SECD machine is support for a "set!" instruction in the implementing language. EXAMPLE OF HOW SECD USES SET This is also a reason for the subsequent CESK machine which does not impose such a restriciton. Our work extends Amin et al.'s work on towers of interpreters CITE which exclusively supports functional languages and whose partial evaluation strategy relies on the absence of a store. In the design of our tower we had the choice between adding support for an underlying "set!" instruction in \mslang or extend the SECD machine such that recursive functions applications do not require mutation in the underlying language. We chose the latter because it was simpler to add such extension than rewriting the Pink framework and would show additional use cases for \mslang.
+- Modifications
+- Results

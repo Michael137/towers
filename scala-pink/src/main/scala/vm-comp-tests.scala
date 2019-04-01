@@ -16,6 +16,7 @@ object EVMCompTests {
         check(runOnVM("(sym? 'symbol)", "'()"))("Cst(1)")
         check(runOnVM("(sym? '(symbol body))", "'()"))("Cst(0)")
         check(runOnVM("(sym? 1)", "'()"))("Cst(0)")
+        check(runOnVM("(letrec (m) ((lambda (s) (if (eq? s 0) 1 (m (- s 1))))) (m 2))", "'()"))("Cst(1)")
     }
 
     def evalTest() = {

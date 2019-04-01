@@ -500,6 +500,12 @@ New method of lifting recursive applications:
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 
+\subsection{Parallels To Towers In the Wild}
+secd -> emulator (can PE of machine code help? \cite{srinivasan2015partial})
+meta-eval -> python
+lisp -> JavaScript
+base -> VM? GraalVM (could it be adapted)?
+
 \section{Problems}
 A useful analogy is the one presented in \cite{amin2017collapsing}: a Python interpreter running on a JavaScript emulator of a x86 CPU. What we envision (with reference to this hypothetical setting) is handling the two following cases:
 \begin{enumerate}
@@ -640,7 +646,7 @@ Kogge's extensive study of machines for symbolic computation \cite{kogge1990arch
 
 We implement some of the extensions to SECD described in \cite{kogge1990architecture} that permit non-deterministic computation and backtracking. The machine itself still remains purely functional. Abstract machines that aim to model specific real system behaviour require the capability of the underlying machinery to provide mechanisms to manipulate cell locations and permit some form of store. For this purpose we extended the original \mslang with the ability to create cells and mutate these. We then implement MultiLisp and the demand-driven evaluation extensions to the SECD machine and present our findings below.
 
-Figure \ref{fig:tombestone} shows a representation of our tower in terms of ``sideways-stacked'' tombstone diagrams. Although here the tower grows upwards and to the left this does not necessarily be. The compilers, or \textit{translators} labelled LABEL and LABEL have been implemented in scala for convenience. To realize a vertical tower structure our Lisp-to-\mslang translator, which converts Lisp source to Scala ASTs, could be ommitted letting the base-evaluator evaluate s-expressions directly. Similarly, the $\mu$-to-SECD translator could be implemented in SECD instructions itself, possibly through generating such instructions using LABEL in a bootstrapping fashion.
+Figure \ref{fig:tombstone} shows a representation of our tower in terms of ``sideways-stacked'' tombstone diagrams. Although here the tower grows upwards and to the left this does not necessarily be. The compilers, or \textit{translators} labelled LABEL and LABEL have been implemented in scala for convenience. To realize a vertical tower structure our Lisp-to-\mslang translator, which converts Lisp source to Scala ASTs, could be ommitted letting the base-evaluator evaluate s-expressions directly. Similarly, the $\mu$-to-SECD translator could be implemented in SECD instructions itself, possibly through generating such instructions using LABEL in a bootstrapping fashion.
 
 \subsubsection{Tying the Knot}
 
@@ -649,7 +655,7 @@ Figure \ref{fig:tombestone} shows a representation of our tower in terms of ``si
 \begin{figure}[t]
 \centering
 \includegraphics[scale=2]{tombstone_tower.png}
-\label{fig:tombestone}
+\label{fig:tombstone}
 \caption{A tombstone digram representation of our framework}
 \end{figure}
 
@@ -671,6 +677,20 @@ partial evaluatability of SECD (and other linear interpreters/small step semanti
 retaining info in PE of TDPE style (our strategy is thunks)
 contribution: was natural to start with EBASE but uncovered problems BLANK
 tying the knot in the code instead of data
+transfer whiteboard diagram
+are able to stage/lift through compiler/translator
+structurally similar/equal to javascript tower
+implementations:
+	1. regular expression matcher (on metaeval or in place of metaeval)
+	2. try/catch
+	3. using cps adding amb (needs set! and store => turn metaeval into cesk machine (possible because SECD supports recursion, lambdas, letrec, etc.))
+Our collapsing strategy is based on the fact that we can choose to either evaluate code or generate code which is an inherent property of the multi-level language base \mslang. Thus in a realistic tower base needs to be a multi-level language
+
+Red thread:
+reflective towers->formalization of towers (first mention of PE by Sturdy and Blond) and first hint at heterogeneity->shift perspective to how such model is realizable->what is evaluation overhead of such models->compiling towers->polymorphic lift->define heterogeneity->find abstract machine for our purpose->SECD->requires side-effects->tie not in code instead of data->benchmarks+code comparisons+optimizations->extend tower->more benchmarks
+
+Future work:
+abstract machine for partial evaluation? multi-level language abstract machine
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

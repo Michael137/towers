@@ -1,7 +1,7 @@
 // multi-level core language λ↑↓ as a definitional interpreter in Scala
 
 object Base {
-  var log: Val => Unit = {x => println(x)}
+  var log: Val => Unit = {x => println(x); println}
 
   // expressions
   abstract trait ListOp
@@ -20,6 +20,8 @@ object Base {
   case class Gt(a:Exp,b:Exp) extends Exp
   case class Lt(a:Exp,b:Exp) extends Exp
   case class Or(a:Exp,b:Exp) extends Exp
+  case class And(a:Exp,b:Exp) extends Exp
+  case class Not(a:Exp) extends Exp
   case class Cons(a:Exp,b:Exp) extends Exp
   case class Fst(a:Exp) extends Exp with ListOp
   case class Snd(a:Exp) extends Exp with ListOp
@@ -121,6 +123,10 @@ object Base {
       reflect(Lt(anf(env,e1),anf(env,e2)))
     case Or(e1,e2) =>
       reflect(Or(anf(env,e1),anf(env,e2)))
+    case And(e1,e2) =>
+      reflect(And(anf(env,e1),anf(env,e2)))
+    case Not(e) =>
+      reflect(Not(anf(env,e)))
     case Cons(e1,e2) =>
       reflect(Cons(anf(env,e1),anf(env,e2)))
     case IsNum(e) =>
@@ -185,6 +191,8 @@ object Base {
           Var(n)
         case None =>
           stFun :+= (stFresh,env2,e2)
+          // println("IN LIFT: ", e2)
+          // TODO: instrument evalms here further
           reflect(Lam(reify{ val Code(r) = evalms(env2:+Code(fresh()):+Code(fresh()),e2); r }))
       }
     case Code(e) => reflect(Lift(e))
@@ -201,6 +209,7 @@ object Base {
       evalms(env:+v1,e2)
 
     case Lift(e) => 
+      // println("LIFTING ", e)
       Code(lift(evalms(env,e)))
 
     case Run(b,e) =>
@@ -294,6 +303,20 @@ object Base {
           Cst(if (n1 == 1 || n2 == 1) 1 else 0)
         case (Code(s1),Code(s2)) =>
           reflectc(Or(s1,s2))
+      }
+    case And(e1,e2) =>
+      (evalms(env,e1), evalms(env,e2)) match {
+        case (Cst(n1), Cst(n2)) =>
+          Cst(if (n1 == 1 && n2 == 1) 1 else 0)
+        case (Code(s1),Code(s2)) =>
+          reflectc(And(s1,s2))
+      }
+    case Not(e) =>
+      evalms(env,e) match {
+        case Cst(n) =>
+          Cst(if (n == 1) 0 else 1)
+        case Code(s) =>
+          reflectc(Not(s))
       }
     case Cons(e1,e2) =>
       // introduction form, needs explicit lifting

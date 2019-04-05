@@ -49,6 +49,8 @@ object Lisp {
     case Tup(Str("lambda"), Tup(Str(f),Tup(Str(x),Tup(e,N)))) => Lam(trans(e,env:+f:+x))
     case Tup(Str("if"),     Tup(c,Tup(a,Tup(b,N)))) => If(trans(c,env),trans(a,env),trans(b,env))
     case Tup(Str("or"),     Tup(a, Tup(b, N))) => Or(trans(a,env), trans(b, env))
+    case Tup(Str("and"),    Tup(a,Tup(b,N))) => And(trans(a,env),trans(b,env))
+    case Tup(Str("not"),    Tup(a,N)) => Not(trans(a,env))
     case Tup(Str("num?"),   Tup(a,N)) => IsNum(trans(a,env))
     case Tup(Str("sym?"),   Tup(a,N)) => IsStr(trans(a,env))
     case Tup(Str("pair?"),  Tup(a,N)) => IsCons(trans(a,env))

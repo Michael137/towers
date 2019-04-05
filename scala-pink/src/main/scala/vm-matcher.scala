@@ -51,13 +51,31 @@ object VMMatcher {
         println(evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
         check(runOnVM(
             """(letrec (rec) ((lambda (arg)
-                                (letrec (rec2)
+                               (+ arg 2))) (rec 1))""", "'()"))("Cst(3)")
+        check(runOnVM(
+            """(letrec (rec) ((lambda (arg)
+                                (let (rec2)
                                     ((lambda (arg2)
-                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)") // TODO: crashes when staging
+                                        (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
+        // check(runOnVM(
+        //     """(letrec (rec) ((lambda (arg)
+        //                         (letrec (rec2)
+        //                             ((lambda (arg2)
+        //                                 (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
+        // println(runOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
+
+        println(ev(s"""((${SECD.cmp} '(
+            DUM NIL LDF
+                    (DUM NIL
+                        LDF (LD (1 1) LD (3 1) ADD RTN) CONS
+                            LDF (LDR (1 1) RTN)
+                    RAP RTN)
+                    CONS LDF
+                        (NIL LDC 2 CONS NIL LDC 1 CONS LDR (1 1) AP AP RTN) RAP WRITEC
+        )) '())"""))
+
+        // after LDR 'ret path should not be taken in RTN
 
         testDone()
     }
 }
-
-// TODO: progress with matcher
-// TODO: note down try/fail logic

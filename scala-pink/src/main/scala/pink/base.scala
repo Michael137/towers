@@ -198,8 +198,14 @@ object Base {
     case Code(e) => reflect(Lift(e))
   }
 
+  var running = false
   // multi-stage evaluation
-  def evalms(env: Env, e: Exp): Val = e match {
+  def evalms(env: Env, e: Exp, force_log: Boolean = false): Val = {
+    if(force_log)
+      running = true;
+    if(running && false)
+      println(s"EVALUATING: $e")
+    e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
     case Var(n) => env(n)
@@ -220,6 +226,7 @@ object Base {
           reflectc(Run(b1, reifyc(evalms(env,e))))
         case _ =>
           val code = reifyc({ stFresh = env.length; evalms(env, e) })
+          running = true
           reifyv(evalms(env, code))
       }
 
@@ -305,11 +312,17 @@ object Base {
           reflectc(Or(s1,s2))
       }
     case And(e1,e2) =>
-      (evalms(env,e1), evalms(env,e2)) match {
-        case (Cst(n1), Cst(n2)) =>
-          Cst(if (n1 == 1 && n2 == 1) 1 else 0)
-        case (Code(s1),Code(s2)) =>
-          reflectc(And(s1,s2))
+      evalms(env,e1) match {
+        case Cst(1) =>
+          evalms(env,e2) match {
+            case Cst(1) => Cst(1)
+            case otherwise => Cst(0)
+          }
+        case Cst(0) => Cst(0)
+        case Code(s1) =>
+          evalms(env, e2) match {
+            case Code(s2) => reflectc(And(s1,s2))
+          }
       }
     case Not(e) =>
       evalms(env,e) match {
@@ -375,7 +388,7 @@ object Base {
 
     // special forms: custom eval, ...
     case Special(f) => f(env)
-  }
+  }}
 
   // pretty printing
   var indent = "\n"

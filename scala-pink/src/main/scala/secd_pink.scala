@@ -5,7 +5,7 @@ import Lisp._
 
 object SECD {
   val src = """
-(let debug_mode? 0
+(let debug_mode? 1
 (let debug (lambda _ x (if debug_mode? (log 0 x) _))
 (let caaar (lambda _ x (car (caar x)))
 (let caaaar (lambda _ x (car (caaar x)))
@@ -91,13 +91,12 @@ object SECD {
   (if (and (pair? d)
            (eq? 'fromldr (car d)))
     (if (code? (car env)) ;this means "RTN" was called immediately after "LDR"
-      'ERROR ;(mla ((car s) 1))
+      (mla ((car s) (maybe-lift 1))) ;(mla (mla (car s)))
       (car s))
   (if (eq? 'ret d)
     (mla (car s))
   (if (eq? 'rec (car d))
     (let _ (debug s)
-      ;(mla ((car s) (maybe-lift 1))))
       (mla (car s)))
     ((((((machine (cons (car s) (car d))) (cddddr d)) (cadddr d)) bt) (caddr d)) (cadr d)))))
 (if (eq? 'CONS (car ops))

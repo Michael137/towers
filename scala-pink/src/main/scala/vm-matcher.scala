@@ -36,9 +36,9 @@ object VMMatcher {
                                 ((match $p) $str))))
     """
 
-    def evalAndRunOnVM(pattern: String, str: String, env: String) = {
+    def evalAndRunOnVM(pattern: String, str: String, env: String, pretty: Boolean = true) = {
         val r1 = evalOnVM(matcher(pattern, str), env)
-        val r2 = runOnVM(matcher(pattern, str), env)
+        val r2 = runOnVM(matcher(pattern, str), env, pretty = pretty, max_depth = 80)
         check(r1.toString)(r2.toString)
 
         // println(Lisp.prettycode(Lam(reifyc(genOnVM(matcher(s, "lift"), env)))))
@@ -48,41 +48,8 @@ object VMMatcher {
     def test() = {
         println("// ------- VMMatcher.test --------")
 
-        //println(evalOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
-        //check(runOnVM(
-        //    """(letrec (rec) ((lambda (arg)
-        //                       (+ arg 2))) (rec 1))""", "'()"))("Cst(3)")
-        //check(runOnVM(
-        //    """(letrec (rec) ((lambda (arg)
-        //                        (let (rec2)
-        //                            ((lambda (arg2)
-        //                                (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
-        // check(runOnVM(
-        //     """(letrec (rec) ((lambda (arg)
-        //                         (letrec (rec2)
-        //                             ((lambda (arg2)
-        //                                 (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
-
-        println(runOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
-
-        println(ev(s"""
-        ((${SECD.evl} '(
-            DUM NIL LDF
-                    (DUM NIL
-                        LDF (LD (1 1) LD (3 1) ADD RTN) CONS
-                            LDF (LDR (1 1) RTN)
-                    RAP RTN)
-                    CONS LDF
-                        (NIL LDC 2 CONS NIL LDC 1 CONS LDR (1 1) AP AP RTN) RAP WRITEC
-        )) '())"""))
-
-        /*
-            Generated closure:
-                Let(Lam(Let(Lam(Let(Lam(Let(Fst(Var(5)),Let(Fst(Var(6)),Let(Snd(Var(5)),Let(Snd(Var(8)),Let(Fst(Var(9)),Let(Fst(Var(10)),Let(Plus(Var(11),Var(7)),Let(App(Var(12),Lit(1)),Var(13)))))))))),Let(Cons(Sym("."),Var(3)),Let(Cons(Var(4),Var(5)),Var(6))))),Let(Cons(Lit(1),Sym(".")),Let(Cons(Sym("."),Var(1)),Let(Cons(Var(3),Var(4)),Let(App(Var(2),Var(5)),Let(Fst(Var(6)),Let(Snd(Var(6)),Let(Snd(Var(8)),Let(Cons(Lit(2),Sym(".")),Let(Cons(Var(10),Var(9)),Let(App(Var(7),Var(11)),Var(12))))))))))))),Var(0))
-        */
-
-        // after LDR 'ret path should not be taken in RTN
-        //println(evalms(Nil, App(Let(Lam(Let(Lam(Let(Lam(Let(Fst(Var(5)),Let(Fst(Var(6)),Let(Snd(Var(5)),Let(Snd(Var(8)),Let(Fst(Var(9)),Let(Var(10),Let(Plus(Var(11),Var(7)),Let(App(Var(12),Lit(1)),Var(13)))))))))),Let(Cons(Sym("."),Var(3)),Let(Cons(Var(4),Var(5)),Var(6))))),Let(Cons(Lit(1),Sym(".")),Let(Cons(Sym("."),Var(1)),Let(Cons(Var(3),Var(4)),Let(App(Var(2),Var(5)),Let(Fst(Var(6)),Let(Snd(Var(6)),Let(Snd(Var(8)),Let(Cons(Lit(2),Sym(".")),Let(Cons(Var(10),Var(9)),Let(App(Var(7),Var(11)),Var(12))))))))))))),Var(0)), Sym(".")), force_log = true))
+        // TODO: record noisy generated code in report before optimizing it out
+        println(evalAndRunOnVM("'(_ * a _ * done)", "'(b a done)", "'()"))
 
         testDone()
     }

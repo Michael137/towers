@@ -27,19 +27,23 @@ object VMEval {
                         (let (x)
                             ((eval (caddr exp) env))
                             (eval (cadddr exp) (lambda (z) (if (eq? z (cadr exp)) x (env z)))))
+                    (if (eq? (car exp) 'letrec)
+                        (let (x)
+                            ((eval (caddr exp) env))
+                            (eval (cadddr exp) (lambda (z) (if (eq? z (cadr exp)) x (env z)))))
                     (if (eq? (car exp) 'lambda)
                         ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
                         
-                    ((eval (car exp) env) (eval (cadr exp) env))))))))))))))
+                    ((eval (car exp) env) (eval (cadr exp) env)))))))))))))))
                 (eval (quote $p) '()))
     """
 
-  def evalAndRunOnVM(s: String, env: String) = {
+  def evalAndRunOnVM(s: String, env: String, pretty: Boolean = false) = {
     val r1 = evalOnVM(meta_eval(s), env)
-    val r2 = runOnVM(meta_eval(s), env)
+    val r2 = runOnVM(meta_eval(s), env, pretty = pretty)
     check(r1.toString)(r2.toString)
 
-    println(Lisp.prettycode(Lam(reifyc(genOnVM(meta_eval(s, "lift"), env)))))
+    // println(Lisp.prettycode(Lam(reifyc(genOnVM(meta_eval(s, "lift"), env)))))
 
     r1
   }
@@ -60,6 +64,7 @@ object VMEval {
         check(evalAndRunOnVM("""((lambda (b) ((lambda (a) b) 1)) 2)""", "'()"))("Cst(2)")
         check(evalAndRunOnVM("""(((lambda (a) (lambda (b) b)) 1) 2)""", "'()"))("Cst(2)")
 
+        // TODO: record noisy generated code in report before optimizing it out
         check(evalAndRunOnVM("""
        (((lambda (fun)
           ((lambda (F)
@@ -75,17 +80,10 @@ object VMEval {
 
        ) 6)""", "'()"))("Cst(720)")
 
-      /* TODO
-      // check(runOnVM(meta_eval("(- 1 1)"), "'()"))("Cst(0)")
-      check(ev(s"""((${SECD.cmp} '(
-               DUM NIL LDF
-                 (NIL LD (1 1) CONS LD (1 2) AP RTN ) CONS LDF
-                   (NIL LDF
-                     (LD (1 1) RTN)
-                      CONS LDC 0
-                      CONS LDR (1 1) AP
-                    RTN) RAP STOP)) '())"""))("")
-       */
+        // TODO: add letrec support + CESK (https://cs.indiana.edu/~dyb/pubs/fixing-letrec.pdf)
+        check(evalAndRunOnVM("(letrec y (lambda (x) (- x 15)) (y 15))", "'()"))("Cst(0)")
+        // check(evalAndRunOnVM("(letrec y (lambda (x) (if (eq? x 0) x (y (- x 1)))) (y 15))", "'()"))("Cst(0)")
+
         testDone()
     }
 }

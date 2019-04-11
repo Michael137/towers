@@ -215,14 +215,15 @@ object EVMComp {
 
     // env and src are passed to PE.runVM in quotes
     // Compilation
-    def runOnVM(src: String, env: String, run: Boolean = true, verbose: Boolean = true) = {
+    def runOnVM(src: String, env: String, run: Boolean = true, verbose: Boolean = true, pretty: Boolean = true, max_depth: Int = 30) = {
         hasLDR = true
         val instrs = compile(parseExp(src), Nil, Tup(Str("STOP"), N))
         val instrSrc = instrsToString(instrs)
         if(verbose)
             println("TESTING:\n" + instrSrc)
 
-        //println(Base.pretty(Base.reifyc(Lisp.ev(s"((${SECD.cmp} '($instrSrc)) (lift '()))")), Nil))
+        if(pretty)
+            println(Base.pretty(Base.reifyc(Lisp.ev(s"((${SECD.cmp} '($instrSrc)) (lift '()))")), Nil, max_depth = max_depth))
 
         val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
         inRec = false

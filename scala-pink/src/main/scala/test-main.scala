@@ -4,7 +4,7 @@ import VM._
 
 object TestMain {
   def main(args: Array[String]) {
-    /* Uncomment to run benchmarks.
+    /* Uncomment to run Pink benchmarks.
        Take some time */
     // Bench.test()
 
@@ -15,6 +15,9 @@ object TestMain {
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD
     VMMatcher.test()
+
+    /* Benchmarks */
+    // SECDBench.test()
 
     /* Uncomment to run benchmarks of
        original framework */

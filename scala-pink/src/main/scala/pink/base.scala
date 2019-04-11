@@ -191,21 +191,13 @@ object Base {
           Var(n)
         case None =>
           stFun :+= (stFresh,env2,e2)
-          // println("IN LIFT: ", e2)
-          // TODO: instrument evalms here further
           reflect(Lam(reify{ val Code(r) = evalms(env2:+Code(fresh()):+Code(fresh()),e2); r }))
       }
     case Code(e) => reflect(Lift(e))
   }
 
-  var running = false
   // multi-stage evaluation
-  def evalms(env: Env, e: Exp, force_log: Boolean = false): Val = {
-    if(force_log)
-      running = true;
-    if(running && false)
-      println(s"EVALUATING: $e")
-    e match {
+  def evalms(env: Env, e: Exp, force_log: Boolean = false): Val = e match {
     case Lit(n) => Cst(n)
     case Sym(s) => Str(s)
     case Var(n) => env(n)
@@ -214,8 +206,7 @@ object Base {
       val v1 = evalms(env,e1)
       evalms(env:+v1,e2)
 
-    case Lift(e) => 
-      // println("LIFTING ", e)
+    case Lift(e) =>
       Code(lift(evalms(env,e)))
 
     case Run(b,e) =>
@@ -226,7 +217,6 @@ object Base {
           reflectc(Run(b1, reifyc(evalms(env,e))))
         case _ =>
           val code = reifyc({ stFresh = env.length; evalms(env, e) })
-          running = true
           reifyv(evalms(env, code))
       }
 
@@ -388,7 +378,7 @@ object Base {
 
     // special forms: custom eval, ...
     case Special(f) => f(env)
-  }}
+  }
 
   // pretty printing
   var indent = "\n"
@@ -397,28 +387,38 @@ object Base {
     indent += "  "
     try a finally indent = save
   }
-  def pretty(e: Exp, env: List[String]): String = e match {
+
+  def pretty_aux(e: Exp, env: List[String]): String = e match {
     case Lit(n)     => n.toString
     case Sym(n)     => "'"+n
     case Var(x)     => try env(x) catch { case _ => "?" }
-    case IsNum(a)   => s"(num? ${pretty(a,env)})"
-    case IsStr(a)   => s"(sym? ${pretty(a,env)})"
-    case Lift(a)    => s"(lift ${pretty(a,env)})"
-    case Cons(a, b)     => s"(cons ${pretty(a,env)} ${pretty(b,env)})"
-    case Fst(a)     => s"(car ${pretty(a,env)})"
-    case Snd(a)     => s"(cdr ${pretty(a,env)})"
-    case Equ(a,b)   => s"(eq? ${pretty(a,env)} ${pretty(b,env)})"
-    case Plus(a,b)  => s"(+ ${pretty(a,env)} ${pretty(b,env)})"
-    case Minus(a,b) => s"(- ${pretty(a,env)} ${pretty(b,env)})"
-    case Times(a,b) => s"(* ${pretty(a,env)} ${pretty(b,env)})"
-    case Run(a,b)   => s"(run ${pretty(a,env)} ${pretty(b,env)})"
-    case Log(a,b)   => s"(log ${pretty(a,env)} ${pretty(b,env)})"
-    case App(a,b)   => s"(${pretty(a,env)} ${pretty(b,env)})"
-    case Let(a,Var(n)) if n == env.length => pretty(a,env)
-    case Let(a,b)   => s"${indent}(let x${env.length} ${block(pretty(a,env))} ${(pretty(b,env:+("x"+env.length)))})"
-    case Lam(e)     => s"${indent}(lambda f${env.length} x${env.length+1} ${block(pretty(e,env:+("f"+env.length):+("x"+(env.length+1))))})"
-    case If(c,a,b)  => s"${indent}(if ${pretty(c,env)} ${block(pretty(a,env))} ${indent}${block(pretty(b,env))})"
+    case IsNum(a)   => s"(num? ${pretty_aux(a,env)})"
+    case IsStr(a)   => s"(sym? ${pretty_aux(a,env)})"
+    case Lift(a)    => s"(lift ${pretty_aux(a,env)})"
+    case Cons(a, b)     => s"(cons ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Fst(a)     => s"(car ${pretty_aux(a,env)})"
+    case Snd(a)     => s"(cdr ${pretty_aux(a,env)})"
+    case Equ(a,b)   => s"(eq? ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Plus(a,b)  => s"(+ ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Minus(a,b) => s"(- ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Times(a,b) => s"(* ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Run(a,b)   => s"(run ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Log(a,b)   => s"(log ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case App(a,b)   => s"(${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case Let(a,Var(n)) if n == env.length => pretty_aux(a,env)
+    case Let(a,b)   => s"${indent}(let x${env.length} ${block(pretty_aux(a,env))} ${(pretty_aux(b,env:+("x"+env.length)))})"
+    case Lam(e)     => s"${indent}(lambda f${env.length} x${env.length+1} ${block(pretty_aux(e,env:+("f"+env.length):+("x"+(env.length+1))))})"
+    case If(c,a,b)  => s"${indent}(if ${pretty_aux(c,env)} ${block(pretty_aux(a,env))} ${indent}${block(pretty_aux(b,env))})"
     case _          => e.toString
+  }
+
+  def pretty(e: Exp, env: List[String], max_depth: Int = 30): String = {
+    var ret = pretty_aux(e, env)
+    val count = ret.count(_ == '\n')
+    if(count >= max_depth)
+      ret.split('\n').slice(0, max_depth).mkString("\n") + "\n<...>"
+    else
+      ret
   }
 
   var testsRun = 0

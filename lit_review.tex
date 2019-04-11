@@ -59,8 +59,8 @@ settings. Prior formalizations of reflective towers have identified partial eval
 of interpreters to explore how partial evaluation techniques can be used to effectively remove levels of interpretation within such systems. %We then extend formalisms to such setting and go on to generalize previous techniques on partially evaluating towers of interpreters.
 \end{abstract}
 
-\newcommand{\mslang}{$\lambda\uparrow\downarrow$}
-\newcommand{\mslangStar}{$\lambda\uparrow\downarrow^*$}
+\newcommand{\mslang}{$\lambda_{\uparrow\downarrow}$}
+\newcommand{\mslangStar}{$\lambda_{\uparrow\downarrow}^*$}
 
 \section{An Introduction to Towers of Interpreters}
 \subsection{3-LISP, Meta-circularity and Reflection}
@@ -224,7 +224,9 @@ What we envision (with reference to this hypothetical setting) is handling the t
 	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
 	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
 	\begin{itemize}
-		\item Here a dynamically changing environment also implies side-effects that are capable of changing the semantics of interpreters within the tower at runtime
+		\item Here a dynamically changing environment also implies 
+		
+		cts that are capable of changing the semantics of interpreters within the tower at runtime
 		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
 	\end{itemize}
 \end{enumerate}
@@ -665,6 +667,15 @@ Numerous extensions exist that show promising candidates for experimentations wi
 - Full description of semantics
 - Problem with model as is for our implementation
 MENTION TYING THE KNOT One of the requirements in the implementation of a complete SECD machine is support for a "set!" instruction in the implementing language. EXAMPLE OF HOW SECD USES SET This is also a reason for the subsequent CESK machine which does not impose such a restriciton. Our work extends Amin et al.'s work on towers of interpreters CITE which exclusively supports functional languages and whose partial evaluation strategy relies on the absence of a store. In the design of our tower we had the choice between adding support for an underlying "set!" instruction in \mslang or extend the SECD machine such that recursive functions applications do not require mutation in the underlying language. We chose the latter because it was simpler to add such extension than rewriting the Pink framework and would show additional use cases for \mslang.
+
+Digression:
+At earlier stages of our study we went down the route of extending the base evaluator with a store and add support for mutating cells. We experimented with turning the evaluator into a traditional CESK-style interpter. When it came to staging the SECD machine, however, we realized the importance of the interplay between recursive lambdas, the functional (stationary (?)) environment and flexibility of single-argument lambdas.
+
+Difficulties arise whenever we attempt to mix dynamic and static values since its easy to want to compare and operate on the stack. Thus we need another register that is purely reserved for static values. To keep the amount of noise in the generated code lower one also needs to be careful to only mix static values into dynamic registers when necessary (show example of SECD noisy instrs in the generated code e.g. in simple non-recursive curried lambda or matcher code pre-noise reduction vs. factorial generated code).
+
+% Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
+
+Turns out single argument recursive lambdas are important to keep implementation simple but also for lifting closures
 - Modifications
 - Results
 
@@ -699,7 +710,7 @@ Figure FIGURE presents the augmented operational semantics for the staged SECD m
 
 \begin{align*}
 		\text{RAP:} & \\
-		& \text{(entryClo recClo).s e (RAP.c) d fns} \longrightarrow \text{$'$() e entryOps (s e c fns.d) (rec entryEnv $'$()).fns} \\
+		& \text{(entryClo recClo.s) e (RAP.c) d fns} \longrightarrow \text{$'$() e entryOps (s e c fns.d) (rec entryEnv $'$()).fns} \\
 		\text{where}																																										\\
 		& \text{entryClo} :=  \text{(entryFn (entryOps entryEnv))}																				\\
 		& \text{recClo}	  :=  \text{(recFn (recOps recEnv))}																							\\
@@ -713,10 +724,14 @@ Figure FIGURE presents the augmented operational semantics for the staged SECD m
 		& \text{res} 			:=  \text{(fn (lift-all (v s.env$'$)))}
 \end{align*}
 
+\subsubsection{SECD Compiler}
+% TODO: extensions to SECD compiler
+
 \subsubsection{Tying the Knot}
 
 % https://tex.stackexchange.com/questions/181366/drawing-tombstone-diagrams
 % https://proglang.informatik.uni-freiburg.de/teaching/compilerbau/2004/T-diagrams.pdf
+% TODO: use http://mirror.its.dal.ca/ctan/macros/latex/contrib/semantic/semantic.pdf package to draw diagram
 \begin{figure}[t]
 \centering
 \includegraphics[scale=2]{tombstone_tower.png}
@@ -756,6 +771,13 @@ reflective towers->formalization of towers (first mention of PE by Sturdy and Bl
 
 Future work:
 abstract machine for partial evaluation? multi-level language abstract machine
+
+\subsubsection{Meta-eval}
+In this section we extend the tower a level further by writing an interpreter that gets compiled into SECD instructions.
+
+%TODO: show generated code
+%TODO: mention staging of meta-eval, further changes to compiler/SECD machine and effects on generated code
+%TODO: show or speculate how ths trend continues for staging even further levels
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

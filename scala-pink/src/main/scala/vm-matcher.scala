@@ -62,7 +62,8 @@ object VMMatcher {
         //                         (letrec (rec2)
         //                             ((lambda (arg2)
         //                                 (+ arg arg2))) rec2))) ((rec 1) 2))""", "'()"))("Cst(3)")
-        // println(runOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
+
+        println(runOnVM(matcher("'(_ * a _ * done)", "'(b a done)"), "'()"))
 
         println(ev(s"""
         ((${SECD.evl} '(

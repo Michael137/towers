@@ -175,7 +175,8 @@ object Pink {
 
     (trace_n_evalc fac_src)))""",
     // confirming Figure 7 (middle)
-    """(lambda f0 x1 
+    """
+(lambda f0 x1 
   (let x2 (log 0 x1) 
   (let x3 (eq? x2 0) 
   (if x3 1 
@@ -183,7 +184,7 @@ object Pink {
     (let x4 (log 0 x1) 
     (let x5 (log 0 x1) 
     (let x6 (- x5 1) 
-    (let x7 (f0 x6) (* x4 x7)))))))))""")
+    (let x7 (f0 x6) (* x4 x7)))))))))""", ignore_whitespace = true)
 
     checkrunlog(s"""
     (let trace_n_evalc $trace_n_evalc_src

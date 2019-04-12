@@ -8,8 +8,10 @@ object TestMain {
        Take some time */
     // Bench.test()
 
-    EBase.test()
-    ELisp.test()
+    Base.test()
+    Lisp.test()
+    Pink.test()
+
     SECD.test() // Pink SECD Machine
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD
@@ -17,12 +19,6 @@ object TestMain {
 
     /* Benchmarks */
     // SECDBench.test()
-
-    /* Uncomment to run benchmarks of
-       original framework */
-    // Base.test()
-    // Lisp.test()
-    // Pink.test()
 
     println("// ###### Full testsuite done ######")
   }

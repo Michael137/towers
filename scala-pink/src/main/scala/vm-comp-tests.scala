@@ -1,11 +1,9 @@
 import EVMComp._
-import ELisp._
-import EPink._
-import EBase._
+import Lisp._
+import Pink._
+import Base._
 
 object EVMCompTests {
-    import TestHelpers._
-
     def basicTests() = {
         check(runOnVM("(+ 5 5)", "'()"))("Cst(10)")
         check(runOnVM("(if (eq? 0 1) (+ 5 5) (- -10 10))", "'()"))("Cst(-20)")

@@ -3,10 +3,10 @@
 object EVMComp {
     // Takes input s-expressions
     // Outputs SECD instructions
-    import ELisp._ // For parseExp
-    import ELisp.parser._
-    import EBase._
-    import EVM._
+    import Lisp._ // For parseExp
+    import Lisp.parser._
+    import Base._
+    import VM._
 
     type CompEnv = List[List[Val]]
 
@@ -259,7 +259,6 @@ object EVMComp {
     }
 
     def test() = {
-        import TestHelpers._
         println("// ------- VMComp.test --------")
 
         EVMCompTests.basicTests

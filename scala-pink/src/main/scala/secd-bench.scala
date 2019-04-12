@@ -91,8 +91,8 @@ object SECDBench {
         // TODO: don't do this in loop.
         //       Requires some tinkering to pass argument to underlying SECD machine properly
         EVMComp.hasLDR = true
-        val meta_eval_instrSrc = instrsToString(compile(ELisp.parseExp(meta_eval_fac_src(i)), Nil, EBase.Tup(EBase.Str("STOP"), EBase.Str("."))))
-        val meta_eval_instrSrc_staged = instrsToString(compile(ELisp.parseExp(meta_eval_fac_src_staged(i)), Nil, EBase.Tup(EBase.Str("WRITEC"), EBase.Str("."))))
+        val meta_eval_instrSrc = instrsToString(compile(Lisp.parseExp(meta_eval_fac_src(i)), Nil, Base.Tup(Base.Str("STOP"), Base.Str("."))))
+        val meta_eval_instrSrc_staged = instrsToString(compile(Lisp.parseExp(meta_eval_fac_src_staged(i)), Nil, Base.Tup(Base.Str("WRITEC"), Base.Str("."))))
         val Code(meta_fac_compiled) = ev(s"(($cmp '($meta_eval_instrSrc)) (lift '()))")
         val Code(meta_fac_compiled_staged) = ev(s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))")
         // println(prettycode(reifyc(Code(meta_fac_compiled_staged))))

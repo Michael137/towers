@@ -91,9 +91,12 @@ object Lisp {
     check(res)(dst)
     res
   }
-  def checkcode(src: String, dst: String) = {
+  def checkcode(src: String, dst: String, ignore_whitespace: Boolean = false) = {
     val Code(res) = ev(src)
-    check(pretty(res, Nil))(dst)
+    if(ignore_whitespace)
+      check(pretty(res, Nil).filterNot((x: Char) => x.isWhitespace))(dst.filterNot((x: Char) => x.isWhitespace))
+    else
+      check(pretty(res, Nil))(dst)
     res
   }
   def prettycode(e: Exp) = pretty(e, Nil)

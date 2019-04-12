@@ -91,6 +91,7 @@ object SECD {
   (if (and (pair? d)
            (eq? 'fromldr (car d)))
     (if (code? (car env)) ;this means "RTN" was called immediately after "LDR"
+                          ;TODO should find a more general/robust invariant
       (mla (let s1 ((car s) 1)
         (cons
           (lambda _ arg ((car s1) (mla (cons (car arg) (cdr s1)))))

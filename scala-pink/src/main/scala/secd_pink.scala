@@ -90,7 +90,7 @@ object SECD {
 (if (eq? 'RTN (car ops))
   (if (and (pair? d)
            (eq? 'fromldr (car d)))
-    (if (code? (car env)) ;this means "RTN" was called immediately after "LDR"
+    (if (code? (maybe-lift 1)) ;this means "RTN" was called immediately after "LDR"
       (mla (let s1 ((car s) 1)
         (cons
           (lambda _ arg ((car s1) (mla (cons (car arg) (cdr s1)))))

@@ -396,6 +396,7 @@ object Base {
     case IsStr(a)   => s"(sym? ${pretty_aux(a,env)})"
     case Lift(a)    => s"(lift ${pretty_aux(a,env)})"
     case Cons(a, b)     => s"(cons ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
+    case And(a,b)     => s"(and ${pretty_aux(a,env)} ${pretty_aux(b,env)})"
     case Fst(a)     => s"(car ${pretty_aux(a,env)})"
     case Snd(a)     => s"(cdr ${pretty_aux(a,env)})"
     case Equ(a,b)   => s"(eq? ${pretty_aux(a,env)} ${pretty_aux(b,env)})"

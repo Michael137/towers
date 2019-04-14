@@ -224,9 +224,7 @@ What we envision (with reference to this hypothetical setting) is handling the t
 	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
 	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
 	\begin{itemize}
-		\item Here a dynamically changing environment also implies 
-		
-		cts that are capable of changing the semantics of interpreters within the tower at runtime
+		\item Here a dynamically changing environment also implies effects that are capable of changing the semantics of interpreters within the tower at runtime
 		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
 	\end{itemize}
 \end{enumerate}
@@ -239,16 +237,13 @@ To tackle the first of these problems we construct a similar yet condensed form 
 \end{figure}
 
 \section{Contributions}
-\begin{itemize}
-	\item Combine the disparate theories of reflective towers and mix-like partial evaluators
-	\item Generalized framework for collapsable towers. A generilzation of \cite{amin2017collapsing} for ``heterogeneous'' towers
-	\item Extension of the core \mslang to support side effects, combining previous insights into multi-level $\lambda$ \cite{nielson1996multi} and work on side-effects in partial evaluators \cite{asai1997partial}.
-	\item Denotational account of original base language/Pink and the new \mslang (including a store, which was not part of \cite{danvy1988intensions})
-	\item Development a CESK-style abstract machine/ abstract interpreter for said extended \mslang
-	\item Form a basis for further work on towers by providing a stage polymorphic base evaluator capable of modelling functional or imperative languages
-	\item Mimick a practical tower through a SECD machine on top of the base evaluator and show compilation without staging commands throughout the tower
-	\item Theoretical proposal of how one might achieve collapsing in practice
-\end{itemize}
+In our study we investigate previous work on collapsing towers of interpreters and aim to take another step towards applying these techniques to real-world settings. We demonstrate that given a multi-level language and a lift operator we can stage individual interpreters in a sequence of non-metacircular interpreters and effectively generate code specialized for a given program eliminating interpretative overhead in the process. As part of the development of this framework our contributions include:
+\begin{enumerate*}[label=(\arabic*)]
+	\item the development of extensions to the SECD machine that allow it to be staged
+	\item implementation of a compiler from a minimal LISP-style language to instructions of the staged SECD machine
+	\item demonstration of collapsing towers of interpreters built on top of the aforementioned SECD machine
+	\item and finally evaluation of the structure of the generated code and possible optimizations
+\end{enumerate*}.
 
 We deviate from traditional research in reflective towers in that we do not develop a separate language that demonstrates reflective tower capabilities and part from the constraints of metacircularity and reflection.
 Instead of generating levels in the tower dynamically through reflection and reification operators we construct a pre-determined tower resembling towers of interpreters in practice. We demonstrate initially how meta-circularity and reflection
@@ -539,6 +534,9 @@ New method of lifting recursive applications:
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 
+\subsubsection{String Matcher}
+To evaluate our extended tower to the one used in the original Pink implementation we wrote a string matcher KNUTH to be executed on our staged SECD machine. Running the SECD in evalms's compilation mode we see SECD instructions as literals being included in the generated code. What's worse is that these literals are never used. Their presence is an example of a trade-off we make between implementation complexity and intrusiveness versus removal of interpretative overhead. Although we removed most of the evaluation overhead of the SECD machine itself, these instructions are present in the generated code because our implementation converts anything in the \textit{env} and \textit{stack} registers into dynamic values in the whenever we use lambdas as firt-class citizens for instance when using them as return values. If we have a . If we wanted to reduce generated code further we could either reuse the \textit{fns} register for non-recursive functions as well and prevent instructions loaded as part of the \textit{LDF} instruction to be lifted.
+
 \subsection{Parallels To Towers In the Wild}
 secd -> emulator (can PE of machine code help? \cite{srinivasan2015partial})
 meta-eval -> python
@@ -611,6 +609,8 @@ will now have the film applied to them. Here sieves are the levels below and gra
 
 Our study examines this property by testing the limits of how we can get the side effects to stick to interpreters in a useful way. One could imagine optimizations, parallelization or instrumentation as possible use cases. Under certain side-effects, we may, however,
 reach limits in terms of security (TROJANS IN HYPERVISORS) or ability to reason about a system. We are interested in the extent of these limits. (concurrency as a side-effect: instead of launching missiles we launch threads)
+
+Partial evaluation is a conceptually powerful technique and its potential applications go far beyond what the largest case studies have shown. The idea of specialization is not limited to improving performance of language interpreters but removing generality imposed by generic interfaces. This extends to programming languages, systems and even hardware design.
 
 \section{Towers in the Wild}
 To provide a real-world analogy of the language towers we are constructing describe some existing arrangements of multi-interpreter systems below:
@@ -766,11 +766,15 @@ implementations:
 	3. using cps adding amb (needs set! and store => turn metaeval into cesk machine (possible because SECD supports recursion, lambdas, letrec, etc.))
 Our collapsing strategy is based on the fact that we can choose to either evaluate code or generate code which is an inherent property of the multi-level language base \mslang. Thus in a realistic tower base needs to be a multi-level language
 
+Partial evaluators can be thought of as lightweight optimizing compilers targeting specific optimization goals
+
 Red thread:
 reflective towers->formalization of towers (first mention of PE by Sturdy and Blond) and first hint at heterogeneity->shift perspective to how such model is realizable->what is evaluation overhead of such models->compiling towers->polymorphic lift->define heterogeneity->find abstract machine for our purpose->SECD->requires side-effects->tie not in code instead of data->benchmarks+code comparisons+optimizations->extend tower->more benchmarks
 
 Future work:
 abstract machine for partial evaluation? multi-level language abstract machine
+
+% TDPE/NBE background -> used by Pink as the partial evaluation technique -> the key to the paper is stage-polymorphism and lift-polymorphism which is achieved through simple string injection -> lift is a powerful construct that is used to stage interpreters and defer from evaluation to code generation manually -> we use the lift operator to stage a SECD machine -> show code generation and discuss difficulties -> to create further levels in the tower instead of writing upper levels in SECD instructions we chose to add a compilation/translation layer by taking Landin's compiler and extending it to support our version of SECD; this is easier to reason about while debugging the tower but also uncovered novel uses of the lift operator -> we then developed an evaluator that gets compiled into SECD and were able to stage and collapse it as well, demonstrating the collapsing of a heterogeneous tower of interpreters -> topics we considered studying but later deemed as out-of-scope and deferred to future work include side effects, e.g. if individual levels perform a unique task/side-effect (which is the typical use for such a tower), different abstract machines to collapse e.g. the WAM which not only is mature and widely used in practice but also offers a different programming paradigm to experiment on, finding ways to collapse towers without needing to expose a lift operator and without requiring a multi-level language as the base
 
 \subsubsection{Meta-eval}
 In this section we extend the tower a level further by writing an interpreter that gets compiled into SECD instructions.

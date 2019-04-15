@@ -15,3 +15,6 @@ lit_review.out
 lit_review.synctex.gz
 scala-pink/src/main/scala/archive/cesk.scala
 .vscode/
+lit_review.wcdetail
+lit_review-chars.sum
+lit_review-words.sum

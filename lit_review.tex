@@ -10,10 +10,15 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage{textcomp}
 \usepackage{tikz}
 \usetikzlibrary{matrix}
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
+\newcommand{\ts}{\textquotesingle}
+
+\newcommand{\mslang}{$\lambda_{\uparrow\downarrow}$}
+\newcommand{\mslangStar}{$\lambda_{\uparrow\downarrow}^*$}
 
 \usepackage{stmaryrd}
 \usepackage{hyperref}
@@ -58,9 +63,6 @@ construct in everyday applications, prior research made use of towers of interpr
 settings. Prior formalizations of reflective towers have identified partial evaluation and reflection to harmonize in the development of such towers. We lift several restrictions of reflective towers including reflectivity, meta-circularity and homogeneity of data representation and then construct non-reflective towers
 of interpreters to explore how partial evaluation techniques can be used to effectively remove levels of interpretation within such systems. %We then extend formalisms to such setting and go on to generalize previous techniques on partially evaluating towers of interpreters.
 \end{abstract}
-
-\newcommand{\mslang}{$\lambda_{\uparrow\downarrow}$}
-\newcommand{\mslangStar}{$\lambda_{\uparrow\downarrow}^*$}
 
 \section{An Introduction to Towers of Interpreters}
 \subsection{3-LISP, Meta-circularity and Reflection}
@@ -531,6 +533,8 @@ New method of lifting recursive applications:
 	  (let x13 (cons x11 x12) (x5 x13)))))))))))))) (x0 '.))
 \end{lstlisting}
 
+A partial evaluator is referred to as \textit{strong} if, when the result of partially evaluating to an interpreter with respect to a target program yields the target proram as output. This is called Jones' optimality directly implies the removal of a layer of interpretation. Our experiments show that depending on which level of a tower we apply our partial evaluator on we can have this strong property of partial evaluators hold. When staging the user-most interpreter we are able to generate ANF code that is equivalent to the subject program the user wrote. If we stage at the level of the SECD machine we generate code that resembles some the structure of the SECD machine and are not able to get completely rid of the stack-based operations of the SECD machine.
+
 \subsubsection{Similarities to Mix}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 
@@ -551,7 +555,12 @@ Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
 \href{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.630.2123&rep=rep1&type=pdf}{Supercompilation and Normalization by Evaluation}
 
 \section{Type-Directed Partial Evluation (TDPE)}
-\cite{grobauer2001second}
+Alternative techniques include syntax directed partial evaluation and off-line partial evaluation
+Futamura's second project showed the direct relationship between an interpreter and a compiler -> hard to realize
+Jone's et al. developed MIX which was the first self-applicable PE that operated on a language developed by the same authors called MIXWELL.
+MIX innovated by making binding-time decisions offline as opposed to during partial evaluation time using source annotations for the PE
+However as noted in \cite{grobauer2001second}, traditionally partial evaluation worked on untyped languages where a single universal datatype could represent all static values
+PE of typed languages was one of the challenges with PE outlined by Jones \cite{jones1988challenging}.
 
 \subsection{Staging}
 There are two types of partial evaluation methodologies \cite{jones1993partial}:
@@ -577,6 +586,9 @@ the base-level lift requires knowledge about its use to be passed from the layer
 We are interested in the last two point. In heterogeneous and practical towers a programmer does not have the liberty to introduce intrusive changes along each layer.
 The original Pink implementation assumes we are allowed to make arbitrary changes to evaluators. It effectively adds tags to the emitted representation of a layer above and lets the layer below infer from these tags
 what tag it itself should pass to the next layer, eventually calling the base-level Lift term.
+
+\subsection{Normalization by Evaluation}
+Since the languages involved in our study are untyped (except in the base-evaluator that serves as our partial evaluator) we also describe the underlying technique of partial evaluation called normalization-by-evaluation (NBE).
 
 \section{Why do we want to collapse towers?}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization
@@ -673,6 +685,11 @@ At earlier stages of our study we went down the route of extending the base eval
 
 Difficulties arise whenever we attempt to mix dynamic and static values since its easy to want to compare and operate on the stack. Thus we need another register that is purely reserved for static values. To keep the amount of noise in the generated code lower one also needs to be careful to only mix static values into dynamic registers when necessary (show example of SECD noisy instrs in the generated code e.g. in simple non-recursive curried lambda or matcher code pre-noise reduction vs. factorial generated code).
 
+\subsubsection{Changes to \mslang}
+Since SECD is a stack-based virtual machine all operations and data storage is performed on one of the four stack registers. By the principle of \textit{division} in partial evaluators CITE, we want to be able to separate static and dynamic values to prevent undesired behaviour in our partial evaluator (EXAMPLE OF NON-TERMINATION). A minor extension we add to the original framework is the ability to lift nested tuples as opposed to only two-element tuples. This addition to the small-step semantics is shown in FIGURE.
+
+SHOW OPERATIONAL SEMANTICS
+
 % Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
 
 Turns out single argument recursive lambdas are important to keep implementation simple but also for lifting closures
@@ -689,8 +706,8 @@ Figure FIGURE presents the augmented operational semantics for the staged SECD m
 
 \begin{alignat*}{3}
 		\text{RTN:} &																																							\\
-		& \text{v.s e (RET.c) (s$'$ e$'$ c$'$ d$'$ fns$'$.d) fns} \longrightarrow &&							\\
-		&& \text{(v.s$'$) e$'$ c$'$ d$'$ fns$'$} \quad	&&& \text{if d-register is tagged with $'$ret} 	\\
+		& \text{v.s e (RET.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} \longrightarrow &&							\\
+		&& \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts} \quad	&&& \text{if d-register is tagged with {\ts}ret} 	\\
 		&& \text{(lift-all v)}									 \quad &&& \text{otherwise}
 \end{alignat*}
 
@@ -704,24 +721,24 @@ Figure FIGURE presents the augmented operational semantics for the staged SECD m
 \begin{equation*}
 	\begin{split}
 		\text{LDF:} & \\
-		& \text{s e (LDF ops.c) d fns} \longrightarrow \text{(($\lambda$e$'$.(machine $'$() e$'$ ops $'$ret fns)) ops.e).s e c d fns}
+		& \text{s e (LDF ops.c) d fns} \longrightarrow \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns}
 	\end{split}
 \end{equation*}
 
 \begin{align*}
 		\text{RAP:} & \\
-		& \text{(entryClo recClo.s) e (RAP.c) d fns} \longrightarrow \text{$'$() e entryOps (s e c fns.d) (rec entryEnv $'$()).fns} \\
+		& \text{(entryClo recClo.s) e (RAP.c) d fns} \longrightarrow \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
 		\text{where}																																										\\
 		& \text{entryClo} :=  \text{(entryFn (entryOps entryEnv))}																				\\
 		& \text{recClo}	  :=  \text{(recFn (recOps recEnv))}																							\\
-		& \text{rec}			:=  \text{$\lambda$env.(machine $'$() env recOps $'$ret (rec recEnv.$'$()).fns)}
+		& \text{rec}			:=  \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)}
 \end{align*}
 
 \begin{align*}
 		\text{AP:} & \\
-		& \text{(fn env.v).s e (AP.c) ($'$() env$'$) fns} \longrightarrow \text{res.s env c d fns}	\\
+		& \text{(fn env.v).s e (AP.c) ({\ts}() env{\ts}) fns} \longrightarrow \text{res.s env c d fns}	\\
 		\text{where}																																								\\
-		& \text{res} 			:=  \text{(fn (lift-all (v s.env$'$)))}
+		& \text{res} 			:=  \text{(fn (lift-all (v s.env{\ts})))}
 \end{align*}
 
 \subsubsection{SECD Compiler}
@@ -774,7 +791,9 @@ reflective towers->formalization of towers (first mention of PE by Sturdy and Bl
 Future work:
 abstract machine for partial evaluation? multi-level language abstract machine
 
-% TDPE/NBE background -> used by Pink as the partial evaluation technique -> the key to the paper is stage-polymorphism and lift-polymorphism which is achieved through simple string injection -> lift is a powerful construct that is used to stage interpreters and defer from evaluation to code generation manually -> we use the lift operator to stage a SECD machine -> show code generation and discuss difficulties -> to create further levels in the tower instead of writing upper levels in SECD instructions we chose to add a compilation/translation layer by taking Landin's compiler and extending it to support our version of SECD; this is easier to reason about while debugging the tower but also uncovered novel uses of the lift operator -> we then developed an evaluator that gets compiled into SECD and were able to stage and collapse it as well, demonstrating the collapsing of a heterogeneous tower of interpreters -> topics we considered studying but later deemed as out-of-scope and deferred to future work include side effects, e.g. if individual levels perform a unique task/side-effect (which is the typical use for such a tower), different abstract machines to collapse e.g. the WAM which not only is mature and widely used in practice but also offers a different programming paradigm to experiment on, finding ways to collapse towers without needing to expose a lift operator and without requiring a multi-level language as the base
+% TDPE/NBE background -> used by Pink as the partial evaluation technique -> the key to the paper is stage-polymorphism and lift-polymorphism which is achieved through simple string injection -> lift is a powerful construct that is used to stage interpreters and defer from evaluation to code generation manually -> we use the lift operator to stage a SECD machine (turned out difficult because its step style semantics are less suited for partial evaluation) -> show code generation and discuss difficulties -> to create further levels in the tower instead of writing upper levels in SECD instructions we chose to add a compilation/translation layer by taking Landin's compiler and extending it to support our version of SECD; this is easier to reason about while debugging the tower but also uncovered novel uses of the lift operator -> we then developed an evaluator that gets compiled into SECD and were able to stage and collapse it as well, demonstrating the collapsing of a heterogeneous tower of interpreters -> topics we considered studying but later deemed as out-of-scope and deferred to future work include side effects, e.g. if individual levels perform a unique task/side-effect (which is the typical use for such a tower) (we tried converting the original base but self-referencing and single arg lambdas and how the environment was designed are less suitable for our PE method), different abstract machines to collapse e.g. the WAM which not only is mature and widely used in practice but also offers a different programming paradigm to experiment on, finding ways to collapse towers without needing to expose a lift operator and without requiring a multi-level language as the base, self-applicative PE
+
+Our study lives in the field of deriving compilers from interpreters and presents techniques of realizing such transformations using previous work on TDPE in the context of towers of interpreters. The crucial difference between modern compilers and interpreters, though the line got blurrier in the last years through JIT compilation in interpreted languages like Python and interpreter virtualization such as GraalVM, are the architecture dependent optimizations and complex pipeline of optimization passes present in compilers. Even in our small-scale study of partial evaluators we encountered questions of optimizing size and structure of generated code and proposed solutions specific to the interpreters we are partially evaluating. We echo the question posed in Jones \cite{jones1988challenging} discussion of challenges in PE of whether we can generate compilers or in our case even simply generate code that rivals modern optimiing compilers. -> need more testing, all optimizations we introduced are very specific to the wiring of the tower, which is maybe how it is supposed to be, although compilers do not require optimizations based specifically on the program source they operate on
 
 \subsubsection{Meta-eval}
 In this section we extend the tower a level further by writing an interpreter that gets compiled into SECD instructions.

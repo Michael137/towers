@@ -19,6 +19,7 @@ object SECD_Machine {
 (if (eq? 'LD (car c))
   (let ij (cadr c) (let i (car ij) (let j (cadr ij)
   ((((machine (cons (((locate i) j) e) s)) e) (cddr c)) d))))
+(if (eq? 'LIFT (car c)) ((((machine (cons (lift (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CAR (car c)) ((((machine (cons (car (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CDR (car c)) ((((machine (cons (cdr (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'ADD (car c)) ((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr c)) d)
@@ -44,7 +45,7 @@ object SECD_Machine {
   (car s)
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
-(cons 'ERROR c)))))))))))))))))))))))
+(cons 'ERROR c))))))))))))))))))))))))
 (lambda _ c ((((machine '()) '()) c) '()))))))
 """
 
@@ -228,12 +229,19 @@ object SECD_Compiler {
     SECD_Machine.run(compileExp(src))
   }
 
+  def prettycode(v: Val) = {
+    Base.pretty(Base.reifyc(v), Nil)
+  }
+
   def test() = {
     println("// ------- SECD_Compiler.test --------")
 
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 6))"))("Cst(720)")
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* (fac (- n 1)) n)))) (fac 6))"))("Cst(720)")
     check(compileAndRun(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)")))("Str(yes)")
+
+    println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
+    //println(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)")))
 
     testDone()
   }

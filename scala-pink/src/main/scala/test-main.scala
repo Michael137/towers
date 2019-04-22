@@ -16,6 +16,7 @@ object TestMain {
     EVMComp.test() // SECD compiler
     VMEval.test() // evaluator on top of SECD
     VMMatcher.test()
+    VMLiftedMatcher.test()
 
     /* Benchmarks */
     // SECDBench.test()

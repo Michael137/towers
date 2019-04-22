@@ -6,21 +6,31 @@ object SECD_Machine {
   val src = """
 (let deeplift (lambda l x (if (code? x) x (if (pair? x) (lift (cons (l (car x)) (l (cdr x)))) (lift x))))
 (let deeplift-if-code (lambda _ r (lambda _ x (if (code? r) (deeplift x) x)))
+(let null? (lambda _ x (eq? ((deeplift-if-code x) '()) x))
+(let atom? (lambda _ a (or (sym? a) (num? a)))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst
 (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
-(let _ (log 0 c)
+(let _ _
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
 (if (eq? 'LD (car c))
   (let ij (cadr c) (let i (car ij) (let j (cadr ij)
   ((((machine (cons (((locate i) j) e) s)) e) (cddr c)) d))))
-(if (eq? 'LIFT (car c)) ((((machine (cons (log 0 (lift (log 0 (car s)))) (cdr s))) e) (cdr c)) d)
+(if (eq? 'LIFT (car c)) ((((machine (cons (lift (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CAR (car c)) ((((machine (cons (car (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CDR (car c)) ((((machine (cons (cdr (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'CADR (car c)) ((((machine (cons (cadr (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'CADDR (car c)) ((((machine (cons (caddr (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'CADDDR (car c)) ((((machine (cons (cadddr (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'CDDDR (car c)) ((((machine (cons (cdddr (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'EMPTY? (car c)) ((((machine (cons (null? (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'ATOM? (car c)) ((((machine (cons (atom? (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'SYM? (car c)) ((((machine (cons (sym? (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'NUM? (car c)) ((((machine (cons (num? (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'ADD (car c)) ((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr c)) d)
 (if (eq? 'SUB (car c)) ((((machine (cons (- (car s) (cadr s)) (cddr s))) e) (cdr c)) d)
 (if (eq? 'MPY (car c)) ((((machine (cons (* (car s) (cadr s)) (cddr s))) e) (cdr c)) d)
@@ -44,8 +54,8 @@ object SECD_Machine {
   (car s)
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
-(cons 'ERROR c))))))))))))))))))))))))
-(lambda _ c ((((machine '()) '()) c) '()))))))
+(cons 'ERROR c))))))))))))))))))))))))))))))))
+(lambda _ c ((((machine '()) '()) c) '()))))))))
 """
 
   val evl = src
@@ -247,6 +257,13 @@ object SECD_Compiler {
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
 
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
+
+
+    check(compileAndRun(VMEval.meta_eval("(- 1 1)")))("Cst(0)")
+    check(compileAndRun(VMEval.meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
+
+    //check(compileAndRun(VMEval.meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
+    //check(compileAndRun(VMEval.meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
     testDone()
   }

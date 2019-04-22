@@ -11,12 +11,14 @@ object TestMain {
     Base.test()
     Lisp.test()
     Pink.test()
+    SECD_Machine.test()
+    SECD_Compiler.test()
 
-    SECD.test() // Pink SECD Machine
-    EVMComp.test() // SECD compiler
-    VMEval.test() // evaluator on top of SECD
-    VMMatcher.test()
-    VMLiftedMatcher.test()
+    // SECD.test() // Pink SECD Machine
+    // EVMComp.test() // SECD compiler
+    // VMEval.test() // evaluator on top of SECD
+    // VMMatcher.test()
+    // VMLiftedMatcher.test()
 
     /* Benchmarks */
     // SECDBench.test()

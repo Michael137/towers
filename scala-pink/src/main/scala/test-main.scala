@@ -8,14 +8,14 @@ object TestMain {
        Take some time */
     // Bench.test()
 
-    // Base.test()
-    // Lisp.test()
-    // Pink.test()
+    Base.test()
+    Lisp.test()
+    Pink.test()
 
-    // SECD.test() // Pink SECD Machine
-    // EVMComp.test() // SECD compiler
-    // VMEval.test() // evaluator on top of SECD
-    // VMMatcher.test()
+    SECD.test() // Pink SECD Machine
+    EVMComp.test() // SECD compiler
+    VMEval.test() // evaluator on top of SECD
+    VMMatcher.test()
     VMLiftedMatcher.test()
 
     /* Benchmarks */

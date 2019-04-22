@@ -14,7 +14,7 @@ object SECD_Machine {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
-(let _ _
+(let _ (log 0 (car c))
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
 (if (eq? 'LD (car c))
@@ -296,6 +296,13 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
 
     check(compileAndRun(meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
+
+    check(compileAndRun("(let (x) (1) x)"))("Cst(1)")
+    //check(compileAndRun(VMEval.meta_eval("(let (x) (1) x)")))("Cst(1)")
+    //check(compileAndRun(VMEval.meta_eval("(let (id) ((lambda (y) y)) (id 1))")))("Cst(1)")
+    //check(compileAndRun(VMEval.meta_eval("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
+    //check(compileAndRun(VMEval.meta_eval(VMMatcher.matcher("'(done)", "'(a done)"))))("Str(no)")
+    //check(compileAndRun(VMEval.meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
     //check(compileAndRun(VMEval.meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
     testDone()

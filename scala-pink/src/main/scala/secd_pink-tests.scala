@@ -95,7 +95,7 @@ object SECDTests {
 
     def basicTests() = {
         check(ev(s"((run 0 ($cmp '(LDC 10 LDC 15 ADD WRITEC))) '())"))("Cst(25)")
-        check(reifyc(ev(s"($cmp '(LDC 10 LDC 15 ADD WRITEC))")))("Let(Lam(Let(Plus(Lit(15),Lit(10)),Var(2))),Var(0))")
+        check(reifyc(ev(s"($cmp '(LDC 10 LDC 15 ADD WRITEC))")))("Let(Lam(Lit(25)),Var(0))")
         check(ev(s"((run 0 ($cmp '(LDC 10 LDC 15 LD (1 1) ADD WRITEC))) '((5 6 7 8 9)))"))("Cst(20)")
         check(reifyc(ev(s"($cmp '(LDC 10 LDC 15 LD (1 1) ADD WRITEC))")))("Let(Lam(Let(Fst(Var(1)),Let(Fst(Var(2)),Let(Plus(Var(3),Lit(15)),Var(4))))),Var(0))")
         check(reifyc(ev(s"""($cmp '(NIL LDC 135 CONS

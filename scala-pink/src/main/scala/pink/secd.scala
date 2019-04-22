@@ -242,6 +242,39 @@ object SECD_Compiler {
     Base.pretty(Base.reifyc(v), Nil)
   }
 
+  def meta_eval(p: String, lift: String = "(lambda (x) x)") = s"""
+(letrec (eval) ((lambda (exp env)
+(if (sym? exp)
+  (env exp)
+(if (num? exp)
+  ($lift exp)
+(if (eq? (car exp) '+)
+  (+ (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) '-)
+  (- (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) '*)
+  (* (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) 'eq?)
+  (eq? (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) '>)
+  (> (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) 'if)
+  (if (eval (cadr exp) env) (eval (caddr exp) env) (eval (cadddr exp) env))
+(if (eq? (car exp) 'let)
+  (let (x)
+    ((eval (car (caddr exp)) env))
+    (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) x (env z)))))
+(if (eq? (car exp) 'letrec)
+  (let (r) ((car (caddr exp)))
+  (letrec (f)
+    ((lambda (x) (eval (caddr r) (lambda (z) (if (eq? z (car (cadr exp))) f (if (eq? z (car (cadr r))) x (env z)))))))
+    (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) f (env z))))))
+(if (eq? (car exp) 'lambda)
+  ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
+((eval (car exp) env) (eval (cadr exp) env)))))))))))))))
+(eval (quote $p) '()))
+"""
+
   def test() = {
     println("// ------- SECD_Compiler.test --------")
 
@@ -259,10 +292,10 @@ object SECD_Compiler {
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
 
-    check(compileAndRun(VMEval.meta_eval("(- 1 1)")))("Cst(0)")
-    check(compileAndRun(VMEval.meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
+    check(compileAndRun(meta_eval("(- 1 1)")))("Cst(0)")
+    check(compileAndRun(meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
 
-    //check(compileAndRun(VMEval.meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
+    check(compileAndRun(meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
     //check(compileAndRun(VMEval.meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
     testDone()

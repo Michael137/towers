@@ -4,6 +4,8 @@ import Base._
 
 object SECD_Machine {
   val src = """
+(let deeplift (lambda l x (if (code? x) x (if (pair? x) (lift (cons (l (car x)) (l (cdr x)))) (lift x))))
+(let deeplift-if-code (lambda _ r (lambda _ x (if (code? r) (deeplift x) x)))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst
 (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))
@@ -35,7 +37,7 @@ object SECD_Machine {
   ((((machine (cons fun s)) e) (cddr c)) d)))
 (if (eq? 'AP (car c))
   (let fun (car s)
-  (let vs (cadr s)
+  (let vs ((deeplift-if-code fun) (cadr s))
   (let r (fun vs)
   ((((machine (cons r (cddr s))) e) (cdr c)) d))))
 (if (eq? 'RTN (car c))
@@ -43,7 +45,7 @@ object SECD_Machine {
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
 (cons 'ERROR c))))))))))))))))))))))))
-(lambda _ c ((((machine '()) '()) c) '()))))
+(lambda _ c ((((machine '()) '()) c) '()))))))
 """
 
   val evl = src
@@ -244,7 +246,7 @@ object SECD_Compiler {
 
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
 
-    //println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
+    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
     testDone()
   }

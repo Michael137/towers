@@ -73,7 +73,7 @@ object SECD {
           (cdr d)
           d)
       (let s1 ((car s) 1)
-        (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+        (let s0 ((car s1) (mla (cons (cadr s) (cddr s1))))
           ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env)))))
   (let _ _ ;(debug 'else?====>)
   (if (lambda? (caar s))
@@ -93,7 +93,7 @@ object SECD {
     (if (code? (maybe-lift 1)) ;this means "RTN" was called immediately after "LDR"
       (mla (let s1 ((car s) 1)
         (cons
-          (lambda _ arg ((car s1) (mla (cons (car arg) (cdr s1)))))
+          (lambda _ arg ((car s1) (mla (cons (car arg) (cddr s1)))))
           (cdr s1))))
       (car s))
   (if (eq? 'ret d)
@@ -126,8 +126,9 @@ object SECD {
     (let s1 (cons (cdar s1) (cdr s1))
       (let newDump (cons (cddr s) (cons env (cons (cdr ops) (cons fns d))))
         (let _ (debug (cadar s))
-          (let rec (maybe-lift (lambda rec env ((((((machine '()) (cons 'rec newDump)) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) bt) (caar s1)) env)))
-            ((((((machine '()) newDump) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) bt) (cadar s)) env))))))
+          (let mem (cons newDump s1)
+          (let rec (maybe-lift (lambda rec env ((((((machine '()) (cons 'rec newDump)) (cons (cons (cons rec (cons mem (cdar s1))) (cdr s1)) fns)) bt) (caar s1)) env)))
+            ((((((machine '()) newDump) (cons (cons (cons rec (cons mem (cdar s1))) (cdr s1)) fns)) bt) (cadar s)) env)))))))
 (if (eq? 'CAR (car ops))
 ((((((machine (cons (car (car s)) (cdr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'CDR (car ops))
@@ -215,7 +216,7 @@ object SECD {
     'ERROR))
   (if (lambda? (car s))
     (let s1 ((car s) 1)
-    (let s0 ((car s1) (mla (cons (cadr s) (cdr s1))))
+    (let s0 ((car s1) (mla (cons (cadr s) (cddr s1))))
       (let d (cons (cddr s) (cons env (cons (cdr ops) d)))
       ((((((machine (cons s0 (car d))) (cdddr d)) fns) bt) (caddr d)) (cadr d)))))
   (let cc (car s) ;;; Purely for the CC instr

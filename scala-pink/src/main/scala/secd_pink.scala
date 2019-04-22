@@ -18,7 +18,7 @@ object SECD {
 (let null? (lambda _ x (eq? ((liftIfCode '()) x) x))
 (let map (lambda map f (lambda mapf xs (if (null? xs) xs (cons (f (car xs)) (mapf (cdr xs))))))
 (let mla (lambda mla xs (if (code? xs) xs (if (pair? xs) (maybe-lift (cons (mla (car xs)) (mla (cdr xs)))) (maybe-lift xs))))
-(let pla (lambda pla xs (if (code? xs) xs (if (pair? xs) (possible-lift (cons (pla (car xs)) (mla (cdr xs)))) (possible-lift xs))))
+(let pla (lambda pla xs (if (code? xs) xs (if (pair? xs) (possible-lift (cons (pla (car xs)) (pla (cdr xs)))) (possible-lift xs))))
 (let atom? (lambda atom? a (if (sym? a) (maybe-lift 1) (if (num? a) (maybe-lift 1) (maybe-lift 0))))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst

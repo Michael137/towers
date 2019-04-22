@@ -42,7 +42,7 @@ object SECD {
       (let s1 (cadr mem)
       (let fns (cadr (cdr mem))
       (let bt (cdr (cddr mem))
-      (let rec (lift (lambda rec x ((((((machine '()) (cons 'rec newDump)) (cons (cons rec (cdr s1)) fns)) bt) (caar s1)) (cons (cons x '()) '()))))
+      (let rec (lift (lambda rec x ((((((machine '()) (cons 'rec newDump)) (cons (cons rec (cdr s1)) fns)) bt) (caar s1)) (cons (cons x '()) (cdr (cdr c))))))
       rec)))))))
       (lift (lambda _ x ((((((machine '()) 'ret) fns) bt) (car (cdr (car s)))) (cons (cons x '()) (cdr (cdar s))))))))
  ((((((machine (cons r (cdr s))) d) fns) bt) (cdr ops)) env))

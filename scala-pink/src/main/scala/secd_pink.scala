@@ -33,7 +33,7 @@ object SECD {
 (let _ (debug (cons 'fns fns))
 (let _ (debug '##################>>>)
 (if (eq? 'LIFT (car ops))
- (let r (if (num? (car s))
+ (let r (if (or (sym? (car s)) (num? (car s)))
       (lift (car s))
       (lift (lambda _ x ((((((machine '()) 'ret) fns) bt) (car (cdr (car s)))) (cons (cons x '()) (cdr (cdar s)))))))
  ((((((machine (cons r (cdr s))) d) fns) bt) (cdr ops)) env))

@@ -82,8 +82,11 @@ object SECD {
           (cdr d)
           d)
       (let s1 ((car s) 1)
+        (if (code? s1) ;lifting
+          (let s0 (s1 (car (cadr s)))
+          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env))
         (let s0 ((car s1) (mla (cons (cadr s) (cddr s1))))
-          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env)))))
+          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env))))))
   (let _ _ ;(debug 'else?====>)
   (if (lambda? (caar s))
     (let _ _ ;(debug 'lambda?====>)

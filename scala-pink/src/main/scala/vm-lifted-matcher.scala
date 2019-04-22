@@ -55,6 +55,7 @@ object VMLiftedMatcher {
         // sanity checks
         printgen("(letrec (rec) ((lambda (s) (+ s s))) (lift rec))")
         printgen("(letrec (rec) ((lambda (s) (if (eq? (lift 'done) s) (lift 0) (rec (cdr s))))) (lift rec))")
+        //printgen("(letrec (rec) ((lambda (r) (lift (lambda (s) (if (eq? 'done r) s ((rec (cdr r)) (cdr s))))))) (rec '(a done)))")
         //printgen("(letrec (rec) ((lambda (r) (lambda (s) (if (eq? 'done r) s ((rec (cdr r)) (cdr s)))))) (lift (rec '(a done))))")
 
 

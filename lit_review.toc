@@ -1,0 +1,36 @@
+\contentsline {section}{\numberline {1}An Introduction to Towers of Interpreters}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}What are Interpreters?}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Reflective Towers}{2}{subsection.1.2}
+\contentsline {subsubsection}{\numberline {1.2.1}3-LISP, Meta-circularity and Reflection}{2}{subsubsection.1.2.1}
+\contentsline {subsubsection}{\numberline {1.2.2}A Formal Account}{3}{subsubsection.1.2.2}
+\contentsline {subsection}{\numberline {1.3}Collapsing Towers}{5}{subsection.1.3}
+\contentsline {subsubsection}{\numberline {1.3.1}Compiling Reflective Languages}{5}{subsubsection.1.3.1}
+\contentsline {subsubsection}{\numberline {1.3.2}Examples}{6}{subsubsection.1.3.2}
+\contentsline {subsection}{\numberline {1.4}Heterogeneity}{6}{subsection.1.4}
+\contentsline {subsubsection}{\numberline {1.4.1}Absence of: Meta-circularity}{7}{subsubsection.1.4.1}
+\contentsline {subsubsection}{\numberline {1.4.2}Absence of: Reflectivity}{7}{subsubsection.1.4.2}
+\contentsline {subsubsection}{\numberline {1.4.3}Mixed Language Systems}{7}{subsubsection.1.4.3}
+\contentsline {section}{\numberline {2}Problems}{7}{section.2}
+\contentsline {section}{\numberline {3}Why do we want to collapse towers?}{8}{section.3}
+\contentsline {subsection}{\numberline {3.1}Example of Deriving Translators}{8}{subsection.3.1}
+\contentsline {section}{\numberline {4}Contributions}{9}{section.4}
+\contentsline {section}{\numberline {5}Background}{11}{section.5}
+\contentsline {subsection}{\numberline {5.1}Type-Directed Partial Evluation (TDPE)}{11}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}Staging}{11}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Abstract Machines}{12}{subsection.5.3}
+\contentsline {section}{\numberline {6}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{12}{section.6}
+\contentsline {subsection}{\numberline {6.1}Scala}{12}{subsection.6.1}
+\contentsline {subsubsection}{\numberline {6.1.1}Similarities to Mix}{13}{subsubsection.6.1.1}
+\contentsline {subsection}{\numberline {6.2}Parallels To Towers In the Wild}{13}{subsection.6.2}
+\contentsline {subsection}{\numberline {6.3}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$Overview}{13}{subsection.6.3}
+\contentsline {section}{\numberline {7}Level 2: SECD}{13}{section.7}
+\contentsline {subsection}{\numberline {7.1}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{15}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}Staging a SECD Machine}{15}{subsection.7.2}
+\contentsline {subsubsection}{\numberline {7.2.1}Tying the Knot}{16}{subsubsection.7.2.1}
+\contentsline {subsection}{\numberline {7.3}SECD Compiler}{17}{subsection.7.3}
+\contentsline {section}{\numberline {8}Level 3: Meta-eval}{17}{section.8}
+\contentsline {subsection}{\numberline {8.1}String Matcher}{17}{subsection.8.1}
+\contentsline {section}{\numberline {9}Results}{17}{section.9}
+\contentsline {subsection}{\numberline {9.1}Benchmarks}{17}{subsection.9.1}
+\contentsline {section}{\numberline {10}Conclusion}{23}{section.10}
+\contentsline {section}{\numberline {11}Future Work}{23}{section.11}

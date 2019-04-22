@@ -248,6 +248,17 @@ object SECD {
     SECDTests.factorialTests
     SECDTests.testAckermann
     SECDTests.testTryFail
+    SECDTests.basicTests
+    SECDTests.listAccessTest
+
+    // For experimentation:
+    // println(EVMComp.runOnVM("(lambda (y) y)", "'()"))
+    // println(EVMComp.runOnVM("(let (x) ((lambda (y) y)) x)", "'()"))
+    // println(EVMComp.runOnVM("""(letrec (x) ((+ 2 2)) (- x 4))""", "'()"))
+
+    // println(EVMComp.runOnVM("""(lambda (x) (+ x y))""", "'()"))
+    // println(EVMComp.runOnVM("""((lambda (x) (lambda (y) (* (+ x y) (- x 1)))) 5)""", "'()"))
+    // println(ev(s"""(($evl '(LDC 10 LDF (LD (1 1) RTN) AP STOP)) '((20)))"""))
 
     testDone()
   }

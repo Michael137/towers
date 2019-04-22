@@ -122,7 +122,7 @@ object EVMCompTests {
     def passFromEnvTest() = {
         check(EVMComp.evalOnVM("""((lambda (x) (+ x p)) 5)""", "'((10))"))("Cst(15)")
         check(EVMComp.evalOnVM("""((lambda (x) (+ x (- p y))) 5)""", "'((10) (11))"))("Cst(4)")
-        check(evalOnVM("""
+        check(EVMComp.evalOnVM("""
             (let (eval) ((lambda (ops)
                                 (if (eq? (car ops) n1) 5
                                 (if (eq? (car ops) n2) 6
@@ -132,5 +132,13 @@ object EVMCompTests {
         """, "'((5) (6) (.))"))("Cst(9)")
         check(EVMComp.runOnVM("""((lambda (x) (+ x p)) 5)""", "'((10))"))("Cst(15)")
         check(EVMComp.runOnVM("""((lambda (x) (+ x (- p y))) 5)""", "'((10) (11))"))("Cst(4)")
+        check(EVMComp.runOnVM("""
+            (let (eval) ((lambda (ops)
+                                (if (eq? (car ops) n1) 5
+                                (if (eq? (car ops) n2) 6
+                                (if (eq? (car ops) null) .
+                                (caddr ops))))))
+                            (eval (cons 7 (cons 8 (cons 9 (cons 6 .))))))
+        """, "'((5) (6) (.))"))("Cst(9)")
     }
 }

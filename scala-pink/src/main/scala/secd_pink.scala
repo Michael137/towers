@@ -5,7 +5,7 @@ import Lisp._
 
 object SECD {
   val src = """
-(let debug_mode? 0
+(let debug_mode? 1
 (let debug (lambda _ x (if debug_mode? (log 0 x) _))
 (let caaar (lambda _ x (car (caar x)))
 (let caaaar (lambda _ x (car (caaar x)))

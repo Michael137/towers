@@ -33,28 +33,34 @@ object EVMComp {
         case Tup(t1, t2) => t1::tupToList(t2)
     }
 
-    def idx(exp: Val, env: CompEnv, i: Int): Val = {
-        if(env.size == 0)
-            N
-
-        def idx2(e: Val, n: List[Val], j: Int): Int = {
-            if(n.size == 0) {
-                -1
+    def idx2(e: Val, n: List[Val], j: Int): Int = {
+        if(n.size == 0) {
+            -1
+        } else {
+            val hd::tl = n
+            if(hd == e) {
+                j
             } else {
-                val hd::tl = n
-                if(hd == e) {
-                    j
-                } else {
-                    idx2(e, tl, j + 1)
-                }
+                idx2(e, tl, j + 1)
             }
         }
-        val hd::tl = env
-        val j = idx2(exp, hd, 1)
-        if(j == -1) {
-            idx(exp, tl, i + 1)
+    }
+
+    // Keep track of where in environment free variables are stored
+    var envArgOffset = 0
+    def idx(exp: Val, env: CompEnv, i: Int): Val = {
+        if(env.size == 0 || env == Nil) {
+            val ret = Tup(Cst(i + envArgOffset), Tup(Cst(1), N))
+            envArgOffset = envArgOffset + 1
+            ret
         } else {
-            Tup(Cst(i), Tup(Cst(j), N))
+            val hd::tl = env
+            val j = idx2(exp, hd, 1)
+            if(j == -1) {
+                idx(exp, tl, i + 1)
+            } else {
+                Tup(Cst(i), Tup(Cst(j), N))
+            }
         }
     }
 
@@ -213,6 +219,12 @@ object EVMComp {
         case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))
     }
 
+    def teardown() = {
+        inRec = false
+        fnEnv = Nil
+        envArgOffset = 0
+    }
+
     // env and src are passed to PE.runVM in quotes
     // Compilation
     def runOnVM(src: String, env: String, run: Boolean = true, verbose: Boolean = true, pretty: Boolean = true, max_depth: Int = 30) = {
@@ -226,8 +238,7 @@ object EVMComp {
             println(Base.pretty(Base.reifyc(Lisp.ev(s"((${SECD.cmp} '($instrSrc)) (lift '()))")), Nil, max_depth = max_depth))
 
         val ret = Base.deref(SECD.runVM(SECD.cmp, s"'($instrSrc)", env, run))
-        inRec = false
-        fnEnv = Nil
+        teardown()
         ret
     }
 
@@ -241,8 +252,7 @@ object EVMComp {
 
         // val ret = EBase.deref(PE.runVM(PE.evl, s"'($instrSrc)", env, false))
         val ret = Base.deref(SECD.runVM(SECD.evl, s"'($instrSrc)", env, false))
-        inRec = false
-        fnEnv = Nil
+        teardown()
         ret
     }
 
@@ -253,8 +263,7 @@ object EVMComp {
         val instrSrc = instrsToString(instrs)
 
         val ret = Base.deref(SECD.runVM(SECD.evg, s"'($instrSrc)", env, false))
-        inRec = false
-        fnEnv = Nil
+        teardown()
         ret
     }
 
@@ -266,6 +275,7 @@ object EVMComp {
         EVMCompTests.factorialTest
         EVMCompTests.nestedLambdaTest
         EVMCompTests.ackermannTest
+        EVMCompTests.passFromEnvTest
         //TODO: EVMCompTests.tryFailTest
 
         testDone()

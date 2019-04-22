@@ -236,9 +236,9 @@ object SECD {
 
   def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true) = {
       if(runCopmiled)
-          ev(s"((run 0 ($vmSrc $src)) (lift $env))")
+          ev(s"((run 0 ($vmSrc $src)) $env)")
       else
-          ev(s"(($vmSrc $src) (lift $env))")
+          ev(s"(($vmSrc $src) $env)")
   }
 
   def test() = {
@@ -258,8 +258,7 @@ object SECD {
 
     // println(EVMComp.runOnVM("""(lambda (x) (+ x y))""", "'()"))
     // println(EVMComp.runOnVM("""((lambda (x) (lambda (y) (* (+ x y) (- x 1)))) 5)""", "'()"))
-    // println(ev(s"""(($evl '(LDC 10 LDF (LD (1 1) RTN) AP STOP)) '((20)))"""))
-
+  
     testDone()
   }
 }

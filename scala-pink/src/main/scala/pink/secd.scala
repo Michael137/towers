@@ -9,9 +9,6 @@ object SECD_Machine {
 (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))
 ((loc j) ((loc i) env))
 ))))
-(let append (lambda append xs (lambda _ ys
-  (if (eq?  '() xs) ys (cons (car xs) ((append (cdr xs)) ys)))))
-(let snoc (lambda snoc x (lambda _ xs ((append xs) (cons x '()))))
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
 (let _ (log 0 c)
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
@@ -19,7 +16,7 @@ object SECD_Machine {
 (if (eq? 'LD (car c))
   (let ij (cadr c) (let i (car ij) (let j (cadr ij)
   ((((machine (cons (((locate i) j) e) s)) e) (cddr c)) d))))
-(if (eq? 'LIFT (car c)) ((((machine (cons (lift (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'LIFT (car c)) ((((machine (cons (log 0 (lift (log 0 (car s)))) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CAR (car c)) ((((machine (cons (car (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CDR (car c)) ((((machine (cons (cdr (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'ADD (car c)) ((((machine (cons (+ (car s) (cadr s)) (cddr s))) e) (cdr c)) d)
@@ -34,7 +31,7 @@ object SECD_Machine {
 (if (eq? 'JOIN (car c)) ((((machine s) e) (car d)) (cdr d))
 (if (eq? 'LDF (car c))
   (let f (cadr c)
-  (let fun (lambda fun xs ((((machine '()) (cons ((snoc fun) xs) e)) f) '()))
+  (let fun (lambda fun xs ((((machine '()) (cons (cons fun xs) e)) f) '()))
   ((((machine (cons fun s)) e) (cddr c)) d)))
 (if (eq? 'AP (car c))
   (let fun (car s)
@@ -46,7 +43,7 @@ object SECD_Machine {
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
 (cons 'ERROR c))))))))))))))))))))))))
-(lambda _ c ((((machine '()) '()) c) '()))))))
+(lambda _ c ((((machine '()) '()) c) '()))))
 """
 
   val evl = src
@@ -61,8 +58,8 @@ object SECD_Machine {
     check(ev(s"($evl '(LDC 1 LDC 2 ADD WRITEC))"))("Cst(3)")
     check(ev(s"($evl '(LDC 2 SEL (LDC 1 JOIN) (LDC 0 JOIN) WRITEC))"))("Cst(1)")
     check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LDC 2 LDC 1 ADD RTN) AP WRITEC))"))("Cst(3)")
-    check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LD (1 2) LD (1 1) ADD RTN) AP WRITEC))"))("Cst(3)")
-    check(ev(s"($evl '(NIL LDC 6 CONS LDF (LD (1 1) SEL (NIL LDC 1 LD (1 1) SUB CONS LD (1 2) AP LD (1 1) MPY JOIN) (LDC 1 JOIN) RTN) AP WRITEC))"))("Cst(720)")
+    check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LD (1 3) LD (1 2) ADD RTN) AP WRITEC))"))("Cst(3)")
+    check(ev(s"($evl '(NIL LDC 6 CONS LDF (LD (1 2) SEL (NIL LDC 1 LD (1 2) SUB CONS LD (1 1) AP LD (1 2) MPY JOIN) (LDC 1 JOIN) RTN) AP WRITEC))"))("Cst(720)")
   }
 }
 
@@ -163,7 +160,7 @@ object SECD_Compiler {
     case n: Cst => Tup(Str("LDC"), Tup(n, acc))
     // Builtin, Lambda, Special form
     case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
-      compileLambda(body, tupToList(args)::env, acc)
+      compileLambda(body, (Str("_")::tupToList(args))::env, acc)
     case Tup(Str("quote"), Tup(args, _)) =>
       compileList(args, env, Tup(Str(""), acc))
     case Tup(Str("lift"), args) =>
@@ -207,12 +204,12 @@ object SECD_Compiler {
     case Tup(Str("if"), Tup(c,Tup(a,Tup(b,N)))) =>
       compileIf(c, a, b, env, acc)
     case Tup(Str("let"), Tup(vs, Tup(vals, Tup(body, N)))) => {
-      val newEnv = tupToList(vs)::env
+      val newEnv = (Str("_")::tupToList(vs))::env
       Tup(Str("NIL"), compileApp(vals, env, compileLambda(body, newEnv, Tup(Str("AP"), acc))))
     }
     case Tup(Str("letrec"), Tup(Tup(name, N), Tup(Tup(Tup(Str("lambda"), Tup(args, Tup(body,N))), N), Tup(letrec_body, N)))) => {
-      val newEnv = List(name)::env
-      Tup(Str("NIL"), compileLambda(body, (tupToList(args)++List(name))::env, Tup(Str("CONS"), compileLambda(letrec_body, newEnv, Tup(Str("AP"), acc)))))
+      val newEnv = (Str("_")::name::Nil)::env
+      Tup(Str("NIL"), compileLambda(body, (name::tupToList(args))::env, Tup(Str("CONS"), compileLambda(letrec_body, newEnv, Tup(Str("AP"), acc)))))
     }
     // Application
     case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))
@@ -241,7 +238,13 @@ object SECD_Compiler {
     check(compileAndRun(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)")))("Str(yes)")
 
     println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
-    //println(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)")))
+    println(prettycode(compileAndRun("(lift (lambda (x) (lift 1)))")))
+    println(prettycode(compileAndRun("(lift (lambda (x) x))")))
+    println(prettycode(compileAndRun("(lift (lambda (x) (+ x (lift 1))))")))
+
+    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
+
+    //println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
     testDone()
   }

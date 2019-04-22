@@ -60,7 +60,7 @@ object VMLiftedMatcher {
         printgen("(let (top) ((lambda (c) (let (inner) ((lambda (s) (lift c))) (lift inner)))) (top '_))")
         printgen("(let (top) ((lambda (c) (letrec (inner) ((lambda (s) (lift c))) (lift inner)))) (top '_))")
 
-        //genMatcher("'(a * done)")
+        genMatcher("'(a * done)")
 
         testDone()
     }

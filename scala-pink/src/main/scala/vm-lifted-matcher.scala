@@ -36,12 +36,12 @@ object VMLiftedMatcher {
                                 (match $p))))
     """
 
-    def genMatcher(pattern: String) = {
-        println(Lisp.prettycode(Lam(reifyc(genOnVM(lifted_matcher(pattern), "'()")))))
+    def printgen(r: String) = {
+        println(Lisp.prettycode(Lam(reifyc(genOnVM(r, "'()")))))
     }
 
-    def printgen(r: String) = {
-      println(Lisp.prettycode(Lam(reifyc(genOnVM(r, "'()")))))
+    def genMatcher(pattern: String) = {
+        printgen(lifted_matcher(pattern))
     }
 
     def test() = {
@@ -55,7 +55,7 @@ object VMLiftedMatcher {
         // sanity checks
         printgen("(letrec (rec) ((lambda (s) (+ s s))) (lift rec))")
         printgen("(letrec (rec) ((lambda (s) (if (eq? (lift 'done) s) (lift 0) (rec (cdr s))))) (lift rec))")
-        printgen("(letrec (rec) ((lambda (r) (lambda (s) (if (eq? 'done r) s ((rec (cdr r)) (cdr s)))))) (lift (rec '(a done))))")
+        //printgen("(letrec (rec) ((lambda (r) (lambda (s) (if (eq? 'done r) s ((rec (cdr r)) (cdr s)))))) (lift (rec '(a done))))")
 
 
         //genMatcher("'(a * done)")

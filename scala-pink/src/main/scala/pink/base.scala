@@ -84,6 +84,9 @@ object Base {
           // smart constructors
           case Fst(Cons(a, b)) => a
           case Snd(Cons(a, b)) => a
+          case Plus(Lit(a), Lit(b)) => Lit(a + b)
+          case Minus(Lit(a), Lit(b)) => Lit(a - b)
+          case Times(Lit(a), Lit(b)) => Lit(a * b)
           case _ =>
             stBlock :+= (stFresh, s)
             fresh()

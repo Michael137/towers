@@ -41,7 +41,8 @@ object VMMatcher {
         val r2 = runOnVM(matcher(pattern, str), env, pretty = pretty, max_depth = 80)
         check(r1.toString)(r2.toString)
 
-        // println(Lisp.prettycode(Lam(reifyc(genOnVM(matcher(s, "lift"), env)))))
+        // TODO: lift matcher from user level
+        // println(Lisp.prettycode(Lam(reifyc(genOnVM(matcher(pattern, str, "lift"), env)))))
 
         r1
     }

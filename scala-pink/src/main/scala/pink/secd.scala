@@ -288,23 +288,14 @@ object SECD_Compiler {
 
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 6))"))("Cst(720)")
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* (fac (- n 1)) n)))) (fac 6))"))("Cst(720)")
-    check(compileAndRun(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)")))("Str(yes)")
 
     println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (lift 1)))")))
     println(prettycode(compileAndRun("(lift (lambda (x) x))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (+ x (lift 1))))")))
-
-    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
-
-    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
-
-
     check(compileAndRun(meta_eval("(- 1 1)")))("Cst(0)")
     check(compileAndRun(meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
-
     check(compileAndRun(meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
-
     check(compileAndRun("(let (x) (1) x)"))("Cst(1)")
     check(compileAndRun(meta_eval("(let (x) (1) x)")))("Cst(1)")
     check(compileAndRun(meta_eval("(let (id) ((lambda (y) y)) (id 1))")))("Cst(1)")
@@ -314,12 +305,17 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval("(letrec (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
     check(compileAndRun(meta_eval("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
 
+
+    check(compileAndRun(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)")))("Str(yes)")
+
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
-    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
+    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
+    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
+    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))
 
     testDone()

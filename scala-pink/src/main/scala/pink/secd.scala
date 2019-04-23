@@ -278,7 +278,7 @@ object SECD_Compiler {
   (let (r) ((car (caddr exp)))
   (letrec (f)
     ((lambda (x) (eval (caddr r) (lambda (z) (if (eq? z (car (cadr exp))) f (if (eq? z (car (cadr r))) x (env z)))))))
-    (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) f (env z))))))
+    (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) ($lift f) (env z))))))
 (if (eq? (car exp) 'lambda)
   ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
 ((eval (car exp) env) (eval (cadr exp) env)))))))))))))))))))
@@ -324,8 +324,7 @@ object SECD_Compiler {
       val r = VMMatcher.matcher(p, "my_input")
       s"(lambda (my_input) $r)"
     }
-    // Stackoverflow
-    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
+    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
 
     testDone()
   }

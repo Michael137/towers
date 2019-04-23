@@ -242,6 +242,8 @@ object SECD_Compiler {
     Base.pretty(Base.reifyc(v), Nil)
   }
 
+  def lifted_meta_eval(p: String) = meta_eval(p, "lift")
+
   def meta_eval(p: String, lift: String = "(lambda (x) x)") = s"""
 (letrec (eval) ((lambda (exp env)
 (if (sym? exp)
@@ -265,7 +267,7 @@ object SECD_Compiler {
 (if (eq? (car exp) '>)
   (> (eval (cadr exp) env) (eval (caddr exp) env))
 (if (eq? (car exp) 'quote)
-  (cadr exp)
+  ($lift (cadr exp))
 (if (eq? (car exp) 'if)
   (if (eval (cadr exp) env) (eval (caddr exp) env) (eval (cadddr exp) env))
 (if (eq? (car exp) 'let)
@@ -317,6 +319,13 @@ object SECD_Compiler {
 
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))
+
+    def curried_matcher(p: String) = {
+      val r = VMMatcher.matcher(p, "my_input")
+      s"(lambda (my_input) $r)"
+    }
+    // Stackoverflow
+    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
 
     testDone()
   }

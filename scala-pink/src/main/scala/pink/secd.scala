@@ -325,6 +325,7 @@ object SECD_Compiler {
       s"(lambda (my_input) $r)"
     }
     println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
+    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
 
     testDone()
   }

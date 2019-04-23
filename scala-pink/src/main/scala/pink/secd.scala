@@ -14,7 +14,7 @@ object SECD_Machine {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
-(let _ (log 0 (car c))
+(let _ _ ;(log 0 (car c))
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
 (if (eq? 'LD (car c))
@@ -248,6 +248,10 @@ object SECD_Compiler {
   (env exp)
 (if (num? exp)
   ($lift exp)
+(if (eq? (car exp) 'car)
+  (car (eval (cadr exp) env))
+(if (eq? (car exp) 'cdr)
+  (cdr (eval (cadr exp) env))
 (if (eq? (car exp) '+)
   (+ (eval (cadr exp) env) (eval (caddr exp) env))
 (if (eq? (car exp) '-)
@@ -258,6 +262,8 @@ object SECD_Compiler {
   (eq? (eval (cadr exp) env) (eval (caddr exp) env))
 (if (eq? (car exp) '>)
   (> (eval (cadr exp) env) (eval (caddr exp) env))
+(if (eq? (car exp) 'quote)
+  (cadr exp)
 (if (eq? (car exp) 'if)
   (if (eval (cadr exp) env) (eval (caddr exp) env) (eval (cadddr exp) env))
 (if (eq? (car exp) 'let)
@@ -271,7 +277,7 @@ object SECD_Compiler {
     (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) f (env z))))))
 (if (eq? (car exp) 'lambda)
   ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
-((eval (car exp) env) (eval (cadr exp) env)))))))))))))))
+((eval (car exp) env) (eval (cadr exp) env))))))))))))))))))
 (eval (quote $p) '()))
 """
 
@@ -300,10 +306,15 @@ object SECD_Compiler {
     check(compileAndRun("(let (x) (1) x)"))("Cst(1)")
     check(compileAndRun(meta_eval("(let (x) (1) x)")))("Cst(1)")
     check(compileAndRun(meta_eval("(let (id) ((lambda (y) y)) (id 1))")))("Cst(1)")
-    //check(compileAndRun(meta_eval("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
-    //check(compileAndRun(meta_eval(VMMatcher.matcher("'(done)", "'(a done)"))))("Str(no)")
-    //check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
-    //check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
+    check(compileAndRun("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))"))("Str(yes)")
+    check(compileAndRun(meta_eval("(let (m) ((lambda (r) (lambda (s) 2))) ((m 3) 4))")))("Cst(2)")
+    check(compileAndRun(meta_eval("'yes")))("Str(yes)")
+    check(compileAndRun(meta_eval("(letrec (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
+    check(compileAndRun(meta_eval("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
+
+    check(compileAndRun(meta_eval(VMMatcher.matcher("'(done)", "'(a done)"))))("Str(yes)")
+    check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
+    check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
     testDone()
   }

@@ -248,6 +248,8 @@ object SECD_Compiler {
   (env exp)
 (if (num? exp)
   ($lift exp)
+(if (eq? (car exp) 'lift)
+  (lift (eval (cadr exp) env))
 (if (eq? (car exp) 'car)
   (car (eval (cadr exp) env))
 (if (eq? (car exp) 'cdr)
@@ -277,7 +279,7 @@ object SECD_Compiler {
     (eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) f (env z))))))
 (if (eq? (car exp) 'lambda)
   ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
-((eval (car exp) env) (eval (cadr exp) env))))))))))))))))))
+((eval (car exp) env) (eval (cadr exp) env)))))))))))))))))))
 (eval (quote $p) '()))
 """
 
@@ -315,6 +317,10 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
+
+    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
+
+    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))
 
     testDone()
   }

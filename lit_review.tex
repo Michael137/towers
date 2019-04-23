@@ -12,8 +12,12 @@
 \usepackage{amsthm}
 \usepackage{textcomp}
 \usepackage{txfonts}
-\usepackage{tikz}
-\usetikzlibrary{matrix}
+%\usepackage{tikz}
+%\usetikzlibrary{matrix}
+\usepackage{booktabs}
+\usepackage{makecell} % For table formatting
+\renewcommand\theadfont{\bfseries}
+
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
 \newcommand{\ts}{\textquotesingle}
@@ -27,7 +31,7 @@
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
-    filecolor=magenta,      
+    filecolor=magenta,
     urlcolor=cyan,
 }
 \urlstyle{same}
@@ -473,10 +477,33 @@ where $f@x$ denotes the application of function $f$ to an expression $x$. By def
 \textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as follows:
 
 \begin{lstlisting}[language=Lisp]
-(let maybe-lift (lambda (x) x) (<rest of the SECD implementation))
-(let maybe-lift (lambda (x) (lift x)) (<rest of the SECD implementation))
+(let maybe-lift (lambda (x) x) (<rest of the SECD implementation>))
+(let maybe-lift (lambda (x) (lift x)) (<rest of the SECD implementation>))
 \end{lstlisting}
 
+Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. Staged execution in our framework makes use of the partial evaluator used in Pink \cite{amin2017collapsing} to generate code in \mslang. Before being able to stage a SECD machine we define our division by where static values can be transferred from. If a dynamic value can be transferred from a register, $A$, to another register, $B$, we classify register $B$ as dynamic. Following are our division rules:
+\begin{table}[!htbp]
+  \centering
+  \caption{Division rules for of approach to staging a SECD machine}
+  \label{tbl:secd_division}
+  \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
+ 	\toprule
+ 	\thead{SECD Register}	&	\thead{Classification}	&	\thead{Reason}	\\ \hline
+
+ 	\midrule
+	$S$ (Stack)				&	Stack				&	Since function arguments and return values operate on the stack \textit{and} environment which is dynamic \\ \hline
+
+	$E$ (Environment)		&	Dynamic			&	Since the user transfers dynamic values to the environment \\ \hline
+
+	$D$ (Dump)				&	Stack				&	Receives dynamic values from the stack and is thus dynamic \\ \hline
+
+	$FNS$ (Functions)		&	Stack				&	We make sure the functions register only receives static values and is thus static (we ensure this through eta-expansion) \\
+
+	\bottomrule
+  \end{tabular}
+\end{table}
+
+Through its LISP front-end the \mslang evaluator can operate as a partial evaluator by exposing its \textit{lift} operator. Using this operator we can then annotate the interpreter we want to stage according to a pre-defined division. Given the division in table \ref{tbl:secd_division} we implement the SECD machine as a definitional interpreter.
 
 We take a conservative stance to binding-time analysis in staging our machine.
 
@@ -507,8 +534,14 @@ At earlier stages of our study we went down the route of extending the base eval
 
 Difficulties arise whenever we attempt to mix dynamic and static values since its easy to want to compare and operate on the stack. Thus we need another register that is purely reserved for static values. To keep the amount of noise in the generated code lower one also needs to be careful to only mix static values into dynamic registers when necessary (show example of SECD noisy instrs in the generated code e.g. in simple non-recursive curried lambda or matcher code pre-noise reduction vs. factorial generated code).
 
+If we are willing to diverge further from the SECD instruction set we can implement recursive function application by omitting the \textit{fns} register, modifying LDF to wrap SECD instruction in a lambda as before but remove the RAP and DUM instructions all-together leaving it up to LD and AP to locate and apply the recursive lambda. Essentially what this resembles is the eta-expansion technique to guarding higher-order static data from dynamic contexts typically used in TDPE \cite{danvy1995essence}. The small-step semantics of this approach are as follows:
+
+SEMANTICS
+
 \subsection{Changes to \mslang}
 Since SECD is a stack-based virtual machine all operations and data storage is performed on one of the four stack registers. By the principle of \textit{division} in partial evaluators CITE, we want to be able to separate static and dynamic values to prevent undesired behaviour in our partial evaluator (EXAMPLE OF NON-TERMINATION). A minor extension we add to the original framework is the ability to lift nested tuples as opposed to only two-element tuples. This addition to the small-step semantics is shown in FIGURE.
+
+To reduce the amount of generated code we add logic within \mslang's \textit{reflect} that reduces purely static expressions. Reducible expressions include arithmetic and list access operations.
 
 SHOW OPERATIONAL SEMANTICS
 
@@ -867,6 +900,14 @@ Cost of Emulation (or interpretation)
 \cite{steil2004dynamic}
 \href{http://materials.dagstuhl.de/files/17/17061/17061.PaulH.J.Kelly.Slides.pdf}{Turing Tax}
 \href{https://www.doc.ic.ac.uk/~phjk/AdvancedCompArchitecture/Lectures/pdfs/Ch01-TuringTaxDiscussionV02.pdf}{Turing Tax specific slides}
+
+The goal of our study was to investigate the extent to which previous work on collapsing towers of interpreters applies to heterogeneous settings and the interpretative overhead that can be eliminated in the process. We demonstrate the ability to turn a sequence of evaluators into a code generator by through a proof of concept heterogeneous tower built on a SECD virtual machine. We show that the trace of any intermediate interpreter can mostly be eliminated from compiled code when staging at the user-most interpreter level. We show a recipe for staging an stack-based abstract machine based on small-step semantics by converting it into an annotated definitional interpreter and using eta-expansion to prevent pollution of binding-times between segments of the machine and prevent non-termination of the type-directed partial evaluator.
+
+A key strategy in our methodology for collapsing towers of interpreters is the exposure of a \textit{lift} operator that propagates binding-time information to lower levels of the tower. More specifically, once we reach a level with a significant semantic gap, such as the SECD machine in our tower, the reimplementation of \textit{lift} becomes necessary and more intrusive. Thus a consequence of heterogeneity and thus the absence of meta-circularity is the availability of binding time information of an interpreter. Two follow-up questions arise from this:
+\begin{enumerate*}
+	\item Is there a way to unify the binding-time metadata across levels in a tower then remove the need for reimplementing staging operators
+	\item Since we essentially \textit{lift} in the same places of an interpreter throughout all levels, can we identify places in an interpreter where BT annotations can be added or inferred automatically. (IS THE DIFFERENCE ONLY SYNTACTIC)
+\end{enumerate*}
 
 \section{Future Work}
 Future work:

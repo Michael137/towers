@@ -37,31 +37,11 @@
 }
 \urlstyle{same}
 
-\usepackage{listings}
-\usepackage{color}
- 
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},
-    numberstyle=\tiny\color{codegray},
-    basicstyle=\ttfamily,
-    breakatwhitespace=false,
-    breaklines=true,
-    captionpos=b,
-    keepspaces=true,
-    numbers=left,
-    numbersep=5pt,
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2,
-	morekeywords={car, cdr, caar, caaar, cddr, cdddr, cadr, caddr, cadddr, lambda}
-}
-\lstset{style=mystyle}
-
-% TODO: remove listings package in favour of minted?
+% Code style:
 \usepackage{minted}
+\RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
+\renewcommand{\figurename}{Listing}
+\usemintedstyle{vs}
 
 \begin{document}
 \maketitle
@@ -482,12 +462,17 @@ where $f@x$ denotes the application of function $f$ to an expression $x$. By def
 	\item regular evaluation
 	\item generation of \mslang code and its subsequent execution
 \end{enumerate*}.
-\textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as follows:
+\textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in listing \ref{lst:stage_poly_ex}.
 
+\begin{figure}[h]
+\centering
 \begin{minted}{lisp}
-(let maybe-lift (lambda (x) x) (<rest of the SECD implementation>))
-(let maybe-lift (lambda (x) (lift x)) (<rest of the SECD implementation>))
+(let evaluator (let maybe-lift (lambda (x) x) (...)))
+(let compiler (let maybe-lift (lambda (x) (lift x)) (...)))
 \end{minted}
+\caption{``Stage-polymorphism'' \cite{amin2017collapsing} in our definitional SECD interpreter}
+\label{lst:stage_poly_ex}
+\end{figure}
 
 Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. Staged execution in our framework makes use of the partial evaluator used in Pink \cite{amin2017collapsing} to generate code in \mslang. Before being able to stage a SECD machine we define our division by where static values can be transferred from. If a dynamic value can be transferred from a register, $A$, to another register, $B$, we classify register $B$ as dynamic. Following are our division rules:
 \begin{table}[!htbp]
@@ -655,48 +640,7 @@ Figure \ref{fig:tombstone} shows a representation of our tower in terms of ``sid
 
 \subsection{Benchmarks}
 We extended the benchmarks provided as part of the original framework \cite{amin2017collapsing} with timings for staging the stack machine with respect to a user factorial program and timings for evaluating said program.
-The compilation output yielded and is essentially a loop unrolling of the (non-recursive SECD) factorial program without traces of the SECD emulator left:
-\begin{lstlisting}[language=Scala]
-	Let(
-		Gt(Lit(3),Lit(1)),
-		Let(
-			Equ(Var(3),Lit(0)),
-			Let(
-				If(Var(4),
-					Lit(1),
-					Let(
-						Lift(Sym(.)),
-						Let(
-							Cons(Lit(3),Sym(.)),
-							Let(
-								Fst(Var(6)),
-								Let(
-									Minus(Lit(1),Var(7)),
-									Let(
-										Times(Var(8),Lit(-1)),
-										Let(
-											Fst(Var(6)),
-											Let(
-												Times(Var(9),Var(10)),
-												Let(
-													Snd(Var(6)),
-													Let(
-														Minus(Lit(1),Var(7)),
-														Let(
-															Times(Var(13),Lit(-1)),
-															Let(
-																Minus(Lit(1),Var(14)),
-																Let(
-																	Times(Var(15),Lit(-1)),
-																	Let(
-																		Times(Var(16),Var(11)),
-																		Let(
-																			Minus(Lit(1),Var(14)),
-																			Let(
-																				Times(Var(18),Lit(-1)),
-																				Var(17))))))))))))))))),
-					Var(5))))
-\end{lstlisting}
+
 Generalization: because we sacrifice the fact input is static and mark them as dynamic (code) values
 PE technique is more like a translation then evaluation. The result of evluation is a new IR in terms of the base language
 
@@ -715,155 +659,24 @@ Varying degrees of generalization:
 
 Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features, non-termination when performing recursive calls from within SECD machine (no differentiation between a function being recursive or not)
 
-Following is the generated code without the SECD machine
-\begin{lstlisting}[language=Lisp]
+\begin{figure}[h]
+\centering
+\begin{minted}{lisp}
 	(lambda f0 x1
 	  (let x2 (eq? x1 0)
 	  (if x2 1
 	
 		(let x3 (- x1 1)
 		(let x4 (f0 x3) (* x1 x4))))))
-\end{lstlisting}
+\end{minted}
+\caption{Generated code without the SECD machine}
+\label{lst:pink_factorial}
+\end{figure}
 
-Following is the generated code with the SECD machine:
-\begin{lstlisting}[language=Lisp]
-	(let x0
-		(lambda f0 x1
-			(let x2
-			(lambda f2 x3
-				(let x4 (car x3)
-				(let x5 (car x4)
-				(let x6 (eq? x5 0)
-				(let x7 (eq? x6 0)
-				(if x7
-				(let x8 (car x3)
-				(let x9 (cdr x8)
-				(let x10 (car x9)
-				(let x11 (car x3)
-				(let x12 (car x11)
-				(let x13 (* x12 x10)
-				(let x14 (cdr x3)
-				(let x15 (cdr x14)
-				(let x16 (car x15)
-				(let x17 (cdr x16)
-				(let x18 (car x17)
-				(let x19 (car x3)
-				(let x20 (car x19)
-				(let x21 (- x20 x18)
-				(let x22 (cons x13 '.)
-				(let x23 (cons x21 x22)
-				(let x24 (cons 1 '.)
-				(let x25 (cons 10 x24)
-				(let x26 (cons x25 x1)
-				(let x27 (cons '. x26)
-				(let x28 (cons x23 x27) (f2 x28))))))))))))))))))))))
-
-				(let x8 (car x3)
-				(let x9 (cdr x8) (car x9)))))))))
-			(let x3 (cons 1 '.)
-			(let x4 (cons 10 x3)
-			(let x5 (cons 1 '.)
-			(let x6 (cons 10 x5)
-			(let x7 (cons x6 x1)
-			(let x8 (cons '. x7)
-			(let x9 (cons x4 x8) (x2 x9)))))))))) (x0 '.))
-\end{lstlisting}
-
-With a simple ``smart constructor'' optimization we can reduce the generated code size to:
-\begin{lstlisting}[language=Lisp]
+\begin{figure}[h]
+\centering
+\begin{minted}{lisp}
 (let x0
-  (lambda f0 x1
-    (let x2
-      (lambda f2 x3
-        (let x4 (car x3)
-        (let x5 (car x4)
-        (let x6 (eq? x5 0)
-        (let x7 (eq? x6 0)
-        (if x7
-          (let x8 (car x3)
-          (let x9 (cdr x8)
-          (let x10 (car x9)
-          (let x11 (car x8)
-          (let x12 (* x11 x10)
-          (let x13 (cdr x3)
-          (let x14 (cdr x13)
-          (let x15 (car x14)
-          (let x16 (cdr x15)
-          (let x17 (car x16)
-          (let x18 (- x11 x17)
-          (let x19 (cons x12 '.)
-          (let x20 (cons x18 x19)
-          (let x21 (cons 1 '.)
-          (let x22 (cons 10 x21)
-          (let x23 (cons x22 x1)
-          (let x24 (cons '. x23)
-          (let x25 (cons x20 x24) (f2 x25)))))))))))))))))))
-
-          (let x8 (car x3)
-          (let x9 (cdr x8) (car x9)))))))))
-    (let x3 (cons 1 '.)
-    (let x4 (cons 10 x3)
-    (let x5 (cons x4 x1)
-    (let x6 (cons '. x5)
-	(let x7 (cons x4 x6) (x2 x7)))))))) (x0 '.))
-\end{lstlisting}
-
-Ackermann (with optimizations):
-\begin{lstlisting}[language=Lisp]
-	(let x0
-	(lambda f0 x1
-	  (let x2
-		(lambda f2 x3
-		  (let x4 (car x3)
-		  (let x5 (car x4)
-		  (let x6 (eq? x5 0)
-		  (let x7 (eq? x6 0)
-		  (if x7
-			(let x8 (car x3)
-			(let x9 (cdr x8)
-			(let x10 (car x9)
-			(let x11 (eq? x10 0)
-			(let x12 (eq? x11 0)
-			(if x12
-			  (let x13 (car x3)
-			  (let x14 (cdr x13)
-			  (let x15 (car x14)
-			  (let x16 (- x15 1)
-			  (let x17 (car x13)
-			  (let x18 (cons x16 '.)
-			  (let x19 (cons x17 x18)
-			  (let x20 (cons '. x1)
-			  (let x21 (cons x19 x20)
-			  (let x22 (f2 x21)
-			  (let x23 (- x17 1)
-			  (let x24 (cons x22 '.)
-			  (let x25 (cons x23 x24)
-			  (let x26 (cons x25 x20) (f2 x26)))))))))))))))
-  
-			  (let x13 (car x3)
-			  (let x14 (car x13)
-			  (let x15 (- x14 1)
-			  (let x16 (cons 1 '.)
-			  (let x17 (cons x15 x16)
-			  (let x18 (cons '. x1)
-			  (let x19 (cons x17 x18) (f2 x19))))))))))))))
-  
-			(let x8 (car x3)
-			(let x9 (cdr x8)
-			(let x10 (car x9) (+ x10 1))))))))))
-	  (let x3 (car x1)
-	  (let x4 (car x3)
-	  (let x5 (cdr x3)
-	  (let x6 (car x5)
-	  (let x7 (cons x4 '.)
-	  (let x8 (cons x6 x7)
-	  (let x9 (cons '. x1)
-	  (let x10 (cons x8 x9) (x2 x10))))))))))) (x0 '.))
-\end{lstlisting}
-
-New method of lifting recursive applications:
-\begin{lstlisting}[language=Lisp]
-	(let x0
 	(lambda f0 x1
 	  (let x2 (cons 1 '.)
 	  (let x3 (cons 10 x2)
@@ -876,7 +689,6 @@ New method of lifting recursive applications:
 		  (if x9
 			(let x10 (car x6)
 			(let x11 (cdr x10) (car x11)))
-  
 			(let x10 (car x6)
 			(let x11 (cdr x10)
 			(let x12 (car x11)
@@ -900,7 +712,10 @@ New method of lifting recursive applications:
 	  (let x11 (cons x9 x10)
 	  (let x12 (cons '. x4)
 	  (let x13 (cons x11 x12) (x5 x13)))))))))))))) (x0 '.))
-\end{lstlisting}
+\end{minted}
+\caption{Generated code with the SECD machine and \mslang smart-constructors \ref{sec:mslang}}
+\label{lst:secd_factorial}
+\end{figure}
 
 A partial evaluator is referred to as \textit{strong} if, when the result of partially evaluating to an interpreter with respect to a target program yields the target proram as output. This is called Jones' optimality directly implies the removal of a layer of interpretation. Our experiments show that depending on which level of a tower we apply our partial evaluator on we can have this strong property of partial evaluators hold. When staging the user-most interpreter we are able to generate ANF code that is equivalent to the subject program the user wrote. If we stage at the level of the SECD machine we generate code that resembles some the structure of the SECD machine and are not able to get completely rid of the stack-based operations of the SECD machine.
 

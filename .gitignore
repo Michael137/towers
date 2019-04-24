@@ -18,3 +18,6 @@ scala-pink/src/main/scala/archive/cesk.scala
 lit_review.wcdetail
 lit_review-chars.sum
 lit_review-words.sum
+*.pygtex
+*.pygstyle
+*.pyg

@@ -336,11 +336,11 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
-    /*
     // 1. staged matcher on VM
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
-    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
+    //println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
+    /*
     // 2. Staged matcher on meta-eval
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))

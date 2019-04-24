@@ -14,13 +14,16 @@ object SECD_Machine {
 ((loc j) ((loc i) env))
 ))))
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
+(let lft (lambda _ x (if (or (sym? x) (num? x)) (lift x)
+  (if (and (pair? x) (code? (car x))) (lift x)
+  (lift (lambda _ args ((((machine '()) (cons args (cdr x))) (car x)) 'ret))))))
 (let _ _ ;(log 0 (car c))
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
 (if (eq? 'LD (car c))
   (let ij (cadr c) (let i (car ij) (let j (cadr ij)
   ((((machine (cons (((locate i) j) e) s)) e) (cddr c)) d))))
-(if (eq? 'LIFT (car c)) ((((machine (cons (lift (car s)) (cdr s))) e) (cdr c)) d)
+(if (eq? 'LIFT (car c)) ((((machine (cons (lft (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CAR (car c)) ((((machine (cons (car (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CDR (car c)) ((((machine (cons (cdr (car s)) (cdr s))) e) (cdr c)) d)
 (if (eq? 'CADR (car c)) ((((machine (cons (cadr (car s)) (cdr s))) e) (cdr c)) d)
@@ -49,7 +52,8 @@ object SECD_Machine {
   (let v (cadr s)
   ((((machine '()) (cons v ep)) f) (cons (cddr s) (cons e (cons (cdr c) d)))))))
 (if (eq? 'RTN (car c))
-  ((((machine (cons (car s) (car d))) (cadr d)) (caddr d)) (cdddr d))
+  (if (eq? d 'ret) (car s)
+  ((((machine (cons (car s) (car d))) (cadr d)) (caddr d)) (cdddr d)))
 (if (eq? 'DUM (car c))
   ((((machine s) (cons '() e)) (cdr c)) d)
 (if (eq? 'RAP (car c))
@@ -59,7 +63,7 @@ object SECD_Machine {
   ((((machine '()) (set-car! ep v)) f) (cons (cddr s) (cons (cdr e) (cons (cdr c) d)))))))
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
-(cons 'ERROR c))))))))))))))))))))))))))))))))))
+(cons 'ERROR c)))))))))))))))))))))))))))))))))))
 (lambda _ c ((((machine '()) '()) c) '()))))))))
 """
 
@@ -309,8 +313,8 @@ object SECD_Compiler {
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* (fac (- n 1)) n)))) (fac 6))"))("Cst(720)")
     println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (lift 1)))")))
-    println(prettycode(compileAndRun("(lift (lambda (x) x))")))
-    println(prettycode(compileAndRun("(lift (lambda (x) (+ x (lift 1))))")))
+    //println(prettycode(compileAndRun("(lift (lambda (x) x))")))
+    //println(prettycode(compileAndRun("(lift (lambda (x) (+ x (lift 1))))")))
 
     /*
     check(compileAndRun(meta_eval("(- 1 1)")))("Cst(0)")

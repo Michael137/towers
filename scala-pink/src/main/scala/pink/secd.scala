@@ -42,19 +42,24 @@ object SECD_Machine {
     ((((machine (cdr s)) e) (caddr c)) (cons (cdddr c) d)))
 (if (eq? 'JOIN (car c)) ((((machine s) e) (car d)) (cdr d))
 (if (eq? 'LDF (car c))
-  (let f (cadr c)
-  (let fun (lambda fun xs ((((machine '()) (cons (cons fun xs) e)) f) '()))
-  ((((machine (cons fun s)) e) (cddr c)) d)))
+  ((((machine (cons (cons (cadr c) e) s)) e) (cddr c)) d)
 (if (eq? 'AP (car c))
-  (let fun (car s)
-  (let vs ((deeplift-if-code fun) (cadr s))
-  (let r (fun vs)
-  ((((machine (cons r (cddr s))) e) (cdr c)) d))))
+  (let f (caar s)
+  (let ep (cdr (car s))
+  (let v (cadr s)
+  ((((machine '()) (cons v ep)) f) (cons (cddr s) (cons e (cons (cdr c) d)))))))
 (if (eq? 'RTN (car c))
-  (car s)
+  ((((machine (cons (car s) (car d))) (cadr d)) (caddr d)) (cdddr d))
+(if (eq? 'DUM (car c))
+  ((((machine s) (cons '() e)) (cdr c)) d)
+(if (eq? 'RAP (car c))
+  (let f (caar s)
+  (let ep (cdr (car s))
+  (let v (cadr s)
+  ((((machine '()) (set-car! ep v)) f) (cons (cddr s) (cons (cdr e) (cons (cdr c) d)))))))
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
-(cons 'ERROR c))))))))))))))))))))))))))))))))
+(cons 'ERROR c))))))))))))))))))))))))))))))))))
 (lambda _ c ((((machine '()) '()) c) '()))))))))
 """
 
@@ -70,8 +75,19 @@ object SECD_Machine {
     check(ev(s"($evl '(LDC 1 LDC 2 ADD WRITEC))"))("Cst(3)")
     check(ev(s"($evl '(LDC 2 SEL (LDC 1 JOIN) (LDC 0 JOIN) WRITEC))"))("Cst(1)")
     check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LDC 2 LDC 1 ADD RTN) AP WRITEC))"))("Cst(3)")
-    check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LD (1 3) LD (1 2) ADD RTN) AP WRITEC))"))("Cst(3)")
-    check(ev(s"($evl '(NIL LDC 6 CONS LDF (LD (1 2) SEL (NIL LDC 1 LD (1 2) SUB CONS LD (1 1) AP LD (1 2) MPY JOIN) (LDC 1 JOIN) RTN) AP WRITEC))"))("Cst(720)")
+    check(ev(s"($evl '(NIL LDC 2 CONS LDC 1 CONS LDF (LD (1 2) LD (1 1) ADD RTN) AP WRITEC))"))("Cst(3)")
+    ev(s"($evl '(DUM STOP))")
+    val factorialProg = """'(NIL LDC 1 CONS LDC 6 CONS LDF
+                (DUM NIL LDF
+                (LDC 0 LD (1 1) EQ SEL
+                (LD (1 2) JOIN)
+                (NIL LD (1 2) LD (1 1) MPY CONS
+                LD (3 2) LD (1 1) SUB CONS LD (2 1) AP JOIN)
+                RTN)
+                CONS LDF
+                (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
+                RTN) AP WRITEC)"""
+    check(ev(s"($evl $factorialProg)"))("Cst(720)")
   }
 }
 
@@ -172,7 +188,7 @@ object SECD_Compiler {
     case n: Cst => Tup(Str("LDC"), Tup(n, acc))
     // Builtin, Lambda, Special form
     case Tup(Str("lambda"), Tup(args, Tup(body,N))) =>
-      compileLambda(body, (Str("_")::tupToList(args))::env, acc)
+      compileLambda(body, tupToList(args)::env, acc)
     case Tup(Str("quote"), Tup(args, _)) =>
       compileList(args, env, Tup(Str(""), acc))
     case Tup(Str("lift"), args) =>
@@ -216,12 +232,13 @@ object SECD_Compiler {
     case Tup(Str("if"), Tup(c,Tup(a,Tup(b,N)))) =>
       compileIf(c, a, b, env, acc)
     case Tup(Str("let"), Tup(vs, Tup(vals, Tup(body, N)))) => {
-      val newEnv = (Str("_")::tupToList(vs))::env
+      val newEnv = tupToList(vs)::env
       Tup(Str("NIL"), compileApp(vals, env, compileLambda(body, newEnv, Tup(Str("AP"), acc))))
     }
-    case Tup(Str("letrec"), Tup(Tup(name, N), Tup(Tup(Tup(Str("lambda"), Tup(args, Tup(body,N))), N), Tup(letrec_body, N)))) => {
-      val newEnv = (Str("_")::name::Nil)::env
-      Tup(Str("NIL"), compileLambda(body, (name::tupToList(args))::env, Tup(Str("CONS"), compileLambda(letrec_body, newEnv, Tup(Str("AP"), acc)))))
+    case Tup(Str("letrec"), Tup(vs, Tup(vals, Tup(body, N)))) => {
+      val newEnv = tupToList(vs)::env
+      Tup(Str("DUM"), Tup(Str("NIL"),
+        compileApp(vals, newEnv, compileLambda(body, newEnv, Tup(Str("RAP"), acc)))))
     }
     // Application
     case Tup(fn, args) => Tup(Str("NIL"), compileApp(args, env, compile(fn, env, Tup(Str("AP"), acc))))
@@ -290,11 +307,12 @@ object SECD_Compiler {
 
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 6))"))("Cst(720)")
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* (fac (- n 1)) n)))) (fac 6))"))("Cst(720)")
-
     println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (lift 1)))")))
     println(prettycode(compileAndRun("(lift (lambda (x) x))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (+ x (lift 1))))")))
+
+    /*
     check(compileAndRun(meta_eval("(- 1 1)")))("Cst(0)")
     check(compileAndRun(meta_eval("(((lambda (a) (lambda (b) b)) 1) 2)")))("Cst(2)")
     check(compileAndRun(meta_eval("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 3))")))("Cst(6)")
@@ -330,7 +348,7 @@ object SECD_Compiler {
     // 3. matcher on staged meta-eval
     println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
     println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
-
+ */
     testDone()
   }
 }

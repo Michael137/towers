@@ -58,6 +58,7 @@ object Lisp {
     case Tup(Str("lambda?"),Tup(a,N)) => IsClosure(trans(a,env))
     case Tup(Str("cons"),   Tup(a,Tup(b,N))) => Cons(trans(a,env),trans(b,env))
     case Tup(Str("car"),    Tup(a,N)) => Fst(trans(a,env))
+    case Tup(Str("set-car!"), Tup(a,Tup(b,N))) => SetFst(trans(a,env),trans(b,env))
     case Tup(Str("caar"),   Tup(a,N)) => Fst(Fst(trans(a,env)))
     case Tup(Str("cddr"),   Tup(a,N)) => Snd(Snd(trans(a,env)))
     case Tup(Str("cdr"),    Tup(a,N)) => Snd(trans(a,env))

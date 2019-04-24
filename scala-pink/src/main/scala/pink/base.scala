@@ -34,6 +34,9 @@ object Base {
   case class Run(b:Exp,e:Exp) extends Exp
   case class Log(b:Exp,e:Exp) extends Exp
 
+  // for implementing SECD machine
+  case class SetFst(a:Exp,b:Exp) extends Exp
+
   // for custom extensions to AST
   case class Special(f:Env => Val) extends Exp {
     override def toString = "<special>"
@@ -48,7 +51,7 @@ object Base {
   case class Clo(env:Env,e:Exp) extends Val {
     override def toString = s"Clo(_, $e)"
   }
-  case class Tup(v1:Val,v2:Val) extends Val
+  case class Tup(var v1:Val,v2:Val) extends Val
 
   case class Code(e:Exp) extends Val
 
@@ -144,6 +147,8 @@ object Base {
       reflect(IsClosure(anf(env,e)))
     case Fst(e) =>
       reflect(Fst(anf(env,e)))
+    case SetFst(t,v) =>
+      reflect(SetFst(anf(env,t),anf(env,v)))
     case Snd(e) =>
       reflect(Snd(anf(env,e)))
     case Lift(e) =>
@@ -334,6 +339,13 @@ object Base {
           a
         case (Code(s1)) =>
           Code(reflect(Fst(s1)))
+      }
+    case SetFst(e1, e2) =>
+      (evalms(env,e1),evalms(env,e2)) match {
+        case (t@Tup(a,b),v) => 
+          t.v1 = v;t
+        case (Code(s1),Code(s2)) =>
+          Code(reflect(SetFst(s1,s2)))
       }
     case Snd(e1) =>
       (evalms(env,e1)) match {

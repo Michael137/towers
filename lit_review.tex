@@ -16,6 +16,7 @@
 %\usetikzlibrary{matrix}
 \usepackage{booktabs}
 \usepackage{makecell} % For table formatting
+\usepackage{multirow} % For table formatting
 \renewcommand\theadfont{\bfseries}
 
 \theoremstyle{definition}
@@ -384,7 +385,7 @@ A widespread technique for implementing partial evaluators is by staging an inte
 
 \subsection{Abstract Machines}
 
-\section{Level 1: \mslang}
+\section{Level 1: \mslang}\label{sec:mslang}
 \begin{itemize}
 	\item Stage polymorphism \cite{ofenbeck2017staging}: ``abstract over staging decisions'' i.e. single program generator can produce code that is specialized in many different ways (instance of the Fourth Futamura Projection? \cite{gluck2009there}) 
 	\item Multi-level base evaluator written in \mslang: supports staging operators (\textbf{polymorphic Lift})
@@ -491,13 +492,15 @@ Prior to deciding on the methodology for code generation we need to outline what
  	\thead{SECD Register}	&	\thead{Classification}	&	\thead{Reason}	\\ \hline
 
  	\midrule
-	$S$ (Stack)				&	Stack				&	Since function arguments and return values operate on the stack \textit{and} environment which is dynamic \\ \hline
+	$S$ (Stack)				&	Dynamic				&	Since function arguments and return values operate on the stack \textit{and} environment which is dynamic \\ \hline
 
 	$E$ (Environment)		&	Dynamic			&	Since the user transfers dynamic values to the environment \\ \hline
 
-	$D$ (Dump)				&	Stack				&	Receives dynamic values from the stack and is thus dynamic \\ \hline
+	$C$ (Control)				&	Static				& We make sure the functions register only receives static values and is thus static (we ensure this through eta-expansion)  \\ \hline
 
-	$FNS$ (Functions)		&	Stack				&	We make sure the functions register only receives static values and is thus static (we ensure this through eta-expansion) \\
+	$D$ (Dump)				&	Dynamic				&	Receives dynamic values from the stack and is thus dynamic \\ \hline
+
+	$FNS$ (Functions)		&	Static				&	Since it resembles a \textit{control} register just for recursively called instructions we also classify it as static \\
 
 	\bottomrule
   \end{tabular}
@@ -505,7 +508,30 @@ Prior to deciding on the methodology for code generation we need to outline what
 
 Through its LISP front-end the \mslang evaluator can operate as a partial evaluator by exposing its \textit{lift} operator. Using this operator we can then annotate the interpreter we want to stage according to a pre-defined division. Given the division in table \ref{tbl:secd_division} we implement the SECD machine as a definitional interpreter.
 
-We take a conservative stance to binding-time analysis in staging our machine.
+We refer to our division as coarse grained since dynamic values pollute whole registers that could serve as either completely static or mixed valued. An example would be a machine that simply performs arithmetic on two integers and returns the result. The state machine transitions would occur as shown in table \ref{tbl:secd_example1}. As the programmer we know there is no unknown input and the expression can simply be reduced to the value 30 following the SECD small-step semantics. However, by default our division assumes the S-register to be dynamic and thus generates code for the addition of two constants. In such cases the smart constructors discussed in section \ref{sec:mslang} allow as to reduce constant expressions that a conservative division would otherwise not. As such we keep this division as the basis for our staged SECD machine since it is less intrusive to the machine's definitional interpreter and still allows us to residualize efficiently.
+
+\begin{table}[]
+\centering
+\caption{Example of SECD evaluation and \mslang code generated using our PE framework. The division follows that of table \ref{tbl:secd_division}.}
+\label{tbl:secd_example1}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Steps                                       & Register Contents                                                                                                  \\ \midrule
+\multicolumn{1}{|l|}{0}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: ()\\ e: ()\\ c: (LDC 10 LDC 20 ADD WRITEC)\\ d: ()\end{tabular}} \\ \midrule
+\multicolumn{1}{|l|}{1}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (10) \\ e: () \\ c: (LDC 20 ADD WRITEC) \\ d: ()\end{tabular}}   \\ \midrule
+\multicolumn{1}{|l|}{2}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (20 10) \\ e: () \\ c: (ADD WRITEC) \\ d: ()\end{tabular}}       \\ \midrule
+\multicolumn{1}{|l|}{3}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (30) \\ e: () \\ c: (WRITEC) \\ d: ()\end{tabular}}              \\ \midrule
+\multicolumn{1}{|l|}{4}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: () \\ e: () \\ c: () \\ d: ()\end{tabular}}
+\\ \bottomrule
+\multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (without smart constructor):\\ \quad(lambda f0 x1 (+ 20 10)) \end{tabular}} \\ \bottomrule
+\multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (with smart constructor):\\ \quad(lambda f0 x1 30)\end{tabular}}
+\\ \hline
+\end{tabular}
+\end{table}
+
+A typical partial evaluator would reduce this expression to a simple constant since the values on the stack are static. We, however, in the spirit of offline-partial evaluation for simplicity determined using a division in table \ref{tbl:secd_division} that any value on the stack is dynamic.
+
+conservative stance to binding-time analysis in staging our machine.
 
 "The main semantic challenge is that we want to implement a definitional interpreter for SECD in Pink, so we need big-step instead of small-step like in Fig 7.12 of Kogge, and we need to use the underlying recursive lambda of Pink instead of mutation for letrec."
 

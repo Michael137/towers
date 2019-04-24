@@ -328,7 +328,6 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval("(letrec (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
     check(compileAndRun(meta_eval("(let (m) ((lambda (r) (if (eq? 'done (car r)) (lambda (s) 'yes) (lambda (s) 'no)))) ((m '(done)) '(a done)))")))("Str(yes)")
 
-    /*
     // -1. run matcher on plain meta-eval
     check(compileAndRun(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)")))("Str(yes)")
 
@@ -337,6 +336,7 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(a done)", "'(a done)"))))("Str(yes)")
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
+    /*
     // 1. staged matcher on VM
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))

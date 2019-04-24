@@ -19,16 +19,15 @@
 \contentsline {subsection}{\numberline {5.2}Staging}{11}{subsection.5.2}
 \contentsline {subsection}{\numberline {5.3}Abstract Machines}{12}{subsection.5.3}
 \contentsline {section}{\numberline {6}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{12}{section.6}
-\contentsline {subsection}{\numberline {6.1}Scala}{12}{subsection.6.1}
-\contentsline {subsubsection}{\numberline {6.1.1}Similarities to Mix}{13}{subsubsection.6.1.1}
-\contentsline {subsection}{\numberline {6.2}Parallels To Towers In the Wild}{13}{subsection.6.2}
-\contentsline {subsection}{\numberline {6.3}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$Overview}{13}{subsection.6.3}
-\contentsline {section}{\numberline {7}Level 2: SECD}{13}{section.7}
-\contentsline {subsection}{\numberline {7.1}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{17}{subsection.7.1}
-\contentsline {subsection}{\numberline {7.2}Staging a SECD Machine}{17}{subsection.7.2}
-\contentsline {subsubsection}{\numberline {7.2.1}Tying the Knot}{18}{subsubsection.7.2.1}
-\contentsline {subsection}{\numberline {7.3}SECD Compiler}{19}{subsection.7.3}
-\contentsline {section}{\numberline {8}Level 3: Meta-eval}{19}{section.8}
+\contentsline {subsection}{\numberline {6.1}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$Overview}{13}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{13}{subsection.6.2}
+\contentsline {subsection}{\numberline {6.3}Parallels To Towers In the Wild}{13}{subsection.6.3}
+\contentsline {subsubsection}{\numberline {6.3.1}Comparison to Other Partial Evaluators}{13}{subsubsection.6.3.1}
+\contentsline {section}{\numberline {7}Level 2: SECD}{14}{section.7}
+\contentsline {subsection}{\numberline {7.1}Staging a SECD Machine}{17}{subsection.7.1}
+\contentsline {subsubsection}{\numberline {7.1.1}Tying the Knot}{17}{subsubsection.7.1.1}
+\contentsline {subsection}{\numberline {7.2}SECD Compiler}{18}{subsection.7.2}
+\contentsline {section}{\numberline {8}Level 3: Meta-eval}{18}{section.8}
 \contentsline {subsection}{\numberline {8.1}String Matcher}{19}{subsection.8.1}
 \contentsline {section}{\numberline {9}Results}{19}{section.9}
 \contentsline {subsection}{\numberline {9.1}Benchmarks}{19}{subsection.9.1}

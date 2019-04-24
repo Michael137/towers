@@ -1,0 +1,2 @@
+(let maybe-lift (lambda (x) x) (<rest of the SECD implementation>))
+(let maybe-lift (lambda (x) (lift x)) (<rest of the SECD implementation>))

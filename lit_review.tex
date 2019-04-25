@@ -51,7 +51,7 @@
 }
  
 \newcommand{\quickwordcount}[1]{%
-  \immediate\write18{texcount -1 -sum -merge -q #1.tex output.bbl > #1-words.sum }%
+  \immediate\write18{texcount -1 -sum -merge -q #1.tex lit_review.bbl > #1-words.sum }%
   \input{#1-words.sum} words%
 }
  
@@ -505,25 +505,23 @@ Prior to deciding on the methodology for code generation we need to outline what
 %TODO move FNS to after sec:secd_staged
 \begin{table}[!htbp]
   \centering
-  \caption{Division rules for of approach to staging a SECD machine}
-  \label{tbl:secd_division}
   \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
- 	\toprule
+ 	\hline
  	\thead{SECD Register}	&	\thead{Classification}	&	\thead{Reason}	\\ \hline
-
- 	\midrule
 	$S$ (Stack)				&	Dynamic				&	Since function arguments and return values operate on the stack \textit{and} environment which is dynamic \\ \hline
 
 	$E$ (Environment)		&	Dynamic			&	Since the user transfers dynamic values to the environment \\ \hline
 
-	$C$ (Control)				&	Static				& We make sure the functions register only receives static values and is thus static (we ensure this through eta-expansion)  \\ \hline
+	$C$ (Control)				&	Static				& We make sure the register only receives static values and is thus static (we ensure this through eta-expansion)  \\ \hline
 
 	$D$ (Dump)				&	Dynamic				&	Receives dynamic values from the stack and is thus dynamic \\ \hline
 
 	$FNS$ (Functions)		&	Static				&	Since it resembles a \textit{control} register just for recursively called instructions we also classify it as static \\
 
-	\bottomrule
+	\hline
   \end{tabular}
+  \caption{Division rules for of approach to staging a SECD machine}
+  \label{tbl:secd_division}
 \end{table}
 
 Through its LISP front-end the \mslang evaluator can operate as a partial evaluator by exposing its \textit{lift} operator. Using this operator we can then annotate the interpreter we want to stage according to a pre-defined division. Given the division in table \ref{tbl:secd_division} we implement the SECD machine as a definitional interpreter.
@@ -533,15 +531,15 @@ We refer to our division as coarse grained since dynamic values pollute whole re
 \begin{table}[ht]
 \centering
 \begin{tabular}{|c|c|}
-\toprule
-\thead{Step}	&	\thead{Register Contents}	 \\ \hline \midrule
-\multicolumn{1}{|l|}{0}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: ()\\ e: ()\\ c: (LDC 10 LDC 20 ADD WRITEC)\\ d: ()\end{tabular}} \\ \midrule
-\multicolumn{1}{|l|}{1}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (10) \\ e: () \\ c: (LDC 20 ADD WRITEC) \\ d: ()\end{tabular}}   \\ \midrule
-\multicolumn{1}{|l|}{2}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (20 10) \\ e: () \\ c: (ADD WRITEC) \\ d: ()\end{tabular}}       \\ \midrule
-\multicolumn{1}{|l|}{3}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (30) \\ e: () \\ c: (WRITEC) \\ d: ()\end{tabular}}              \\ \midrule
+\hline
+\thead{Step}	&	\thead{Register Contents}	 \\ \hline
+\multicolumn{1}{|l|}{0}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: ()\\ e: ()\\ c: (LDC 10 LDC 20 ADD WRITEC)\\ d: ()\end{tabular}} \\ \hline
+\multicolumn{1}{|l|}{1}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (10) \\ e: () \\ c: (LDC 20 ADD WRITEC) \\ d: ()\end{tabular}}   \\ \hline
+\multicolumn{1}{|l|}{2}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (20 10) \\ e: () \\ c: (ADD WRITEC) \\ d: ()\end{tabular}}       \\ \hline
+\multicolumn{1}{|l|}{3}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: (30) \\ e: () \\ c: (WRITEC) \\ d: ()\end{tabular}}              \\ \hline
 \multicolumn{1}{|l|}{4}                     & \multicolumn{1}{l|}{\begin{tabular}[c]{@{}l@{}}s: () \\ e: () \\ c: () \\ d: ()\end{tabular}}
-\\ \bottomrule
-\multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (without smart constructor):\\ \quad(lambda f0 x1 (+ 20 10)) \end{tabular}} \\ \bottomrule
+\\ \hline
+\multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (without smart constructor):\\ \quad(lambda f0 x1 (+ 20 10)) \end{tabular}} \\ \hline
 \multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (with smart constructor):\\ \quad(lambda f0 x1 30)\end{tabular}}
 \\ \hline
 \end{tabular}
@@ -553,28 +551,59 @@ Now that we clarified how static and dynamic values are classified in our SECD m
 
 %"The main semantic challenge is that we want to implement a definitional interpreter for SECD in Pink, so we need big-step instead of small-step like in Fig 7.12 of Kogge, and we need to use the underlying recursive lambda of Pink instead of mutation for letrec." - Nada
 
-\subsubsection{The Interpreter}
+\subsubsection{The Interpreter}\label{subsec:secd_interp}
 \begin{figure}[ht]
 \centering
-\begin{minted}[linenos]{lisp}
+\begin{minted}[escapeinside=||,linenos]{lisp}
 (let machine (lambda _ stack (lambda _ dump (lambda _ control (lambda _ environment
     (if (eq? 'LDC (car control))
         (((((machine (cons (cadr control) stack)) dump) (cdr control)) environment)
+    (if (eq? 'DUM (car control))
+        (((((machine stack) dump) (cdr control)) (cons '() environment))
     (if (eq? 'WRITEC (car control))
         (car s)
     ...
-    ...))))))
+    ...)))))))
     (let initStack '()
     (let initDump '()
-        (lambda _ ops (((((machine initStack) initDump) ops))))
+        (lambda _ ops (((((machine initStack) initDump) ops)))) |\label{mline:machine_init}|
 \end{minted}
 \caption{Structure of interpreter for SECD machine (unstaged). Lambdas take two arguments, a self-reference for recursion which is ignored through a ``\_'' sentinel and a caller supplied argument. All of SECD's stack registers are represented as LISP lists and initialized to empty lists. The full interpreter is provided in APPENDIX.}
 \label{lst:secd_unstaged}
 \end{figure}
 
-Our staged machine is written in \mslang's LISP front-end as a traditional case-based virtual machine that dispatches on SECD instructions stored in the C-register. The structure of our interpreter without annotations to stage it is shown in figure \ref{lst:secd_unstaged}. Of note are the single-argument self-referential lambdas due to the LISP-frontend and the out-of-order argument list to the machine. To allow a user to supply instructions to the machine we return a lambda that accepts input to the control register ($C$) in line 12 of figure \ref{lst:secd_unstaged}. Once a SECD program is provided we curry the machine with respect to the last \textit{environment} register which is where user-supplied arguments go. An example invocation is \mint{lisp}|((secd '(LDC 10 LDC 20 ADD WRITEC)) '())| where \texttt{secd} is the source of figure \ref{lst:secd_unstaged} and the arguments to the machine are the arithmetic example of table \ref{tbl:secd_example1} and an empty environment respectively.
+Our staged machine is written in \mslang's LISP front-end as a traditional case-based virtual machine that dispatches on SECD instructions stored in the C-register. The structure of our interpreter without annotations to stage it is shown in figure \ref{lst:secd_unstaged}. Of note are the single-argument self-referential lambdas due to the LISP-frontend and the out-of-order argument list to the machine. To allow a user to supply instructions to the machine we return a lambda that accepts input to the control register ($C$) in line \ref{mline:machine_init} of figure \ref{lst:secd_unstaged}. Once a SECD program is provided we curry the machine with respect to the last \textit{environment} register which is where user-supplied arguments go. An example invocation is \mint{lisp}|((secd '(LDC 10 LDC 20 ADD WRITEC)) '())| where \texttt{secd} is the source of figure \ref{lst:secd_unstaged} and the arguments to the machine are the arithmetic example of table \ref{tbl:secd_example1} and an empty environment respectively.
 
-Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annotate the expressions of the language that our interpreter defines for which we want to be able to generate code for with the stage-polymorphic \textit{maybe-lift} operators defined in \ref{lst:stage_poly_ex}. With our division in place (see table \ref{tbl:secd_division}) we simply wrap in calls to \textit{maybe-lift} all constants that potentially interact with dynamic values and all expressions that operate on the stack, environment or dump. This recipe is not enough, however, because of the conflicting nature of the small-step semantics of the SECD machine with NbE-style partial evaluation. To progress in partially evaluating the VM we must take steps forward in the machine and essentially execute it at PE time. A consequence of this is that the PE can easily get into a situation where dynamic values are evaluated in static contexts potentially leading to undesired behaviour such as non-termination at specialization time. Where we encountered this particularly often is the reification of an if-statement.
+Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annotate the expressions of the language that our interpreter defines for which we want to be able to generate code for with the stage-polymorphic \textit{maybe-lift} operators defined in \ref{lst:stage_poly_ex}. With our division in place (see table \ref{tbl:secd_division}) we simply wrap in calls to \textit{maybe-lift} all constants that potentially interact with dynamic values and all expressions that add elements to the stack, environment or dump. Finally we wrap the  Figure \ref{lst:secd_staged1} shows these preliminary annotations. We wrap the initializing call to the SECD machine in \textit{maybe-lift} as well because we want to specialize the machine without the dynamic input of the environment provided yet. Hence line \ref{mline:lift_machine} in figure \ref{lst:secd_staged1} simply signals the PE to generate code for the curried SECD machine.
+
+\begin{figure}[ht]
+\centering
+\begin{minted}[escapeinside=||,linenos]{lisp}
+(let machine (lambda _ stack (lambda _ dump (lambda _ control (lambda _ environment
+    (if (eq? 'LDC (car control))
+        (((((machine (cons |\colorbox{green}{(maybe-lift }|(cadr control)|\colorbox{green}{)}| stack)) dump) (cdr control)) environment)
+    (if (eq? 'DUM (car control))
+        (((((machine stack) dump) (cdr control)) (cons |\colorbox{green}{(maybe-lift }|'()|\colorbox{green}{)}| environment))
+    (if (eq? 'WRITEC (car control))
+        (car s)
+    ...
+    ...)))))))
+    (let initStack '()
+    (let initDump '()
+        (lambda _ ops |\colorbox{green}{(maybe-lift }|(((((machine initStack) initDump) ops))))|\colorbox{green}{)}||\label{mline:lift_machine}|
+\end{minted}
+\caption{Annotated version of the SECD interpreter in figure \ref{lst:secd_unstaged} with differences highlighted in green. \textit{maybe-lift} is used to signal to the PE that we want to generate code for the wrapped expression. Here we follow exactly the division of table \ref{tbl:secd_division}. These changes are not enough to fully stage the machine as discussed in section \ref{subsec:secd_interp}}.
+\label{lst:secd_staged1}
+\end{figure}
+
+This recipe is not enough, however, because of the conflicting nature of the small-step semantics of the SECD machine with NbE-style partial evaluation. To progress in partially evaluating the VM we must take steps forward in the machine and essentially execute it at PE time. A consequence of this is that the PE can easily get into a situation where dynamic values are evaluated in static contexts potentially leading to undesired behaviour such as non-termination at specialization time. Where we encountered this particularly often is the accidental lifting of SECD instructions and the reification of base-cases in recursive function calls.
+
+Key to us removing interpretative overhead of the SECD machine is the elimination of the unnecessary instruction dispatch logic, whose effect on interpreter efficiency was studied extensively by Ertl et al. \cite{ertl2003structure}, in the specialized code. Since the SECD program is known at PE time and thus has static binding time, we do not want to lift the constants against which we compare the control register. However, if we put something into the control register that is dynamic we are suddenly comparing dynamic and static values which is a specialization time error at best and non-termination of the PE at worst.
+
+EXAMPLE IF BRANCH NON-TERMINATION/PROBLEM IMPLEMENTING RECURSION
+TYING THE KNOT
+
+Putting the above solutions together yields the new staged interpreter in figure FIGURE.
 
 % Problems encountered: code value in sel branch + non-termination of RAP case (solved by wrapping machine in lambda and lift), using a 
 An issue that became apparent during the conversion from a regular to a staged SECD machine is the machine's stepwise operational semantics proneness to non-termination when applying our NBE-style partial evaluation. This is particularly prominent whenever an if-statement decides the arguments to the next step of the machine.
@@ -699,7 +728,6 @@ Technical difficulties: implementation of letrec/multi-arg lambdas, implementati
 	(lambda f0 x1
 	  (let x2 (eq? x1 0)
 	  (if x2 1
-	
 		(let x3 (- x1 1)
 		(let x4 (f0 x3) (* x1 x4))))))
 \end{minted}

@@ -5,31 +5,33 @@
 \contentsline {subsubsection}{\numberline {1.2.2}A Formal Account}{3}{subsubsection.1.2.2}
 \contentsline {subsection}{\numberline {1.3}Collapsing Towers}{5}{subsection.1.3}
 \contentsline {subsubsection}{\numberline {1.3.1}Compiling Reflective Languages}{5}{subsubsection.1.3.1}
-\contentsline {subsubsection}{\numberline {1.3.2}Examples}{6}{subsubsection.1.3.2}
+\contentsline {subsubsection}{\numberline {1.3.2}Examples}{5}{subsubsection.1.3.2}
 \contentsline {subsection}{\numberline {1.4}Heterogeneity}{6}{subsection.1.4}
-\contentsline {subsubsection}{\numberline {1.4.1}Absence of: Meta-circularity}{7}{subsubsection.1.4.1}
-\contentsline {subsubsection}{\numberline {1.4.2}Absence of: Reflectivity}{7}{subsubsection.1.4.2}
+\contentsline {subsubsection}{\numberline {1.4.1}Absence of: Meta-circularity}{6}{subsubsection.1.4.1}
+\contentsline {subsubsection}{\numberline {1.4.2}Absence of: Reflectivity}{6}{subsubsection.1.4.2}
 \contentsline {subsubsection}{\numberline {1.4.3}Mixed Language Systems}{7}{subsubsection.1.4.3}
 \contentsline {section}{\numberline {2}Problems}{7}{section.2}
 \contentsline {section}{\numberline {3}Why do we want to collapse towers?}{8}{section.3}
 \contentsline {subsection}{\numberline {3.1}Example of Deriving Translators}{8}{subsection.3.1}
-\contentsline {section}{\numberline {4}Contributions}{9}{section.4}
-\contentsline {section}{\numberline {5}Background}{11}{section.5}
-\contentsline {subsection}{\numberline {5.1}Type-Directed Partial Evluation (TDPE)}{11}{subsection.5.1}
-\contentsline {subsection}{\numberline {5.2}Staging}{11}{subsection.5.2}
-\contentsline {subsection}{\numberline {5.3}Abstract Machines}{12}{subsection.5.3}
-\contentsline {section}{\numberline {6}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{12}{section.6}
-\contentsline {subsection}{\numberline {6.1}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$Overview}{13}{subsection.6.1}
-\contentsline {subsection}{\numberline {6.2}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{13}{subsection.6.2}
-\contentsline {subsection}{\numberline {6.3}Parallels To Towers In the Wild}{13}{subsection.6.3}
+\contentsline {section}{\numberline {4}Contributions}{8}{section.4}
+\contentsline {section}{\numberline {5}Background}{10}{section.5}
+\contentsline {subsection}{\numberline {5.1}Type-Directed Partial Evluation (TDPE)}{10}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}Staging}{10}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Abstract Machines}{11}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Definitional Interpreter}{11}{subsection.5.4}
+\contentsline {section}{\numberline {6}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{11}{section.6}
+\contentsline {subsection}{\numberline {6.1}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$ Overview}{12}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{12}{subsection.6.2}
+\contentsline {subsection}{\numberline {6.3}Parallels To Towers In the Wild}{12}{subsection.6.3}
 \contentsline {subsubsection}{\numberline {6.3.1}Comparison to Other Partial Evaluators}{13}{subsubsection.6.3.1}
-\contentsline {section}{\numberline {7}Level 2: SECD}{14}{section.7}
-\contentsline {subsection}{\numberline {7.1}Staging a SECD Machine}{17}{subsection.7.1}
-\contentsline {subsubsection}{\numberline {7.1.1}Tying the Knot}{17}{subsubsection.7.1.1}
+\contentsline {section}{\numberline {7}Level 2: SECD}{13}{section.7}
+\contentsline {subsection}{\numberline {7.1}Staging a SECD Machine}{13}{subsection.7.1}
+\contentsline {subsubsection}{\numberline {7.1.1}The Interpreter}{15}{subsubsection.7.1.1}
+\contentsline {subsubsection}{\numberline {7.1.2}Tying the Knot}{17}{subsubsection.7.1.2}
 \contentsline {subsection}{\numberline {7.2}SECD Compiler}{18}{subsection.7.2}
 \contentsline {section}{\numberline {8}Level 3: Meta-eval}{18}{section.8}
-\contentsline {subsection}{\numberline {8.1}String Matcher}{19}{subsection.8.1}
-\contentsline {section}{\numberline {9}Results}{19}{section.9}
+\contentsline {subsection}{\numberline {8.1}String Matcher}{18}{subsection.8.1}
+\contentsline {section}{\numberline {9}Results}{18}{section.9}
 \contentsline {subsection}{\numberline {9.1}Benchmarks}{19}{subsection.9.1}
 \contentsline {section}{\numberline {10}Conclusion}{20}{section.10}
-\contentsline {section}{\numberline {11}Future Work}{21}{section.11}
+\contentsline {section}{\numberline {11}Future Work}{20}{section.11}

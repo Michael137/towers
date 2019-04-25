@@ -1,4 +1,5 @@
-\documentclass[fleqn]{article}
+%\documentclass[fleqn]{article}
+\documentclass{article}
 \title{Collapsing Heterogeneous Towers of Interpreters}
 \author{Michael Buch}
 \date{\today}
@@ -39,13 +40,36 @@
 
 % Code style:
 \usepackage{minted}
-\RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{}
-\renewcommand{\figurename}{Listing}
+%\RecustomVerbatimEnvironment{Verbatim}{BVerbatim}{} % For centering markup
+%\renewcommand{\figurename}{Listing}
 \usemintedstyle{vs}
+
+% For Word Count:
+\newcommand{\detailtexcount}[1]{%
+  \immediate\write18{texcount -merge -sum -q #1.tex output.bbl > #1.wcdetail }%
+  \verbatiminput{#1.wcdetail}%
+}
+ 
+\newcommand{\quickwordcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge -q #1.tex output.bbl > #1-words.sum }%
+  \input{#1-words.sum} words%
+}
+ 
+\newcommand{\quickcharcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge -char -q #1.tex output.bbl > #1-chars.sum }%
+  \input{#1-chars.sum} characters (not including spaces)%
+}
 
 \begin{document}
 \maketitle
 \frenchspacing
+
+%%TC:ignore
+\quickwordcount{lit_review} (out of 15000)
+%\quickcharcount{lit_review}
+%\detailtexcount{lit_review}
+%%TC:endignore
+
 \tableofcontents
 
 \begin{abstract}
@@ -225,7 +249,7 @@ What we envision (with reference to this hypothetical setting) is handling the t
 		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
 	\end{itemize}
 \end{enumerate}
-To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{secd_tower_arch}.
+To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{fig:tombstone}
 
 \section{Why do we want to collapse towers?}
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
@@ -235,14 +259,8 @@ can lead to code explosion or inefficient code generation, or worse, to non-term
 
 An interesting consequence of collapsing towers of interpreters demonstrated in \cite{amin2017collapsing} paper is the ability to derive translators in the process of collapsing.
 
-\begin{figure}[t]
-	\centering
-	\includegraphics[scale=0.75]{secd_arch.png}
-	\caption{``Effectively functional'' \mslangStar with SECD tower above it}\label{secd_tower_arch}
-\end{figure}
-
 \subsection{Example of Deriving Translators}
-A trivial but useful example is logging. Given the tower in figure \ref{logging_translator_tower} we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
+A trivial but useful example is logging. Given the tower in figure FIGURE we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
 of the IR of the level above is a mere accidental consequence of design instead of a necessity. We claim this work to be \textit{interpretative overhead} and defer its quantification by benchmarks to a later section.
 
 Collapsing the tower achieves exactly what we wanted, base-language (here the compilation target language) expressions including logging specialized to the user-level program.
@@ -301,9 +319,6 @@ Our collapsing strategy is based on the fact that we can choose to either evalua
 
 Partial evaluators can be thought of as lightweight optimizing compilers targeting specific optimization goals
 
-Red thread:
-reflective towers->formalization of towers (first mention of PE by Sturdy and Blond) and first hint at heterogeneity->shift perspective to how such model is realizable->what is evaluation overhead of such models->compiling towers->polymorphic lift->define heterogeneity->find abstract machine for our purpose->SECD->requires side-effects->tie not in code instead of data->benchmarks+code comparisons+optimizations->extend tower->more benchmarks
-
 % https://tex.stackexchange.com/questions/181366/drawing-tombstone-diagrams
 % https://proglang.informatik.uni-freiburg.de/teaching/compilerbau/2004/T-diagrams.pdf
 % TODO: use http://mirror.its.dal.ca/ctan/macros/latex/contrib/semantic/semantic.pdf package to draw diagram
@@ -317,14 +332,17 @@ reflective towers->formalization of towers (first mention of PE by Sturdy and Bl
 
 For the rest of this thesis we systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse it. The aim of the following sections is to enumerate the steps we took to create a tower of interpreters as shown in figure \ref{fig:tombstone} and our experiments on it. Section SECTION describes the original framework due to Amin et al. \cite{amin2017collapsing} which we extend for the purposes of our work. The sections after (SECTIONS 1 2 3), each represent the addition of an individual layer in the tower. We conclude with an evaluation of experimental results followed by a discussion of potential future work.
 
+stratification of towers
+how can changing semantics of individual levels in real world towers work soundly?
+
 \section{Background}
 \subsection{Type-Directed Partial Evluation (TDPE)}
 NbE resources:
-Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
-\href{http://www.cse.chalmers.se/~abela/univnbe.pdf}{NBE paper}
-\href{http://homepages.inf.ed.ac.uk/slindley/nbe/nbe-cambridge2016.pdf}{More slides}
-\href{https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/supercomp-by-eval.pdf?from=http%3A%2F%2Fresearch.microsoft.com%2Fen-us%2Fum%2Fpeople%2Fsimonpj%2Fpapers%2Fsupercompilation%2Fsupercomp-by-eval.pdf}{Supercompilation by Evaluation}
-\href{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.630.2123&rep=rep1&type=pdf}{Supercompilation and Normalization by Evaluation}
+%Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
+%\href{http://www.cse.chalmers.se/~abela/univnbe.pdf}{NBE paper}
+%\href{http://homepages.inf.ed.ac.uk/slindley/nbe/nbe-cambridge2016.pdf}{More slides}
+%\href{https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/supercomp-by-eval.pdf?from=http%3A%2F%2Fresearch.microsoft.com%2Fen-us%2Fum%2Fpeople%2Fsimonpj%2Fpapers%2Fsupercompilation%2Fsupercomp-by-eval.pdf}{Supercompilation by Evaluation}
+%\href{http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.630.2123&rep=rep1&type=pdf}{Supercompilation and Normalization by Evaluation}
 
 Alternative techniques include syntax directed partial evaluation and off-line partial evaluation
 Futamura's second project showed the direct relationship between an interpreter and a compiler -> hard to realize
@@ -368,7 +386,13 @@ A widespread technique for implementing partial evaluators is by staging an inte
 
 \subsection{Abstract Machines}
 
-\section{Level 1: \mslang}\label{sec:mslang}
+\subsection{Definitional Interpreter}
+\mslang expects this style of interpreter
+see \cite{reynolds1972definitional}
+
+A language is defined by how the interpreter implements it. \mslang uses this idea to produce a staged version of a language through a definitional interpreter of that language with BTA annotations
+
+\section{Level 1: \texorpdfstring{\mslang}{Lg}}\label{sec:mslang}
 \begin{itemize}
 	\item Stage polymorphism \cite{ofenbeck2017staging}: ``abstract over staging decisions'' i.e. single program generator can produce code that is specialized in many different ways (instance of the Fourth Futamura Projection? \cite{gluck2009there}) 
 	\item Multi-level base evaluator written in \mslang: supports staging operators (\textbf{polymorphic Lift})
@@ -390,7 +414,7 @@ A widespread technique for implementing partial evaluators is by staging an inte
 
 In partial evaluation terms, the configurations, i.e. set of run-time computational states, is stored in stBlock while the division, i.e. denotation of static vs dynamic values 
 
-\subsection{\mslang Overview}
+\subsection{\texorpdfstring{\mslang}{Lg} Overview}
 Since our work is based on the multi-level language, \mslang, developed by Amin et al. \cite{amin2017collapsing} we provide a summary of the core language which is a call-by-value $\lambda$-calculus split into two evaluation contexts, one in which expressions are code and the other in which expressions normalize to values. It also features a NbE style lift operator that forms tool by which partial evaluation is achieved. The LISP front-end is described in figure FIGURE. It is a LISP derivative that has support for non-mutable list and cons-cell operations, the lift operator for staging and recursive self-referencing lambdas.
 
 %Our language extends Pink with side effects and a stack machine that makes use of pointer like semantics for Lisp-like cons pairs. Thus we build on top of the NBE-style lift operator for staging. However, calling into
@@ -411,7 +435,7 @@ The original Pink implementation assumes we are allowed to make arbitrary change
 
 How are stages encoded? dynamic vs. static (e.g. see MetaOcaml or TDPE's ML extensions)
 
-\subsection{Changes to \mslang}
+\subsection{Changes to \texorpdfstring{\mslang}{Lg}}
 Since SECD is a stack-based virtual machine all operations and data storage is performed on one of the four stack registers. By the principle of \textit{division} in partial evaluators CITE, we want to be able to separate static and dynamic values to prevent undesired behaviour in our partial evaluator (EXAMPLE OF NON-TERMINATION). A minor extension we add to the original framework is the ability to lift nested tuples as opposed to only two-element tuples. This addition to the small-step semantics is shown in FIGURE.
 
 To reduce the amount of generated code we add logic within \mslang's \textit{reflect} that reduces purely static expressions. Reducible expressions include arithmetic and list access operations.
@@ -447,7 +471,10 @@ Our reasoning behind choosing the SECD abstract machine as one of our levels is 
 	\item \textbf{Large Semantic Gap}: a central part of our definition of heterogeneity is that languages that adjacent interpreters interpret are different from each other. ELABORATE
 	\item \textbf{Extensible}: Extensions to the machine, many of which are described in \cite{kogge1990architecture}, have been developed to support richer features then the ones available in its most basic form.
 \end{enumerate}
-An additional benefit of using a LISP machine is that the \mslang framework we use as our partial evaluator also features a LISP front-end and supports all the list-processing primitives that it's inventors described the operational semantics with and aided the development complexity. Our first step in constructing the heterogeneous tower is implementing the standard SECD machine (described by the operational semantics in APPENDIX) using \mslang's LISP front-end. We model the machine through a case-based evaluator with a step function at its core that advances the state of the machine until a STOP or WRITEC instruction is encountered. Since a part of our experiments of collapsing towers is concerned with the effect of staging at different levels in the tower, we want to design the SECD machine to aid this process. This poses a question of what it means for an abstract machine to be staged.
+An additional benefit of using a LISP machine is that the \mslang framework we use as our partial evaluator also features a LISP front-end and supports all the list-processing primitives that it's inventors described the operational semantics with and aided the development complexity. Our first step in constructing the heterogeneous tower is implementing the standard SECD machine (described by the operational semantics in APPENDIX) using \mslang's LISP front-end. We model the machine through a case-based evaluator with a step function at its core that advances the state of the machine until a STOP or WRITEC instruction is encountered.
+
+\subsection{Staging a SECD Machine}\label{sec:secd_staged}
+Since a part of our experiments of collapsing towers is concerned with the effect of staging at different levels in the tower, we want to design the SECD machine to aid this process. This poses a question of what it means for an abstract machine to be staged.
 
 From the architecture of a SECD machine the intended place for free variables to live in is the environment register. A simple example in terms of SECD instructions is as follows:
 
@@ -462,9 +489,9 @@ where $f@x$ denotes the application of function $f$ to an expression $x$. By def
 	\item regular evaluation
 	\item generation of \mslang code and its subsequent execution
 \end{enumerate*}.
-\textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in listing \ref{lst:stage_poly_ex}.
+\textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in figure \ref{lst:stage_poly_ex}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \begin{minted}{lisp}
 (let evaluator (let maybe-lift (lambda (x) x) (...)))
@@ -475,6 +502,7 @@ where $f@x$ denotes the application of function $f$ to an expression $x$. By def
 \end{figure}
 
 Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. Staged execution in our framework makes use of the partial evaluator used in Pink \cite{amin2017collapsing} to generate code in \mslang. Before being able to stage a SECD machine we define our division by where static values can be transferred from. If a dynamic value can be transferred from a register, $A$, to another register, $B$, we classify register $B$ as dynamic. Following are our division rules:
+%TODO move FNS to after sec:secd_staged
 \begin{table}[!htbp]
   \centering
   \caption{Division rules for of approach to staging a SECD machine}
@@ -502,10 +530,8 @@ Through its LISP front-end the \mslang evaluator can operate as a partial evalua
 
 We refer to our division as coarse grained since dynamic values pollute whole registers that could serve as either completely static or mixed valued. An example would be a machine that simply performs arithmetic on two integers and returns the result. The state machine transitions would occur as shown in table \ref{tbl:secd_example1}. As the programmer we know there is no unknown input and the expression can simply be reduced to the value 30 following the SECD small-step semantics. However, by default our division assumes the S-register to be dynamic and thus generates code for the addition of two constants. In such cases the smart constructors discussed in section \ref{sec:mslang} allow as to reduce constant expressions that a conservative division would otherwise not. As such we keep this division as the basis for our staged SECD machine since it is less intrusive to the machine's definitional interpreter and still allows us to residualize efficiently.
 
-\begin{table}[]
+\begin{table}[ht]
 \centering
-\caption{Example of SECD evaluation and \mslang code generated using our PE framework. The division follows that of table \ref{tbl:secd_division}.}
-\label{tbl:secd_example1}
 \begin{tabular}{|c|c|}
 \toprule
 \thead{Step}	&	\thead{Register Contents}	 \\ \hline \midrule
@@ -519,26 +545,51 @@ We refer to our division as coarse grained since dynamic values pollute whole re
 \multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (with smart constructor):\\ \quad(lambda f0 x1 30)\end{tabular}}
 \\ \hline
 \end{tabular}
+\caption{Example of SECD evaluation and \mslang code generated using our PE framework. The division follows that of table \ref{tbl:secd_division}.}
+\label{tbl:secd_example1}
 \end{table}
 
-Now that we clarified how static and dynamic values are classified in our SECD machine we describe the definitional interpreter that 
+Now that we clarified how static and dynamic values are classified in our SECD machine we describe its implementation as a definitional interpreter.
 
-"The main semantic challenge is that we want to implement a definitional interpreter for SECD in Pink, so we need big-step instead of small-step like in Fig 7.12 of Kogge, and we need to use the underlying recursive lambda of Pink instead of mutation for letrec."
+%"The main semantic challenge is that we want to implement a definitional interpreter for SECD in Pink, so we need big-step instead of small-step like in Fig 7.12 of Kogge, and we need to use the underlying recursive lambda of Pink instead of mutation for letrec." - Nada
+
+\subsubsection{The Interpreter}
+\begin{figure}[ht]
+\centering
+\begin{minted}[linenos]{lisp}
+(let machine (lambda _ stack (lambda _ dump (lambda _ control (lambda _ environment
+    (if (eq? 'LDC (car control))
+        (((((machine (cons (cadr control) stack)) dump) (cdr control)) environment)
+    (if (eq? 'WRITEC (car control))
+        (car s)
+    ...
+    ...))))))
+    (let initStack '()
+    (let initDump '()
+        (lambda _ ops (((((machine initStack) initDump) ops))))
+\end{minted}
+\caption{Structure of interpreter for SECD machine (unstaged). Lambdas take two arguments, a self-reference for recursion which is ignored through a ``\_'' sentinel and a caller supplied argument. All of SECD's stack registers are represented as LISP lists and initialized to empty lists. The full interpreter is provided in APPENDIX.}
+\label{lst:secd_unstaged}
+\end{figure}
+
+Our staged machine is written in \mslang's LISP front-end as a traditional case-based virtual machine that dispatches on SECD instructions stored in the C-register. The structure of our interpreter without annotations to stage it is shown in figure \ref{lst:secd_unstaged}. Of note are the single-argument self-referential lambdas due to the LISP-frontend and the out-of-order argument list to the machine. To allow a user to supply instructions to the machine we return a lambda that accepts input to the control register ($C$) in line 12 of figure \ref{lst:secd_unstaged}. Once a SECD program is provided we curry the machine with respect to the last \textit{environment} register which is where user-supplied arguments go. An example invocation is \mint{lisp}|((secd '(LDC 10 LDC 20 ADD WRITEC)) '())| where \texttt{secd} is the source of figure \ref{lst:secd_unstaged} and the arguments to the machine are the arithmetic example of table \ref{tbl:secd_example1} and an empty environment respectively.
+
+Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annotate the expressions of the language that our interpreter defines for which we want to be able to generate code for with the stage-polymorphic \textit{maybe-lift} operators defined in \ref{lst:stage_poly_ex}. With our division in place (see table \ref{tbl:secd_division}) we simply wrap in calls to \textit{maybe-lift} all constants that potentially interact with dynamic values and all expressions that operate on the stack, environment or dump. This recipe is not enough, however, because of the conflicting nature of the small-step semantics of the SECD machine with NbE-style partial evaluation. To progress in partially evaluating the VM we must take steps forward in the machine and essentially execute it at PE time. A consequence of this is that the PE can easily get into a situation where dynamic values are evaluated in static contexts potentially leading to undesired behaviour such as non-termination at specialization time. Where we encountered this particularly often is the reification of an if-statement.
+
+% Problems encountered: code value in sel branch + non-termination of RAP case (solved by wrapping machine in lambda and lift), using a 
+An issue that became apparent during the conversion from a regular to a staged SECD machine is the machine's stepwise operational semantics proneness to non-termination when applying our NBE-style partial evaluation. This is particularly prominent whenever an if-statement decides the arguments to the next step of the machine.
+
+Resort to online partial evaluation at certain points not because it helps optimize more aggressively, as that is usually the reason to use online PE, but rather to avoid non-termination in our model.
 
 Numerous extensions exist that show promising candidates for experimentations with collapsing through the SECD machine. We describe a subsection of them in this section.
 	* Straightforward Semantics Compared to WAM
 	* Interprets Lisp style programs and allowed to reuse components
 - Full description of semantics
 - Problem with model as is for our implementation
-MENTION TYING THE KNOT
 
 One of the requirements in the implementation of a complete SECD machine is support for a "set!" instruction in the implementing language. EXAMPLE OF HOW SECD USES "SET!" This is also a reason for the subsequent CESK machine which does not impose such a restriciton. Our work extends Amin et al.'s work on towers of interpreters CITE which exclusively supports functional languages and whose partial evaluation strategy relies on the absence of a store. In the design of our tower we had the choice between adding support for an underlying "set!" instruction in \mslang or extend the SECD machine such that recursive functions applications do not require mutation in the underlying language. We chose the latter because it was simpler to add such extension than rewriting the Pink framework and would show additional use cases for \mslang. For a thorough treatment of side-effects in partial evaluators we defer to previous work by Asai et al. who develop a partial evaluator for an imperative $\lambda$-calculus with support for mutating cons-cells and imperative LISP features.
 
 Kogge's extensive study of machines for symbolic computation \cite{kogge1990architecture} and Diehl et al.'s survey of abstract machines provide several attractive opportunities for future investigations. The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}, MultiLisp
-
-%TODO: We implement some of the extensions to SECD described in \cite{kogge1990architecture} that permit non-deterministic computation and backtracking. The machine itself still remains purely functional. Abstract machines that aim to model specific real system behaviour require the capability of the underlying machinery to provide mechanisms to manipulate cell locations and permit some form of store. For this purpose we extended the original \mslang with the ability to create cells and mutate these. We then implement MultiLisp and the demand-driven evaluation extensions to the SECD machine and present our findings below.
-
-%TODO: do we need LDR at all? or everything possible through LD?
 
 Digression:
 At earlier stages of our study we went down the route of extending the base evaluator with a store and add support for mutating cells. We experimented with turning the evaluator into a traditional CESK-style interpter. When it came to staging the SECD machine, however, we realized the importance of the interplay between recursive lambdas, the functional (stationary (?)) environment and flexibility of single-argument lambdas.
@@ -549,15 +600,6 @@ If we are willing to diverge further from the SECD instruction set we can implem
 
 SEMANTICS
 
-\subsection{Staging a SECD Machine}
-Turns out single argument recursive lambdas are important to keep implementation simple but also for lifting closures
-- Modifications
-- Results
-
-An issue that became apparent during the conversion from a regular to a staged SECD machine is the machine's stepwise operational semantics proneness to non-termination when applying our NBE-style partial evaluation. This is particularly prominent whenever an if-statement decides the arguments to the next step of the machine.
-
-Resort to online partial evaluation at certain points not because it helps optimize more aggressively, as that is usually the reason to use online PE, but rather to avoid non-termination in our model.
-
 \subsubsection{Tying the Knot}
 Figure FIGURE presents the augmented operational semantics for the staged SECD machine. The key to partially evaluating the SECD VM itself through ``evalms'' is the introduction of a function register, labelled \textit{fns}, that holds closures to-be-called recursively using the \textit{RAP} instruction. This alleviates us from the need to tie the knot in the environment as is done in the traditional SECD model. The benefit is two-fold:
 \begin{enumerate}
@@ -566,42 +608,34 @@ Figure FIGURE presents the augmented operational semantics for the staged SECD m
 \end{enumerate}
 
 %TODO: commands bold + maybe dont need header
-\begin{alignat*}{3}
-		\text{RTN:} &																																							\\
-		& \text{v.s e (RTN.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} \longrightarrow &&							\\
-		&& \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts} \quad	&&& \text{if d-register is tagged with {\ts}ret} 	\\
-		&& \text{(lift-all v)}									 \quad &&& \text{otherwise}
-\end{alignat*}
+%TODO: left align
+	\begin{alignat*}{3}
+			\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} \longrightarrow \:
+			& \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts} \quad	&& \text{if d-register is tagged with {\ts}ret} 	\\
+			& \text{(lift-all v)}									 \quad && \text{otherwise}
+	\end{alignat*}
 
-\begin{equation*}
-	\begin{split}
-		\text{LDR:} & \\
-		& \text{s e (LDR (i j).c) d fns} \longrightarrow \text{(($\lambda$.(locate i j fns)).s) e c d fns}
-	\end{split}
-\end{equation*}
+	\begin{equation*}
+		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} \longrightarrow \text{(($\lambda$.(locate i j fns)).s) e c d fns}
+	\end{equation*}
 
-\begin{equation*}
-	\begin{split}
-		\text{LDF:} & \\
-		& \text{s e (LDF ops.c) d fns} \longrightarrow \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns}
-	\end{split}
-\end{equation*}
+	\begin{equation*}
+		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} \longrightarrow \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns}
+	\end{equation*}
 
-\begin{align*}
-		\text{RAP:} & \\
-		& \text{(entryClo recClo.s) e (RAP.c) d fns} \longrightarrow \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
-		\text{where}																																										\\
-		& \text{entryClo} :=  \text{(entryFn (entryOps entryEnv))}																				\\
-		& \text{recClo}	  :=  \text{(recFn (recOps recEnv))}																							\\
-		& \text{rec}			:=  \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)}
-\end{align*}
+	\begin{align*}
+			& \text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} \longrightarrow \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
+			\text{where}																																										\\
+			& \text{entryClo} :=  \text{(entryFn (entryOps entryEnv))}																				\\
+			& \text{recClo}	  :=  \text{(recFn (recOps recEnv))}																							\\
+			& \text{rec}			:=  \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)}
+	\end{align*}
 
-\begin{align*}
-		\text{AP:} & \\
-		& \text{(fn env.v).s e (AP.c) ({\ts}() env{\ts}) fns} \longrightarrow \text{res.s env c d fns}	\\
-		\text{where}																																								\\
-		& \text{res} 			:=  \text{(fn (lift-all (v s.env{\ts})))}
-\end{align*}
+	\begin{align*}
+			& \text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} \longrightarrow \text{res.s env c d fns}	\\
+			\text{where}																																								\\
+			& \text{res} 			:=  \text{(fn (lift-all (v s.env{\ts})))}
+	\end{align*}
 
 \subsection{SECD Compiler}
 % TODO: extensions to SECD compiler
@@ -659,7 +693,7 @@ Varying degrees of generalization:
 
 Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features, non-termination when performing recursive calls from within SECD machine (no differentiation between a function being recursive or not)
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \begin{minted}{lisp}
 	(lambda f0 x1
@@ -673,7 +707,7 @@ Technical difficulties: implementation of letrec/multi-arg lambdas, implementati
 \label{lst:pink_factorial}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \begin{minted}{lisp}
 (let x0

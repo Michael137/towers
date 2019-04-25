@@ -8,15 +8,21 @@ object SECD_Machine {
 (let deeplift-if-code (lambda _ r (lambda _ x (if (code? r) (deeplift x) x)))
 (let null? (lambda _ x (eq? ((deeplift-if-code x) '()) x))
 (let atom? (lambda _ a (or (sym? a) (num? a)))
+(let assq (lambda assq x (lambda _ l (if (null? l) '() (if (eq? (caar l) x) (car l) ((assq x) (cdr l))))))
 (let locate (lambda locate i (lambda _ j (lambda _ env
 (let loc (lambda loc y (lambda _ lst
 (if (eq? y 1) (car lst) ((loc (- y 1)) (cdr lst)))))
 ((loc j) ((loc i) env))
 ))))
+(let funs (cons '() '())
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
 (let lft (lambda _ x (if (or (sym? x) (num? x)) (lift x)
   (if (and (pair? x) (code? (car x))) (lift x)
-  (lift (lambda _ args ((((machine '()) (cons args (cdr x))) (car x)) 'ret))))))
+   (let memo (cons (lift '()) '())
+   (let _ (set-car! funs (cons (cons x memo) (car funs)))
+   (lift (lambda fun args
+     (let _ (set-car! memo fun)
+     ((((machine '()) (cons args (cdr x))) (car x)) 'ret)))))))))
 (let _ _ ;(log 0 (car c))
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
@@ -47,10 +53,15 @@ object SECD_Machine {
 (if (eq? 'LDF (car c))
   ((((machine (cons (cons (cadr c) e) s)) e) (cddr c)) d)
 (if (eq? 'AP (car c))
+  (let r (if (code? (car s)) (cons '() (cons (car s) '())) ((assq (car s)) (car funs)))
+  (if (eq? r '())
   (let f (caar s)
   (let ep (cdr (car s))
   (let v (cadr s)
   ((((machine '()) (cons v ep)) f) (cons (cddr s) (cons e (cons (cdr c) d)))))))
+  (let fun (cadr r)
+  (let v (cadr s)
+  ((((machine (cons (fun ((deeplift-if-code fun) v)) (cddr s))) e) (cdr c)) d)))))
 (if (eq? 'RTN (car c))
   (if (eq? d 'ret) (car s)
   ((((machine (cons (car s) (car d))) (cadr d)) (caddr d)) (cdddr d)))
@@ -64,7 +75,7 @@ object SECD_Machine {
 (if (eq? 'STOP (car c)) s
 (if (eq? 'WRITEC (car c)) (car s)
 (cons 'ERROR c)))))))))))))))))))))))))))))))))))
-(lambda _ c ((((machine '()) '()) c) '()))))))))
+(lambda _ c ((((machine '()) '()) c) '()))))))))))
 """
 
   val evl = src
@@ -311,6 +322,10 @@ object SECD_Compiler {
 
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* n (fac (- n 1)))))) (fac 6))"))("Cst(720)")
     check(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n 0) 1 (* (fac (- n 1)) n)))) (fac 6))"))("Cst(720)")
+
+    println(prettycode(compileAndRun("(lift (letrec (fac) ((lambda (n) (if (eq? n (lift 0)) (lift 1) (* n (fac (- n (lift 1))))))) fac))")))
+    println(prettycode(compileAndRun("(letrec (fac) ((lambda (n) (if (eq? n (lift 0)) (lift 1) (* n (fac (- n (lift 1))))))) (lift fac))")))
+
     println(prettycode(compileAndRun("(+ (lift 1) (lift 2))")))
     println(prettycode(compileAndRun("(lift (lambda (x) (lift 1)))")))
     println(prettycode(compileAndRun("(lift (lambda (x) x))")))
@@ -338,9 +353,8 @@ object SECD_Compiler {
 
     // 1. staged matcher on VM
     println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
-    //println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
+    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
 
-    /*
     // 2. Staged matcher on meta-eval
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
     println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))
@@ -350,9 +364,9 @@ object SECD_Compiler {
       s"(lambda (my_input) $r)"
     }
     // 3. matcher on staged meta-eval
-    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
-    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
- */
+    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
+    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
+
     testDone()
   }
 }

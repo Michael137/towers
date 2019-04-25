@@ -51,7 +51,13 @@ object Base {
   case class Clo(env:Env,e:Exp) extends Val {
     override def toString = s"Clo(_, $e)"
   }
-  case class Tup(var v1:Val,v2:Val) extends Val
+  class Tup(var v1:Val,val v2:Val) extends Val {
+    override def toString = "Tup("+v1+","+v2+")"
+  }
+  object Tup {
+    def apply(v1: Val, v2: Val) = new Tup(v1, v2)
+    def unapply(t: Tup): Some[(Val,Val)] = Some((t.v1, t.v2))
+  }
 
   case class Code(e:Exp) extends Val
 

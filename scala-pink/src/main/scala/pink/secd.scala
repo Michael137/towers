@@ -16,14 +16,14 @@ object SECD_Machine {
 ))))
 (let funs (cons '() '())
 (let machine (lambda machine s (lambda _ e (lambda _ c (lambda _ d
-(let lft (lambda _ x (if (or (sym? x) (num? x)) (lift x)
-  (if (and (pair? x) (code? (car x))) (lift x)
+(let lft (lambda _ x (if (and (pair? x) (eq? '__clo (car x)))
    (let memo (cons (lift '()) '())
-   (let _ (set-car! funs (cons (cons x memo) (car funs)))
+   (let _ (set-car! funs (cons (cons (cdr x) memo) (car funs)))
    (lift (lambda fun args
      (let _ (set-car! memo fun)
-     ((((machine '()) (cons args (cdr x))) (car x)) 'ret)))))))))
-(let _ _ ;(log 0 (car c))
+     ((((machine '()) (cons args (cdr (cdr x)))) (car (cdr x))) 'ret))))))
+   (lift x)))
+(let _ _
 (if (eq? 'NIL (car c)) ((((machine (cons '() s)) e) (cdr c)) d)
 (if (eq? 'LDC (car c)) ((((machine (cons (cadr c) s)) e) (cddr c)) d)
 (if (eq? 'LD (car c))
@@ -51,12 +51,12 @@ object SECD_Machine {
     ((((machine (cdr s)) e) (caddr c)) (cons (cdddr c) d)))
 (if (eq? 'JOIN (car c)) ((((machine s) e) (car d)) (cdr d))
 (if (eq? 'LDF (car c))
-  ((((machine (cons (cons (cadr c) e) s)) e) (cddr c)) d)
+  ((((machine (cons (cons '__clo (cons (cadr c) e)) s)) e) (cddr c)) d)
 (if (eq? 'AP (car c))
-  (let r (if (code? (car s)) (cons '() (cons (car s) '())) ((assq (car s)) (car funs)))
+  (let r (if (code? (car s)) (cons '() (cons (car s) '())) ((assq (cdr (car s))) (car funs)))
   (if (eq? r '())
-  (let f (caar s)
-  (let ep (cdr (car s))
+  (let f (car (cdr (car s)))
+  (let ep (cdr (cdr (car s)))
   (let v (cadr s)
   ((((machine '()) (cons v ep)) f) (cons (cddr s) (cons e (cons (cdr c) d)))))))
   (let fun (cadr r)
@@ -68,8 +68,8 @@ object SECD_Machine {
 (if (eq? 'DUM (car c))
   ((((machine s) (cons '() e)) (cdr c)) d)
 (if (eq? 'RAP (car c))
-  (let f (caar s)
-  (let ep (cdr (car s))
+  (let f (car (cdr (car s)))
+  (let ep (cdr (cdr (car s)))
   (let v (cadr s)
   ((((machine '()) (set-car! ep v)) f) (cons (cddr s) (cons (cdr e) (cons (cdr c) d)))))))
 (if (eq? 'STOP (car c)) s
@@ -364,8 +364,8 @@ object SECD_Compiler {
       s"(lambda (my_input) $r)"
     }
     // 3. matcher on staged meta-eval
-    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
-    //println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
+    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
+    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
 
     testDone()
   }

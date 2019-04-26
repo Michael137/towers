@@ -376,7 +376,7 @@ There are two types of partial evaluation methodologies \cite{jones1993partial}:
 	\item Offline partial evaluation
 	\item Online partial evaluation \cite{cook2011tutorial}
 \end{itemize}
-Namin et al. \cite{amin2017collapsing}, propose two languages Pink and Purple. Pink uses a form of online partial evaluation but requires manual staging facilities. Purple relies on LMS for automatic binding time analysis and staging
+Namin et al. \cite{amin2017collapsing}, propose two languages Pink and Purple. Pink uses a form of online partial evaluation (driven by whether values are "code?" or not) but requires manual staging facilities. Purple relies on LMS for automatic binding time analysis and staging
 which limits it to offline partial evaluation and thus relies on further optimization heuristics to achieve the same level of program specialization in the generated code as Pink.
 at its heart it uses the fact that $\beta$-reduction to $\beta$-normal form can be viewed as a form of specialization (taken further by NbE \cite{berger1991inverse,berger1998normalization})
 ``NbE'' extracts the normal form from its meaning (i.e. semantics -> syntax or in our case Val -> Exp which is done via the ``lift'' operator in \mslang)
@@ -629,27 +629,36 @@ Another issue we dealt with in the process of writing the staged SECD interprete
 %If we are willing to diverge further from the SECD instruction set we can implement recursive function application by omitting the \textit{fns} register, modifying LDF to wrap SECD instruction in a lambda as before but remove the RAP and DUM instructions all-together leaving it up to LD and AP to locate and apply the recursive lambda. Essentially what this resembles is the eta-expansion technique to guarding higher-order static data from dynamic contexts typically used in TDPE \cite{danvy1995essence}. The small-step semantics of this approach are as follows:
 
 \subsubsection{Tying the Knot}\label{ssubsec:knot}
-We now provide a redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in-tact in order to allow SECD style recursive function calls without the need for mutable variables. The idea is to create wrap the recursive SECD instructions in a closure at the LISP-level, performing residualization on the closure and distinguishing between returning from a regular as opposed to recursive function to ensure termination of the specializer.
+We now provide a substantial redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in-tact in order to allow SECD style recursive function calls without the need for mutable variables. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level, perform residualization on the closure and distinguish between returning from a regular as opposed to recursive function to ensure termination of our specializer.
 
-%TODO explain above paragraph further
+%TODO EXAMPLE OF PROBLEM THAT REQUIRES CHANGES TO RAP
+
+%TODO essence of new semantics
+
+%TODO elaborate above paragraph further
+%TODO AP semantics
 \begin{figure}[ht]
 \centering
 \begin{alignat}{5}
-		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} & \longrightarrow \:
-		 && \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts} 	\quad	\text{if d-register is tagged with {\ts}ret}	\\
-		 & && \text{(lift-all v)}								\qquad\;\;\text{otherwise} \nonumber \\
-		\nonumber \\%
-		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} & \longrightarrow \: && \text{(($\lambda$.(locate i j fns)).s) e c d fns} \\
-		\nonumber \\%
-		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \\
-		\nonumber \\%
-		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} & \longrightarrow \: && \text{res.s env c d fns} \\
-		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber  \\
+		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} & \longrightarrow \: && \text{(($\lambda$.(locate i j fns)).s) e c {\ts}fromldr.d fns} \\
 		\nonumber \\%
 		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
 		\text{where entryClo} & := && \text{(entryFn (entryOps entryEnv))} \nonumber \\
 		\text{recClo} & := && \text{(recFn (recOps recEnv))} \nonumber \\
 		\text{rec} & := && \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)} \nonumber
+		\nonumber \\%
+		\nonumber \\%
+		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} & \longrightarrow \:
+		 && \text{(lift-all v)} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
+		 & && \text{($\lambda$x.((car s{\ts}) (cons (car x) (cddr s{\ts}))) (cddr s1)	} \nonumber \\
+		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
+		 & && \qquad\text{where s1} := \text{(car s)@\_} \nonumber \\
+ 		 & && \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts}	\qquad\;\;\text{otherwise} \nonumber \\
+ 		\nonumber \\%
+		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \\
+		\nonumber \\%
+		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} & \longrightarrow \: && \text{res.s env c d fns} \\
+		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber
 \end{alignat}
 \caption{Modifications to the SECD operational semantics @CITE KOGGE/LANDIN. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
 \label{fig:secd_semantics}

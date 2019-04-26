@@ -98,10 +98,7 @@ object SECD {
       (car s))
   (if (eq? 'ret d)
     (mla (car s))
-  (if (eq? 'rec (car d))
-    (let _ (debug s)
-      (mla (car s)))
-    ((((((machine (cons (car s) (car d))) (cddddr d)) (cadddr d)) bt) (caddr d)) (cadr d)))))
+    ((((((machine (cons (car s) (car d))) (cddddr d)) (cadddr d)) bt) (caddr d)) (cadr d))))
 (if (eq? 'CONS (car ops))
 ((((((machine (cons (cons (car s) (cadr s)) (cddr s))) d) fns) bt) (cdr ops)) env)
 (if (eq? 'SEL (car ops))
@@ -126,7 +123,7 @@ object SECD {
     (let s1 (cons (cdar s1) (cdr s1))
       (let newDump (cons (cddr s) (cons env (cons (cdr ops) (cons fns d))))
         (let _ (debug (cadar s))
-          (let rec (maybe-lift (lambda rec env ((((((machine '()) (cons 'rec newDump)) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) bt) (caar s1)) env)))
+          (let rec (maybe-lift (lambda rec env ((((((machine '()) 'ret) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) bt) (caar s1)) env)))
             ((((((machine '()) newDump) (cons (cons (cons rec (cdar s1)) (cdr s1)) fns)) bt) (cadar s)) env))))))
 (if (eq? 'CAR (car ops))
 ((((((machine (cons (car (car s)) (cdr s))) d) fns) bt) (cdr ops)) env)
@@ -260,7 +257,7 @@ object SECD {
 
     // println(EVMComp.runOnVM("""(lambda (x) (+ x y))""", "'()"))
     println(EVMComp.runOnVM("""((lambda (x) (* (+ x y) (- x 1))) 5)""", "'()", run = false, liftEnv = true))
-  
+	println(pretty(reifyc(ev(s"""($cmp '(LDC 10 LDC 20 ADD WRITEC))""")), Nil));
     testDone()
   }
 }

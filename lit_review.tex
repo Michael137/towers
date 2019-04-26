@@ -333,9 +333,6 @@ Partial evaluators can be thought of as lightweight optimizing compilers targeti
 
 For the rest of this thesis we systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse it. The aim of the following sections is to enumerate the steps we took to create a tower of interpreters as shown in figure \ref{fig:tombstone} and our experiments on it. Section SECTION describes the original framework due to Amin et al. \cite{amin2017collapsing} which we extend for the purposes of our work. The sections after (SECTIONS 1 2 3), each represent the addition of an individual layer in the tower. We conclude with an evaluation of experimental results followed by a discussion of potential future work.
 
-stratification of towers
-how can changing semantics of individual levels in real world towers work soundly?
-
 \section{Background}
 \subsection{Type-Directed Partial Evluation (TDPE)}
 NbE resources:
@@ -581,7 +578,7 @@ Now that we clarified how static and dynamic values are classified in our SECD m
     (let initDump '()
         (lambda _ ops (((((machine initStack) initDump) ops)))) |\label{mline:machine_init}|
 \end{minted}
-\caption{Structure of interpreter for SECD machine (unstaged). Lambdas take two arguments, a self-reference for recursion which is ignored through a ``\_'' sentinel and a caller supplied argument. All of SECD's stack registers are represented as LISP lists and initialized to empty lists. The full interpreter is provided in APPENDIX.}
+\caption{Structure of interpreter for SECD machine (unstaged). Lambdas take two arguments, a self-reference for recursion which is ignored through a ``\_'' sentinel and a caller supplied argument. All of SECD's stack registers are represented as LISP lists and initialized to empty lists. ``...'' indicate omitted implementation details. The full interpreter is provided in APPENDIX.}
 \label{lst:secd_unstaged}
 \end{figure}
 
@@ -629,24 +626,54 @@ Another issue we dealt with in the process of writing the staged SECD interprete
 %If we are willing to diverge further from the SECD instruction set we can implement recursive function application by omitting the \textit{fns} register, modifying LDF to wrap SECD instruction in a lambda as before but remove the RAP and DUM instructions all-together leaving it up to LD and AP to locate and apply the recursive lambda. Essentially what this resembles is the eta-expansion technique to guarding higher-order static data from dynamic contexts typically used in TDPE \cite{danvy1995essence}. The small-step semantics of this approach are as follows:
 
 \subsubsection{Tying the Knot}\label{ssubsec:knot}
-We now provide a substantial redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in-tact in order to allow SECD style recursive function calls without the need for mutable variables. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level, perform residualization on the closure and distinguish between returning from a regular as opposed to recursive function to ensure termination of our specializer.
+We now provide a substantial redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in-tact in order to allow SECD style recursive function calls without the need for mutable variables and more crucially enable their partial evaluation. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level, perform residualization on the closure and distinguish between returning from a regular as opposed to recursive function to ensure termination of our specializer. We demonstrate the issue of partially evaluating a recursive call in the standard SECD semantics on the example in figure \ref{lst:secd_recursion_ex1} which shows a recursive function that decrements a user provided number down to zero.
 
-%TODO EXAMPLE OF PROBLEM THAT REQUIRES CHANGES TO RAP
-
-%TODO essence of new semantics
-
-%TODO elaborate above paragraph further
-%TODO AP semantics
 \begin{figure}[ht]
+\begin{minted}[escapeinside=||,linenos]{lisp}
+DUM NIL LDF ;|\small{Definition of recursive function starts here}\label{mline:rec_ex1_rec_fn}|
+    (LD (1 1)
+     LDC 0 EQ ;|\small{counter == 0?}\label{mline:rec_ex1_base_chk}|
+     SEL
+       (LDC done STOP) ;|\small{Base case: Push "done" and halt}\label{mline:rec_ex1_base_exit}|
+       (NIL LDC 1 LD (1 1) SUB CONS LD (2 1) AP JOIN) ;|\small{Recursive Case: Decrement counter}|
+     RTN)
+    CONS LDF
+    (NIL LD (3 1) CONS LD (2 1) AP RTN) RAP)) ;|\small{Set up initial recursive call. Set counter to 10}\label{mline:rec_ex1_setup_fn}|
+\end{minted}
+\caption{An example recursive function application annotated to show the issue with partially evaluating this type of construct.}
+\label{lst:secd_recursion_ex1}
+\end{figure}
+
+Were we to simply reduce this program by evaluating the machine we would hit non-termination of our PE. Our exit out of the recursive function (defined on line \ref{mline:rec_ex1_rec_fn}) occurs on line \ref{mline:rec_ex1_base_exit} but is guarded by a conditional check on line \ref{mline:rec_ex1_base_chk}. This conditional compares a dynamic value (\texttt{LD (1 1)}) with a constant 0. By virtue of congruence the 0 and the whole if-statement are classified as dynamic. However, for TDPE this dynamic check does not terminate the PE but instead attempts to reduce both branches of the statement. Since both branches are simply a recursive call of the step function in the actual machine we hit this choice again repeatedly without stopping because we have no way of signalling to stop partially evaluating. Figure \ref{lst:secd_recursion_machine_ex1} highlights this in the internals of the VM.
+
+\begin{figure}[ht!]
+\begin{minted}[escapeinside=||,linenos]{lisp}
+(if (eq? 'SEL (car control))
+  |\colorbox{green}{(if (car stack)}| ;Do not know the result because value on stack is dynamic
+    ;Make another step in machine. Will eventually hit this condition again
+    ;because we are evaluating a recursive program
+    (((((|\colorbox{green}{machine}| (cdr stack)) (cons (cdddr control) dump)) fns) (cadr control)) environment)
+    (((((machine (cdr stack)) (cons (cdddr control) dump)) fns) (caddr control)) environment))
+\end{minted}
+\caption{Snippet from the internals of the SECD interpreter from section \ref{subsec:secd_interp}. Highlighted are the locations at which our partial evaluator does not terminate. TDPE attempts to evaluate both branches because we cannot determine the outcome of the conditional.}
+\label{lst:secd_recursion_machine_ex1}
+\end{figure}
+
+Instead of evaluating the recursive call we want to instead generate the call and function in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are to-be-called recursively. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a ``set-car!'' in the underlying language.
+
+%TODO revisit AP semantics
+\begin{figure}[ht!]
 \centering
 \begin{alignat}{5}
-		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} & \longrightarrow \: && \text{(($\lambda$.(locate i j fns)).s) e c {\ts}fromldr.d fns} \\
+		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
 		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
 		\text{where entryClo} & := && \text{(entryFn (entryOps entryEnv))} \nonumber \\
 		\text{recClo} & := && \text{(recFn (recOps recEnv))} \nonumber \\
 		\text{rec} & := && \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)} \nonumber
 		\nonumber \\%
+		\nonumber \\%
+		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} & \longrightarrow \: && \text{(($\lambda$.(locate i j fns)).s) e c {\ts}fromldr.d fns} \\
 		\nonumber \\%
 		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} & \longrightarrow \:
 		 && \text{(lift-all v)} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
@@ -655,14 +682,19 @@ We now provide a substantial redesign to the internal \texttt{RAP} calling conve
 		 & && \qquad\text{where s1} := \text{(car s)@\_} \nonumber \\
  		 & && \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts}	\qquad\;\;\text{otherwise} \nonumber \\
  		\nonumber \\%
-		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \\
-		\nonumber \\%
 		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} & \longrightarrow \: && \text{res.s env c d fns} \\
 		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber
 \end{alignat}
-\caption{Modifications to the SECD operational semantics @CITE KOGGE/LANDIN. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
-\label{fig:secd_semantics}
+\caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
+\label{fig:secd_semantics_noset}
 \end{figure}
+
+%TODO essence of new semantics
+Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to an actual function that accepts an environment and will take a step in the abstract machine with the instructions defined by \textbf{LDF}, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which realized that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts.
+
+This proposed change to the semantics add a new functions register, which we refer to as the \textbf{fns-register} or simply \textbf{fns}. This new register is responsible for holding the recursive instructions of a \textbf{RAP} call.
+
+%TODO rewrite example using new semantics
 
 \subsection{SECD Compiler}
 To continue the construction of a tower where each level is performing actual interpretation of the level above we would have to implement an interpreter written in SECD instructions as the next level in the tower. To speed up the development process and aid debuggability we implement compiler that parses a LISP-like language, which we refer to as \secdlisp{}, and generates SECD instructions. It is based on the compiler described by Kogge \cite{kogge1990architecture} though with modifications to support our modified calling conventions and additional registers described in section \ref{ssubsec:knot}.
@@ -685,7 +717,7 @@ Given a source program in \secdlisp{} we invoke the compiler as shown in figure 
 \label{lst:secd_comp_ex1}
 \end{figure}
 
-As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
+As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
 
 \section{Level 3: Meta-eval}
 Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} @ELABORATE. \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine but also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it enables to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
@@ -698,7 +730,8 @@ Armed with a staged SECD machine and a language to target it with we build to ne
 															   & | \: \text{(} op_{2} \: \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(} op_{1} \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(if} \: \langle \text{expression}_\text{condition} \rangle \: \langle \text{expression}_\text{consequence} \rangle \: \langle \text{expression}_\text{alternative} \rangle \text{)} \\
-															   & | \: \text{(let} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)}
+															   & | \: \text{(let} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
+															   & | \: \text{(letrec} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression}_\text{recursive} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)}
 \end{align*}
 \caption{Syntax of \mevl which gets compiled into SECD instructions for interpretation by the SECD machine}
 \label{fig:mevl_syntax}
@@ -834,7 +867,7 @@ A key strategy in our methodology for collapsing towers of interpreters is the e
 \end{enumerate*}
 
 The lower in the tower one stages the more noise the generated code outputs and traces of the structure of the underlying machine are noticeable although reducing further would require changing its semantics which is what staging at upper levels essentially does
-Main challenge in collapsing in presence of heterogeneity is the propagating of the \textit{lift} operator throughout each level.
+Main challenge in collapsing in presence of heterogeneity is the propagating of the \textit{lift} operator throughout each level. "lifting of closures particularly needs to be rewritten at every level which would make applying our methodology to real-world towers infeasible.
 
 \section{Future Work}
 Future work:
@@ -850,6 +883,9 @@ Another avenue to explore is the efficiency of binding time analysis. In our sta
 Our study lives in the field of deriving compilers from interpreters and presents techniques of realizing such transformations using previous work on TDPE in the context of towers of interpreters. The crucial difference between modern compilers and interpreters, though the line got blurrier in the last years through JIT compilation in interpreted languages like Python and interpreter virtualization such as GraalVM, are the architecture dependent optimizations and complex pipeline of optimization passes present in compilers. Even in our small-scale study of partial evaluators we encountered questions of optimizing size and structure of generated code and proposed solutions specific to the interpreters we are partially evaluating. We echo the question posed in Jones \cite{jones1988challenging} discussion of challenges in PE of whether we can generate compilers or in our case even simply generate code that rivals modern optimiing compilers. -> need more testing, all optimizations we introduced are very specific to the wiring of the tower, which is maybe how it is supposed to be, although compilers do not require optimizations based specifically on the program source they operate on
 
 extending heterogeneity to mean targeting a different (e.g. lower-level language) than pink
+
+stratification of towers
+how can changing semantics of individual levels in real world towers work soundly?
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

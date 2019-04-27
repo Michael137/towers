@@ -242,6 +242,15 @@ object SECD_Compiler {
     Base.pretty(Base.reifyc(v), Nil)
   }
 
+  def compileAndRunLifted(src: String, arg: String) = {
+    val v = compileAndRun(src)
+    println(prettycode(v))
+    val e = Base.reifyc(v)
+    reifyv(evalms(Nil, App(e,
+      Cons(trans(parseExp(arg), Nil), Sym("."))
+    )))
+  }
+
   def lifted_meta_eval(p: String) = meta_eval(p, "lift")
 
   def meta_eval(p: String, lift: String = "(lambda (x) x)") = s"""
@@ -316,20 +325,20 @@ object SECD_Compiler {
     check(compileAndRun(meta_eval(VMMatcher.matcher("'(_ * a _ * done)", "'(b a done)"))))("Str(yes)")
 
     // 1. staged matcher on VM
-    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a done)"))))
-    println(prettycode(compileAndRun(VMLiftedMatcher.lifted_matcher("'(a * done)"))))
+    check(compileAndRunLifted(VMLiftedMatcher.lifted_matcher("'(a done)"), "'(a done)"))("Str(yes)")
+    check(compileAndRunLifted(VMLiftedMatcher.lifted_matcher("'(a * done)"), "'(a done)"))("Str(yes)")
 
     // 2. Staged matcher on meta-eval
-    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")))))
-    println(prettycode(compileAndRun(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")))))
+    check(compileAndRunLifted(meta_eval(VMLiftedMatcher.lifted_matcher("'(a done)")), "'(a done)"))("Str(yes)")
+    check(compileAndRunLifted(meta_eval(VMLiftedMatcher.lifted_matcher("'(a * done)")), "'(a done)"))("Str(yes)")
 
     def curried_matcher(p: String) = {
       val r = VMMatcher.matcher(p, "my_input")
       s"(lambda (my_input) $r)"
     }
     // 3. matcher on staged meta-eval
-    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a done)")))))
-    println(prettycode(compileAndRun(lifted_meta_eval(curried_matcher("'(a * done)")))))
+    check(compileAndRunLifted(lifted_meta_eval(curried_matcher("'(a done)")), "'(a done)"))("Str(yes)")
+    check(compileAndRunLifted(lifted_meta_eval(curried_matcher("'(a * done)")), "'(a done)"))("Str(yes)")
 
     testDone()
   }

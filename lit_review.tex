@@ -584,7 +584,7 @@ Now that we clarified how static and dynamic values are classified in our SECD m
 
 Our staged machine is written in \mslang's LISP front-end as a traditional case-based virtual machine that dispatches on SECD instructions stored in the C-register. The structure of our interpreter without annotations to stage it is shown in figure \ref{lst:secd_unstaged}. Of note are the single-argument self-referential lambdas due to the LISP-frontend and the out-of-order argument list to the machine. To allow a user to supply instructions to the machine we return a lambda that accepts input to the control register ($C$) in line \ref{mline:machine_init} of figure \ref{lst:secd_unstaged}. Once a SECD program is provided we curry the machine with respect to the last \textit{environment} register which is where user-supplied arguments go. An example invocation is \mint{lisp}|((secd '(LDC 10 LDC 20 ADD WRITEC)) '())| where \texttt{secd} is the source of figure \ref{lst:secd_unstaged} and the arguments to the machine are the arithmetic example of table \ref{tbl:secd_example1} and an empty environment respectively.
 
-Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annotate the expressions of the language that our interpreter defines for which we want to be able to generate code for with the stage-polymorphic \textit{maybe-lift} operators defined in \ref{lst:stage_poly_ex}. With our division in place (see table \ref{tbl:secd_division}) we simply wrap in calls to \textit{maybe-lift} all constants that potentially interact with dynamic values and all expressions that add elements to the stack, environment or dump. Finally we wrap the  Figure \ref{lst:secd_staged1} shows these preliminary annotations. We wrap the initializing call to the SECD machine in \textit{maybe-lift} as well because we want to specialize the machine without the dynamic input of the environment provided yet. Hence line \ref{mline:lift_machine} in figure \ref{lst:secd_staged1} simply signals the PE to generate code for the curried SECD machine.
+Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annotate the expressions of the language that our interpreter defines for which we want to be able to generate code for with the stage-polymorphic \textit{maybe-lift} operators defined in \ref{lst:stage_poly_ex}. With our division in place (see table \ref{tbl:secd_division}) we simply wrap in calls to \textit{maybe-lift} all constants that potentially interact with dynamic values and all expressions that add elements to the stack, environment or dump. Figure \ref{lst:secd_staged1} shows these preliminary annotations. We wrap the initializing call to the SECD machine in \textit{maybe-lift} as well because we want to specialize the machine without the dynamic input of the environment provided yet. Hence line \ref{mline:lift_machine} in figure \ref{lst:secd_staged1} simply signals the PE to generate code for the curried SECD machine.
 
 \begin{figure}[ht]
 \centering
@@ -667,7 +667,7 @@ Instead of evaluating the recursive call we want to instead generate the call an
 \begin{alignat}{5}
 		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
-		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \\
+		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \label{eq:secd_sem_rap} \\
 		\text{where entryClo} & := && \text{(entryFn (entryOps entryEnv))} \nonumber \\
 		\text{recClo} & := && \text{(recFn (recOps recEnv))} \nonumber \\
 		\text{rec} & := && \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)} \nonumber
@@ -690,11 +690,39 @@ Instead of evaluating the recursive call we want to instead generate the call an
 \end{figure}
 
 %TODO essence of new semantics
-Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to an actual function that accepts an environment and will take a step in the abstract machine with the instructions defined by \textbf{LDF}, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which realized that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts.
+Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to a function that accepts an environment and upon invocation takes a step in the abstract machine with the instructions defined by \textbf{LDF} in control-register, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which showed that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts. Note also that we add a new functions register, which we refer to as the \textbf{fns-register} or simply \textbf{fns} which is responsible for holding the recursive instructions of a \textbf{RAP} call.
 
-This proposed change to the semantics add a new functions register, which we refer to as the \textbf{fns-register} or simply \textbf{fns}. This new register is responsible for holding the recursive instructions of a \textbf{RAP} call.
+In equation \ref{eq:secd_sem_rap} the \textbf{RAP} instruction still expects two closures on top of the stack: one that performs the initial recursive call which we refer to as \textit{entryClo} and another that represents the actual set of instructions that get called recursively, \textit{recClo}. Each closure consists of a function, \textit{entryFn} and \textit{recFn}, the SECD instructions these functions execute and an environment. \textbf{RAP} then saves the current contents of all registers on the D-register and appends a closure on the fns-register. This closure when applied to an environment, takes a step in the machine with the control-register containing instructions of the recursive function body and a self-reference to the closure. Additionally, applying the closure tags the dump-register with a ``ret'' tag later used as an indicator to stop evaluating the current call, crucial to aid termination during specialization time.
 
-%TODO rewrite example using new semantics
+In the traditional SECD machine both the recursive and the calling function are kept in the environment and then loaded on the stack using \textbf{LD}, subsequently called using \textbf{AP}. However, for simplicity we keep recursive functions on the fns-register. Thus we introduce a new \textbf{LDR} instruction that returns the contents of the fns-register by index, just as \textbf{LD} does for the E-register. However, we wrap the action of finding a function in fns in a thunk to be able to generate code for this operation during partial evaluation.
+
+%TODO
+The \textbf{RTN} instruction works on the state set up by the modified instructions above to decide the SECD evaluators behaviour upon returning from a SECD function.
+
+%TODO explain AP
+
+To rewrite the example from figure \ref{lst:secd_recursion_ex1} with the new semantics we load the recursive function using the new \textbf{LDR} instead of the \textbf{LD} instruction as highlighted in figure \ref{lst:secd_recursion_ex1_newsem}.
+
+\begin{figure}[ht]
+\begin{minted}[escapeinside=||,linenos]{lisp}
+DUM NIL LDF
+    (LD (1 1)
+     LDC 0 EQ
+     SEL
+       (LDC done STOP)
+       (NIL LDC 1 LD (1 1) SUB CONS |\colorbox{green}{LDR (1 1)}| AP JOIN)
+     RTN)
+    CONS LDF
+    (NIL LD (2 1) CONS |\colorbox{green}{LDR (1 1)}| AP RTN) RAP))
+\end{minted}
+\caption{Recursive countdown example from figure \ref{lst:secd_recursion_ex1} rewritten with the SECD operational semantics in figure \ref{fig:secd_semantics_noset}}
+\label{lst:secd_recursion_ex1_newsem}
+\end{figure}
+
+The above changes to the machine show that to permit partial evaluation of the original SECD semantics an intrusive set of changes which necessitated knowledge of the inner workings of the machine were required. This arises from the fact that
+TDPE ON SMALL-STEP SEMANTICS
+\mslang WORKS BEST ON LITERALS AND CLOSURES
+STACK-BASED SO DIVISION HAS TO BE MIXED BUT NEED TO BE CAREFUL TO NOT POLLUTE STATIC AND DYNAMIC CONTEXTS FOR EFFICIENCY AND CORRECTNESS REASONS
 
 \subsection{SECD Compiler}
 To continue the construction of a tower where each level is performing actual interpretation of the level above we would have to implement an interpreter written in SECD instructions as the next level in the tower. To speed up the development process and aid debuggability we implement compiler that parses a LISP-like language, which we refer to as \secdlisp{}, and generates SECD instructions. It is based on the compiler described by Kogge \cite{kogge1990architecture} though with modifications to support our modified calling conventions and additional registers described in section \ref{ssubsec:knot}.

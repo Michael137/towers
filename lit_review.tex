@@ -88,90 +88,21 @@ But they Futamura showed they are fundamentally related in an elegant way by thr
 What follows is the study of partial evaluation which lies at the heart of our methodology of collapsing towers of interpreters and is described in more detail in SECTION
 
 \subsection{Reflective Towers}
+%TODO represent diagrammatically
 The earliest mentions of towers of interpreters appeared in the study of reflection in LISP and its derivatives.
 
-\subsubsection{3-LISP, Meta-circularity and Reflection}
 In his proposal for a language extension to Lisp called 3-LISP \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. The treatment of programs as data is a core concept in the Lisp family of languages and enables  convenient implementations of Lisp interpreters written in Lisp themselves. These are known as \textit{meta-circular} interpreters. Smith argued that there is a distinction between reflection and the ability to reference programs as just ordinary values. Reflection requires a way with which an embedded language can access the structures and state of the process that the embedding lives in. Crucial is the idea of implicit as opposed to explicit information that an evaluator exposes. Smith's idea of reflection is the capability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of a tradidional Lisp process, are implicitly passed around, a 3-LISP program can access both these structures explicitly at any point in time. 3-LISP achieves this by way of a, conceptually infinite, \textit{reflective tower}. Smith divides a process into two parts: a \textit{structural field} that consists of a program with accompanying data structures and an evaluator that acts on the structural field. Replacing the evaluator with a meta-circular one then provides a way to construct an infinite reflective tower. In Smith's original model, meta-circular interpreters each with its own environment and structural field, included a builtin \textit{reflective procedure}, which when called provided access to the state, i.e. environment, of it's interpreter. A meta-interpreter, also referred to as ``the ultimate machine'' is the upper-most interpreter in a tower and is itself not evaluated but simply a necessesity for the tower to exist in the first place. Questions of performance, potential uses and a complete model separate from implementation details was provided in subsequent work.
-\subsubsection{A Formal Account}
-\begin{figure}[t]
-	\centering
-	\includegraphics{refl_reif_tower.png}
-	\caption{Demonstration of reflection and reification in a two-level tower.}\label{refl_reif_tower}
-\end{figure}
 
-Friedman et al. took Smith's account of reflection and decomposed it into distinct operations: \textit{reification} and reflection \cite{friedman1984reification, wand1988mystery}. The authors provide one of the early denotational descriptions of reflective towers assuming a model where an interpreter is a \textit{valuation function} ($\mathcal{E}$) that maps an expression ($Exp$), environment ($E$) and continuation ($K$) to a domain of answers ($A$) and the input values to the interpreter bind to $\epsilon$, $\rho$, $\kappa$ respectively:
-
-\begin{equation}\label{non_refl_eqn}
-\mathcal{E}: Exp \rightarrow Env \rightarrow K \rightarrow A = \lambda\epsilon\rho\kappa....
-\end{equation}
+%REIFICATION AND REFLECTION
 
 An open question was how Smith's meta-interpreter \cite{smith1982reflection} could be described in a cohesive framework that relates different levels within a tower through formal semantics. The need for a formalization of reflection was also that earlier work described reflection in terms of reflective towers but which themselves were explained through the use of reflection. To part from such circular reasoning, Friedman et al. defined levels within a tower and their mutual interaction through operators on the state of the valuation function in equation \ref{non_refl_eqn} \cite{friedman1984reification}. Reflection operators take values for expression, environment and continuation and re-install them into the interpreter state. Reification operators provide access to the interpreter state and pass it to the program as values. A packaged up state of $\epsilon$, $\rho$, and $\kappa$ that can be treated as regular values is said to be \textit{reified}. In the context of multiple-levels of interpretation in a tower, calling a reflection operator spawns a new level in the tower with the interpreter state being the one at the time of application. Once evaluation was performed in the new level control is passed back to the interpreter that spawned it. Reification operators package up the state of the interpreter at the level of application and pass it to the expression to be evaluated. Diagramatically this process is shown in figure \ref{refl_reif_tower}.
 
 % Sturdy calls the above a flat tower model
 
-A subsequent study due to Danvy et al. \cite{danvy1988intensions} provides a systematic approach to constructing reflective towers. The authors provide a denotational semantic account of their reflection model similar to the technique described above and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and non-meta-circular tower. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of each level in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower that relates the interpreter state at different levels of a tower to the reflection and reification operations. To gain a a better intuition for their description, we summarize Danvy et al.'s model of reflection and reification below.
+A subsequent study due to Danvy et al. \cite{danvy1988intensions} provides a systematic approach to constructing reflective towers. The authors provide a denotational semantic account of their reflection model similar to the technique described above and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and non-meta-circular tower. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of each level in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower that relates the interpreter state at different levels of a tower to the reflection and reification operations.
 
-Adding supscripts to the valuation function from equation \ref{non_refl_eqn} and providing domains for components of the interpreter's state, we get:
-
-\begin{gather}
-	\rho_n \in Environment_n = Identifier_n \rightarrow DenotableValue_n \label{denot_non_refl_tower} \\
-	\kappa_n \in Continuation_n = DenotableValue_n \rightarrow Answer_n \\
-	\mathcal{E}_n: Expression_n \times Environment_n \times Continuation_n \rightarrow Answer_n \\
-	\mathcal{E}_n \llbracket interpreter_n \rrbracket \rho_n \kappa_n \simeq \mathcal{E}_{n-1} \label{valuation_fn_non_refl}
-\end{gather}
-
+%HINT AT HETEROGENEITY FROM BLOND AND PINK PAPERS (in Pink's conclusion)
 A $DenotableValue_n$ is any valid language construct and its representation as defined by the interpreter at level $n$. A consequence of this formulation is the fact that domains between levels are distinct but connected via the valuation function in equation \ref{valuation_fn_non_refl} and formalizes the earlier notion of an interpreter at level $n$ spawning a new evaluator at $n-1$ through some reflective operation. An even more relevant fact is that according to this denotational model, we are free to choose the representation of denotable values in each level. The authors assume for the rest of their study that levels are identical, however, in our work we assume the exact opposite. None of our levels are identical but can be formulated in the same framework given above. An example would be the denotation of an expression $Exp_0 = (1 + 2)$ at level 0 in our hypothetical tower of $n$ levels. At level $n = 1$ this can be represented as $Exp_1 = (+\;1\;2)_1$ or at level $n = 14$ as $Exp_{14} = (01 + 10)_{14}$, i.e. in binary. In our model we not only keep the notion of non-identical levels and non-metacirularity, but also the concept of a store, which the authors purposefully ommitted to keep the description purely functional.
-
-\begin{equation}
-	\begin{split}
-		\mathcal{E}_n \llbracket ((reify\;(e\;r\;k)\;body)\;E*) \rrbracket \rho_n \kappa_n \\
-		= \mathcal{E}_{n+1} \llbracket body \rrbracket (& [\llbracket e \rrbracket \mapsto (map_n \; \hat{exp_{n}} \llbracket E* \rrbracket) \\
-		& \llbracket r \rrbracket \mapsto (\hat{env_{n}}  \rho_n) \\
-		& \llbracket k \rrbracket \mapsto (\hat{cont_{n}} \kappa_n)]\rho_{n+1}) \kappa_{n+1} \label{reify_lvls_relation}
-	\end{split}
-\end{equation}
-
-Equation \ref{reify_lvls_relation} describes the effect of a reification operation, here \textit{reify(e r k)} where e, r and k are the variables that are bound to the expression, environment and continuation of the upper level respectively, between a level $n$ and the level above (i.e. its interpreter) $n+1$.
-
-\begin{equation}
-	\begin{split}
-	\mathcal{E}_n \llbracket (reflect (E\;R\;K)) \rrbracket \rho_n \kappa_n \\
-	= \mathcal{E}_n \llbracket E \rrbracket \rho_n & (\lambda\,a.\mathcal{E}_n \llbracket R \rrbracket \rho_n \\
-										& (\lambda\,b.\mathcal{E}_n \llbracket K \rrbracket \rho_n \\
-										& (\lambda\,c.\mathcal{E}_{n-1} (\check{exp_n}\,a)(\check{env_n}\,b)(\check{cont_n}\,c)))) \label{refl_lvls_relation}
-	\end{split}									
-\end{equation}
-
-The reflection operation in relation between two levels, $n$ and the interpreter it interprets $n-1$, is shown in equation \ref{refl_lvls_relation}. The domains for individual reflection and reification operations (superscripted with $\hat{}$ and $\check{}$ respectively), are given equation \ref{refl_reify_types}
-
-\begin{equation}
-	\begin{split}
-		exp^\wedge_n & : DenotableValue_n \rightarrow Expression_{n-1} \cup {error}		\\
-		env^\wedge_n & : DenotableValue_n \rightarrow Environment_{n-1} \cup {error}	\\
-		cont^\wedge_n & : DenotableValue_n \rightarrow Continuation_{n-1} \cup {error} 	\\
-		exp\,\check{}_{n} & : Expression_{n} \rightarrow DenotableValue_{n+1}			\\
-		env\,\check{}_{n} & : Environment_{n} \rightarrow DenotableValue_{n+1}			\\
-		cont\,\check{}_{n} & : Continuation_{n} \rightarrow DenotableValue_{n+1}		\label{refl_reify_types}
-	\end{split}
-\end{equation}
-
-An important observation is that in this model, reification and reflection operators are not commutative. As an example reifying a continuation at level $n$, $cont_n$, followed by reflecting the continuation in level $n+1$ does not yield the same domain when called in reversed order: $\check{cont_{n+1}} \circ \hat{cont_n} \neq \hat{cont_n} \circ \check{cont_{n+1}}$. The expression types given by equations \ref{refl_reify_types} let us explain this trivially by substituting the domains into the inequality.
-
-%by rewriting the compositions as:
-%
-%\begin{multline}
-%	\label{rewrite_composition_fst}
-%	(Continuation_{n} \rightarrow DenotableValue_{n+1}) \rightarrow (DenotableValue_{n+1} \\
-%	\rightarrow Continuation_{n+1-1} \cup {error}) = Continuation_n
-%\end{multline}
-%
-%\begin{multline}
-%	\label{rewrite_composition_snd}
-%	(DenotableValue_{n+1} \rightarrow Continuation_{n} \cup {error}) \\ 
-%	\rightarrow (Continuation_{n} \rightarrow DenotableValue_{n+1}) = DenotableValue_{n+1} \cup{error}
-%\end{multline}
-
-A less formal explanation of this statement is in terms of the possible values reflection versus reification can result in. Reflection spawns a new interpreter that can yield any result, including an error. Then reifying an error would not yield a valid interpreter state. If one reflects a reified expression it by definition corresponds to simple evaluation in the current interpreter. The importance of this is that this restricts us from being able to fully explain a reflective tower model and valuation functions that act on a level below, $\mathcal{E}^{-1}_n$. If we are not able to provide a definition for reflection and reification at interpreters below any level $n$ we will not have a full description of a reflective tower. This gives a denotational account for the metacontinuations that 3-LISP originally introduced. It was to deal with exaclty this discrepancy in the compositionality of reflection and reification operations. Danvy et al. then add meta-continuations into the equations previously described and their purpose is to describe the continuation that accepts the result of the interpreter it interprets.
 
 \subsection{Collapsing Towers}
 Taking a traditional model of interpretation, a conceptually infinite tower of interpreters adds evaluation overhead solely for the purpose of achieving reflection. In the original proposals of the reflective tower models only minimal attention was given to the imposed cost of performing new interpretation at each level of a tower. BLOND/STURDY both hint at partial evaluation potentially being a tool capable of removing some of this overhead by specializing individual levels to the interpreters below.
@@ -253,6 +184,10 @@ What we envision (with reference to this hypothetical setting) is handling the t
 To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{fig:tombstone}
 
 \section{Why do we want to collapse towers?}
+%SIMILAR GOALS TO COMPILATION IN GENERAL: code size, speed, etc.
+%DERIVING TRANSLATORS
+%STRIP AWAY GENERALITY
+%PLATFORM FOR FUTURE RESEARCH
 The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
 
 Binding time analysis is one of the obstacles of program specialization. The program specializer needs to decide, either automatically or with assistance from the programmer, which data to treat as static and which as dynamic. Simple divisions
@@ -260,7 +195,6 @@ can lead to code explosion or inefficient code generation, or worse, to non-term
 
 An interesting consequence of collapsing towers of interpreters demonstrated in \cite{amin2017collapsing} paper is the ability to derive translators in the process of collapsing.
 
-\subsection{Example of Deriving Translators}
 A trivial but useful example is logging. Given the tower in figure FIGURE we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
 of the IR of the level above is a mere accidental consequence of design instead of a necessity. We claim this work to be \textit{interpretative overhead} and defer its quantification by benchmarks to a later section.
 
@@ -287,8 +221,12 @@ In our study we investigate previous work on collapsing towers of interpreters a
 	\item and finally evaluation of the structure of the generated code and possible optimizations
 \end{enumerate*}.
 
-We deviate from traditional research in reflective towers in that we do not develop a separate language that demonstrates reflective tower capabilities and part from the constraints of metacircularity and reflection.
-Instead of generating levels in the tower dynamically through reflection and reification operators we construct a pre-determined tower resembling towers of interpreters in practice. We demonstrate initially how meta-circularity and reflection eases the collapsing process and then wire the tower in a way that breaks key implicit assumptions of said technique. Finally we propose a generalization of the original framework that deals with the constraints such a semantic gaps and lack of reflection and reification. We evaluate the framework on a set of abstract machines that are convenient to implement in Lisp-like fashion but are capable of modelling a broad set of functional and non-functional language properties.
+%We deviate from traditional research in reflective towers in that we do not develop a separate language that demonstrates reflective tower capabilities and part from the constraints of metacircularity and reflection.
+%Instead of generating levels in the tower dynamically through reflection and reification operators we construct a pre-determined tower resembling towers of interpreters in practice. We demonstrate initially how meta-circularity and reflection eases the collapsing process and then wire the tower in a way that breaks key implicit assumptions of said technique. Finally we propose a generalization of the original framework that deals with the constraints such a semantic gaps and lack of reflection and reification. We evaluate the framework on a set of abstract machines that are convenient to implement in Lisp-like fashion but are capable of modelling a broad set of functional and non-functional language properties.
+
+One of the aims of this study is to explore the effectiveness of compilation of towers under various configurations. The expected outcome follows the Amin et al.'s idea of only staging the user-most interpreters for the most efficient code output.
+effect of staging at different levels
+how severe is the difference in generated code? is it worth the increased implementation complexity?
 
 \cite{jones1993partial}: page 26. Only recently has partial evaluation seen growing adoption with frameworks such as Scala's LMS \cite{rompf2010lightweight} or Oracle's GraalVM \cite{wurthinger2013one}. The design space of partial evaluators is multi-faceted and considerations include:
 \begin{itemize}
@@ -390,8 +328,8 @@ see \cite{reynolds1972definitional}
 
 A language is defined by how the interpreter implements it. \mslang uses this idea to produce a staged version of a language through a definitional interpreter of that language with BTA annotations
 
-\section{Level 1: \texorpdfstring{\mslang}{Lg}}\label{sec:mslang}
-The partial evaluation framework due to Amin et al.'s \cite{amin2017collapsing} features a core multi-level language whose evaluator also serves as a partial evaluator. The framework also includes a Lisp front-end that translates s-expressions into terms of \mslang. We will be using this framework as the basis for our tower of interpreters.
+\subsection{\texorpdfstring{\mslang}{Lg} Overview}
+The partial evaluation framework due to Amin et al.'s \cite{amin2017collapsing} features a core multi-level language, \mslang, whose evaluator also serves as a partial evaluator. The framework also includes a LISP front-end that translates s-expressions into terms of \mslang. We will be using this framework as the basis for our tower of interpreters. \mslang is built on the concept of TDPE and implements a powerful construct formally described in \cite{berger1998normalization} called \textit{lift}. The operator converts the semantics of an expression to it's syntax and thus is said to be generating code where code is \mslang's syntax constructors. The fact that code generation of expressions can be guided using this single operator whose semantics closely resemble a expression annotation is attractive for converting interpreters into translators. A user of \mslang can stage an interpreter by annotating it's source provided the possibility of changing the interpreter's internals and enough knowledge of the its semantics.
 
 KEY FEATURES
 WHY IT SERVES WELL FOR TOWER CONSTRUCTION (ARE THERE ALTERNATIVES)
@@ -403,27 +341,8 @@ Multi-level base evaluator written in \mslang: supports staging operators (\text
 
 Modify other interpreters: make them \textbf{stage polymorphic}, i.e. commands either evaluate code (like an interpreter) or generate code (like a translator)
 
-Stage only user-most interpreter: \textit{wire tower} such that the \textbf{staging commands in $L_{n}$ are interpreted directly in terms of staging commands in $L_{0}$} i.e. staging commands pass through all other layers handing down commands to layers below without performing any staging commands
-
-Non-reflective method: meta-circular evaluator \textbf{Pink} => collapse arbitrary levels of ``self-interpretation''
-
-By abstracting over staging decisions one can write the same program to both perform staging or evaluate directly \cite{amin2017collapsing} (maybe-lift)
-
-\mslang features:
-	\begin{itemize}
-		\item \textit{run residual code}
-		\item binding-time/stage polymorphism \cite{henglein1994polymorphic}
-		\item preserves execution order of future-stage expressions
-		\item does not require type system or static analysis
-		\begin{itemize}
-			\item TDPE \cite{danvy1999type} (great explanation also at \cite{grobauer2001second}): \textbf{polymorphic Lift} operator turns static values into dynamic (future-stage) expressions
-		\end{itemize}
-	\end{itemize}
-
-In partial evaluation terms, the configurations, i.e. set of run-time computational states, is stored in stBlock while the division, i.e. denotation of static vs dynamic values 
-
-\subsection{\texorpdfstring{\mslang}{Lg} Overview}
 HOW DOES \mslang WORK INTERNALLY => HOW DOES \mslang USE TDPE
+%TODO HOW IS THE TECH STACK SET UP
 
 Since our work is based on the multi-level language, \mslang, developed by Amin et al. \cite{amin2017collapsing} we provide a summary of the core language which is a call-by-value $\lambda$-calculus split into two evaluation contexts, one in which expressions are code and the other in which expressions normalize to values. It also features a NbE style lift operator that forms tool by which partial evaluation is achieved. The LISP front-end is described in figure FIGURE. It is a LISP derivative that has support for non-mutable list and cons-cell operations, the lift operator for staging and recursive self-referencing lambdas.
 
@@ -445,15 +364,6 @@ The original Pink implementation assumes we are allowed to make arbitrary change
 
 How are stages encoded? dynamic vs. static (e.g. see MetaOcaml or TDPE's ML extensions)
 
-\subsection{Changes to \texorpdfstring{\mslang}{Lg}}
-Since SECD is a stack-based virtual machine all operations and data storage is performed on one of the four stack registers. By the principle of \textit{division} in partial evaluators CITE, we want to be able to separate static and dynamic values to prevent undesired behaviour in our partial evaluator (EXAMPLE OF NON-TERMINATION). A minor extension we add to the original framework is the ability to lift nested tuples as opposed to only two-element tuples. This addition to the small-step semantics is shown in FIGURE.
-
-To reduce the amount of generated code we add logic within \mslang's \textit{reflect} that reduces purely static expressions. Reducible expressions include arithmetic and list access operations.
-
-SHOW OPERATIONAL SEMANTICS
-
-% Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
-
 \subsection{Parallels To Towers In the Wild}
 %Our study examines this property by testing the limits of how we can get the side effects to stick to interpreters in a useful way. One could imagine optimizations, parallelization or instrumentation as possible use cases. Under certain side-effects, we may, however,
 %reach limits in terms of security (TROJANS IN HYPERVISORS) or ability to reason about a system. We are interested in the extent of these limits. (concurrency as a side-effect: instead of launching missiles we launch threads)
@@ -471,6 +381,35 @@ base -> VM? GraalVM (could it be adapted)?
 
 \subsubsection{Comparison to Other Partial Evaluators}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
+
+\section{Level 1: \texorpdfstring{\mslang}{Lg}}\label{sec:mslang}
+Stage only user-most interpreter (we investigate configurations in this thesis): \textit{wire tower} such that the \textbf{staging commands in $L_{n}$ are interpreted directly in terms of staging commands in $L_{0}$} i.e. staging commands pass through all other layers handing down commands to layers below without performing any staging commands
+
+Non-reflective method: meta-circular evaluator \textbf{Pink} => collapse arbitrary levels of ``self-interpretation''
+
+By abstracting over staging decisions one can write the same program to both perform staging or evaluate directly \cite{amin2017collapsing} (maybe-lift)
+
+\mslang features:
+	\begin{itemize}
+		\item \textit{run residual code}
+		\item binding-time/stage polymorphism \cite{henglein1994polymorphic}
+		\item preserves execution order of future-stage expressions
+		\item does not require type system or static analysis
+		\begin{itemize}
+			\item TDPE \cite{danvy1999type} (great explanation also at \cite{grobauer2001second}): \textbf{polymorphic Lift} operator turns static values into dynamic (future-stage) expressions
+		\end{itemize}
+	\end{itemize}
+
+In partial evaluation terms, the configurations, i.e. set of run-time computational states, is stored in stBlock while the division, i.e. denotation of static vs dynamic values 
+
+\subsection{Changes to \texorpdfstring{\mslang}{Lg}}
+Since SECD is a stack-based virtual machine all operations and data storage is performed on one of the four stack registers. By the principle of \textit{division} in partial evaluators CITE, we want to be able to separate static and dynamic values to prevent undesired behaviour in our partial evaluator (EXAMPLE OF NON-TERMINATION). A minor extension we add to the original framework is the ability to lift nested tuples as opposed to only two-element tuples. This addition to the small-step semantics is shown in FIGURE.
+
+To reduce the amount of generated code we add logic within \mslang's \textit{reflect} that reduces purely static expressions. Reducible expressions include arithmetic and list access operations.
+
+SHOW OPERATIONAL SEMANTICS
+
+% Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
 
 \section{Level 2: SECD}
 The SECD machine due to Landin CITE is a mature stack-based abstract machine initially developed in order to provide a machine model capable of interpreting LISP programs. The full small-step semantics of the machine are given in APPENDIX and figures FIGURES demonstrate examples of how the machine operates. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a STOP or WRITEC instruction, at which point the machine returns all values or a single value from the S-register respectively.

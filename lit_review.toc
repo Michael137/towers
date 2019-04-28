@@ -26,12 +26,13 @@
 \contentsline {subsubsection}{\numberline {6.3.1}Comparison to Other Partial Evaluators}{12}{subsubsection.6.3.1}
 \contentsline {section}{\numberline {7}Level 2: SECD}{13}{section.7}
 \contentsline {subsection}{\numberline {7.1}Staging a SECD Machine}{13}{subsection.7.1}
-\contentsline {subsubsection}{\numberline {7.1.1}The Interpreter}{14}{subsubsection.7.1.1}
-\contentsline {subsubsection}{\numberline {7.1.2}Tying the Knot}{16}{subsubsection.7.1.2}
+\contentsline {subsubsection}{\numberline {7.1.1}The Interpreter}{15}{subsubsection.7.1.1}
+\contentsline {subsubsection}{\numberline {7.1.2}Tying the Knot}{17}{subsubsection.7.1.2}
 \contentsline {subsection}{\numberline {7.2}SECD Compiler}{19}{subsection.7.2}
-\contentsline {section}{\numberline {8}Level 3: Meta-eval}{19}{section.8}
-\contentsline {subsection}{\numberline {8.1}String Matcher}{19}{subsection.8.1}
-\contentsline {section}{\numberline {9}Results}{20}{section.9}
-\contentsline {subsection}{\numberline {9.1}Benchmarks}{20}{subsection.9.1}
-\contentsline {section}{\numberline {10}Conclusion}{21}{section.10}
-\contentsline {section}{\numberline {11}Future Work}{22}{section.11}
+\contentsline {section}{\numberline {8}Level 3: Meta-Eval}{20}{section.8}
+\contentsline {section}{\numberline {9}Collapsing the Tower}{21}{section.9}
+\contentsline {subsection}{\numberline {9.1}String Matcher}{21}{subsection.9.1}
+\contentsline {subsection}{\numberline {9.2}Experiments}{21}{subsection.9.2}
+\contentsline {subsection}{\numberline {9.3}Benchmarks}{22}{subsection.9.3}
+\contentsline {section}{\numberline {10}Conclusion}{23}{section.10}
+\contentsline {section}{\numberline {11}Future Work}{23}{section.11}

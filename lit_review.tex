@@ -512,19 +512,19 @@ where $f@x$ denotes the application of function $f$ to an expression $x$. By def
 \end{figure}
 
 Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. Staged execution in our framework makes use of the partial evaluator used in Pink \cite{amin2017collapsing} to generate code in \mslang. Before being able to stage a SECD machine we define our division by where static values can be transferred from. If a dynamic value can be transferred from a register, $A$, to another register, $B$, we classify register $B$ as dynamic. Following are our division rules:
-%TODO move FNS to after sec:secd_staged
+
 \begin{table}[!htbp]
   \centering
   \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
  	\hline
  	\thead{SECD Register}	&	\thead{Classification}	&	\thead{Reason}	\\ \hline
-	$S$ (Stack)				&	Dynamic				&	Since function arguments and return values operate on the stack \textit{and} environment which is dynamic \\ \hline
+	$S$ (Stack)				&	Mixed				&	Function arguments and return values operate on the stack \textit{and} dynamic environment and thus are mostly dynamic. Elements of the stack can, however, be static in the case of thunks described in section \ref{ssubsec:knot} \\ \hline
 
-	$E$ (Environment)		&	Dynamic			&	Since the user transfers dynamic values to the environment \\ \hline
+	$E$ (Environment)		&	Mixed			&	 Most elements in this register are dynamic because they are passed from the user or represent values transferred from the stack. Since the stack can transfer static values on occasion the environment can contain static values as well. \\ \hline
 
 	$C$ (Control)				&	Static				& We make sure the register only receives static values and is thus static (we ensure this through eta-expansion)  \\ \hline
 
-	$D$ (Dump)				&	Dynamic				&	Receives dynamic values from the stack and is thus dynamic \\ \hline
+	$D$ (Dump)				&	Mixed				&	Used for saving state of any other register and thus elements can be both dynamic, static or a combination of both \\ \hline
 
 	$FNS$ (Functions)		&	Static				&	Since it resembles a \textit{control} register just for recursively called instructions we also classify it as static \\
 
@@ -662,6 +662,7 @@ Were we to simply reduce this program by evaluating the machine we would hit non
 Instead of evaluating the recursive call we want to instead generate the call and function in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are to-be-called recursively. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a ``set-car!'' in the underlying language.
 
 %TODO revisit AP semantics
+%TODO add LIFT operator and associated semantics changes
 \begin{figure}[ht!]
 \centering
 \begin{alignat}{5}
@@ -747,28 +748,41 @@ Given a source program in \secdlisp{} we invoke the compiler as shown in figure 
 
 As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
 
-\section{Level 3: Meta-eval}
-Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} @ELABORATE. \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine but also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it enables to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
+\section{Level 3: Meta-Eval}
+Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} @ELABORATE. \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine but also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
 
 \begin{figure}[ht]
 \begin{align*}
+	\langle \text{program} \rangle \Coloneqq & \: \langle \text{expression} \rangle \\
 	\langle \text{expression} \rangle \Coloneqq & \: \langle \text{variable} \rangle \\
+															   & | \: \langle \text{literal} \rangle \\
 															   & | \: \text{(lambda (} \langle \text{variable} \rangle\text{)} \: \langle \text{expression} \rangle\text{)} \\
 															   & | \: \text{(} \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(} op_{2} \: \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(} op_{1} \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(if} \: \langle \text{expression}_\text{condition} \rangle \: \langle \text{expression}_\text{consequence} \rangle \: \langle \text{expression}_\text{alternative} \rangle \text{)} \\
 															   & | \: \text{(let} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
-															   & | \: \text{(letrec} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression}_\text{recursive} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)}
+															   & | \: \text{(letrec} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression}_\text{recursive} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
+															   & | \: \text{(quote} \: \langle \text{expression} \rangle \text{)} \\
+	\langle \text{variable} \rangle \Coloneqq & \: \text{ID} \\
+	\langle \text{literal} \rangle \Coloneqq & \: \text{NUM} \: | \: \text{{\ts}ID} \\
+	op_{1} \Coloneqq & \: \text{num?} \\
+	op_{2} \Coloneqq & \: \text{and} \: | \: \text{or} \: | \: - \: | \: + \: | \: * \: | \: < \: | \: \text{eq?}
 \end{align*}
 \caption{Syntax of \mevl which gets compiled into SECD instructions for interpretation by the SECD machine}
 \label{fig:mevl_syntax}
 \end{figure}
 
-HOW INTERPRETER WILL GET USED
-CAN START EXPERIMENTING WITH THE EFFECT OF GENERATING CODE THROUGH SEVERAL LEVELS
-WITHOUT LIFTING CODE SNIPPET=>ACHIEVE FIRST EVIDENCE  OF COLLAPSING=>NEED LIFT
-IMPLEMENTATION
+\mevl supports the traditional functional features such as recursion, first-class functions, currying but also LISP-like quotation. We implement the language as a case-based interpreter again shown in APPENDIX.
+
+We demonstrate examples of running the interpreter on our staged virtual machine in section \ref{sec:experiments}. Our study is also concerned with the process of staging interpreters at varying levels in the tower and we thus enumerate the steps we took to stage \mevl. Once we are able to specialize with respect to this user-most evaluator we can start investigating the effect of collapsing our tower in various configurations on the generated code.
+
+%LIFT INJECTED INTO INTERPRETER
+%HOW INTERPRETER WILL GET USED
+%WITHOUT LIFTING CODE SNIPPET=>ACHIEVE FIRST EVIDENCE  OF COLLAPSING=>NEED LIFT
+
+Staging the \mevl interpreter is performed just as in Pink \cite{amin2017collapsing} by lifting all literals, symbols and closures returned by the interpreter and let \mslang's evaluator generate code of operations performed on the lifted values. The main caveat unique to our setting is a consequence of heterogeneity: \mevl does not have access to a builtin \textit{lift} operator. This poses the crucial question of how one can propagate the concept of lifting expressions through levels of the tower without having to expose it at all levels. We take the route of making a \textit{lift} operator available to the levels above the SECD machine which requires the implementation of a new SECD \textbf{LIFT} instruction.
+
 CODE SNIPPET OF STAGED VERSION
 
 % TODO: describe op_1 and op_2 and give description of <program> ::= and description of <variable> ::=
@@ -777,10 +791,15 @@ CODE SNIPPET OF STAGED VERSION
 %TODO: mention staging of meta-eval, further changes to compiler/SECD machine and effects on generated code
 %TODO: show or speculate how ths trend continues for staging even further levels
 
+\section{Collapsing the Tower}
+HOW ARE USER-MOST INTERPRETERS STAGED=>NEED TO EXPOSE LIFT
+
 \subsection{String Matcher}
 To evaluate our extended tower to the one used in the original Pink implementation we wrote a string matcher KNUTH to be executed on our staged SECD machine. Running the SECD in evalms's compilation mode we see SECD instructions as literals being included in the generated code. What's worse is that these literals are never used. Their presence is an example of a trade-off we make between implementation complexity and intrusiveness versus removal of interpretative overhead. Although we removed most of the evaluation overhead of the SECD machine itself, these instructions are present in the generated code because our implementation converts anything in the \textit{env} and \textit{stack} registers into dynamic values in the whenever we use lambdas as firt-class citizens for instance when using them as return values. If we wanted to reduce generated code further we could either reuse the \textit{fns} register for non-recursive functions as well and prevent instructions loaded as part of the \textit{LDF} instruction to be lifted.
 
-\section{Results}
+\subsection{Experiments}\label{sec:experiments}
+%Experiments: running on staged VM, staged VM + meta-eval, VM + staged meta-eval, VM + staged matcher, staged VM + matcher, implementing set-car!, VM + meta-eval + staged matcher, VM + staged meta-eval + matcher
+
 Figure \ref{fig:tombstone} shows a representation of our tower in terms of ``sideways-stacked'' tombstone diagrams. Although here the tower grows upwards and to the left this does not necessarily be. The compilers, or \textit{translators} labelled LABEL and LABEL have been implemented in scala for convenience. To realize a vertical tower structure our Lisp-to-\mslang translator, which converts Lisp source to Scala ASTs, could be ommitted letting the base-evaluator evaluate s-expressions directly. Similarly, the $\mu$-to-SECD translator could be implemented in SECD instructions itself, possibly through generating such instructions using LABEL in a bootstrapping fashion.
 
 \begin{itemize}

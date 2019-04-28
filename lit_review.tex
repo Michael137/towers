@@ -10,6 +10,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage[tdiagram]{semantic}
 \usepackage{amsthm}
 \usepackage{textcomp}
 \usepackage{txfonts}
@@ -47,7 +48,7 @@
 
 % For Word Count:
 \newcommand{\detailtexcount}[1]{%
-  \immediate\write18{texcount -merge -sum -q #1.tex output.bbl > #1.wcdetail }%
+  \immediate\write18{texcount -merge -sum -q #1.tex lit_review.bbl > #1.wcdetail }%
   \verbatiminput{#1.wcdetail}%
 }
  
@@ -57,7 +58,7 @@
 }
  
 \newcommand{\quickcharcount}[1]{%
-  \immediate\write18{texcount -1 -sum -merge -char -q #1.tex output.bbl > #1-chars.sum }%
+  \immediate\write18{texcount -1 -sum -merge -char -q #1.tex lit_review.bbl > #1-chars.sum }%
   \input{#1-chars.sum} characters (not including spaces)%
 }
 
@@ -66,7 +67,7 @@
 \frenchspacing
 
 %%TC:ignore
-\quickwordcount{lit_review} (out of 15000)
+%\quickwordcount{lit_review} (out of 15000)
 %\quickcharcount{lit_review}
 %\detailtexcount{lit_review}
 %%TC:endignore
@@ -80,135 +81,20 @@ settings. Prior formalizations of reflective towers have identified partial eval
 of interpreters to explore how partial evaluation techniques can be used to effectively remove levels of interpretation within such systems. %We then extend formalisms to such setting and go on to generalize previous techniques on partially evaluating towers of interpreters.
 \end{abstract}
 
-\section{An Introduction to Towers of Interpreters}
-\subsection{What are Interpreters?}
-Interpreters vs. compilers
-Lines are getting blurry: JIT compilation or more recently Graal
-But they Futamura showed they are fundamentally related in an elegant way by three projections that follow from the SMN theorem in recursive function theory
-What follows is the study of partial evaluation which lies at the heart of our methodology of collapsing towers of interpreters and is described in more detail in SECTION
+%TODO redraw tombstone diagarm using semantic pkg
+%\begin{picture}(220,75)(0,-35)
+%\put(10,0){\interpreter{S,L’}}
+%\put(110,0){\program{P,\compiler{C,\machine{M},\program{P,M}}}}
+%\end{picture}
 
-\subsection{Reflective Towers}
-%TODO represent diagrammatically
-The earliest mentions of towers of interpreters appeared in the study of reflection in LISP and its derivatives.
+\section{Introduction}
+Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an adjacent interpreter in the tower. On one hand, it has been used in the formalization of reflection in LISP and serves as a model in the development of reflective languages. On the other hand, towers of interpreters are a frequent occurrence in application development. Examples include interpreters for embedded domain-specific languages (DSLs) or string parsers embedded in a language both of which form towers of two levels. Advances in virtualization technology has driven increasing interest in software emulation. Viewing emulation as a form of interpretation we can view interpreters running on virtual hardware as towers of interpreters as well.
 
-In his proposal for a language extension to Lisp called 3-LISP \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. The treatment of programs as data is a core concept in the Lisp family of languages and enables  convenient implementations of Lisp interpreters written in Lisp themselves. These are known as \textit{meta-circular} interpreters. Smith argued that there is a distinction between reflection and the ability to reference programs as just ordinary values. Reflection requires a way with which an embedded language can access the structures and state of the process that the embedding lives in. Crucial is the idea of implicit as opposed to explicit information that an evaluator exposes. Smith's idea of reflection is the capability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of a tradidional Lisp process, are implicitly passed around, a 3-LISP program can access both these structures explicitly at any point in time. 3-LISP achieves this by way of a, conceptually infinite, \textit{reflective tower}. Smith divides a process into two parts: a \textit{structural field} that consists of a program with accompanying data structures and an evaluator that acts on the structural field. Replacing the evaluator with a meta-circular one then provides a way to construct an infinite reflective tower. In Smith's original model, meta-circular interpreters each with its own environment and structural field, included a builtin \textit{reflective procedure}, which when called provided access to the state, i.e. environment, of it's interpreter. A meta-interpreter, also referred to as ``the ultimate machine'' is the upper-most interpreter in a tower and is itself not evaluated but simply a necessesity for the tower to exist in the first place. Questions of performance, potential uses and a complete model separate from implementation details was provided in subsequent work.
+The inefficiency of reflective tower models of evaluation has been noted since their inception.
+CAN COMPILE REFLECTIVE LANGUAGES
+REMOVE LAYERS OF INTERPRETATION
+COMPILING WITH MODIFIED COMPILED SEMANTICS
 
-%REIFICATION AND REFLECTION
-
-An open question was how Smith's meta-interpreter \cite{smith1982reflection} could be described in a cohesive framework that relates different levels within a tower through formal semantics. The need for a formalization of reflection was also that earlier work described reflection in terms of reflective towers but which themselves were explained through the use of reflection. To part from such circular reasoning, Friedman et al. defined levels within a tower and their mutual interaction through operators on the state of the valuation function in equation \ref{non_refl_eqn} \cite{friedman1984reification}. Reflection operators take values for expression, environment and continuation and re-install them into the interpreter state. Reification operators provide access to the interpreter state and pass it to the program as values. A packaged up state of $\epsilon$, $\rho$, and $\kappa$ that can be treated as regular values is said to be \textit{reified}. In the context of multiple-levels of interpretation in a tower, calling a reflection operator spawns a new level in the tower with the interpreter state being the one at the time of application. Once evaluation was performed in the new level control is passed back to the interpreter that spawned it. Reification operators package up the state of the interpreter at the level of application and pass it to the expression to be evaluated. Diagramatically this process is shown in figure \ref{refl_reif_tower}.
-
-% Sturdy calls the above a flat tower model
-
-A subsequent study due to Danvy et al. \cite{danvy1988intensions} provides a systematic approach to constructing reflective towers. The authors provide a denotational semantic account of their reflection model similar to the technique described above and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and non-meta-circular tower. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of each level in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower that relates the interpreter state at different levels of a tower to the reflection and reification operations.
-
-%HINT AT HETEROGENEITY FROM BLOND AND PINK PAPERS (in Pink's conclusion)
-A $DenotableValue_n$ is any valid language construct and its representation as defined by the interpreter at level $n$. A consequence of this formulation is the fact that domains between levels are distinct but connected via the valuation function in equation \ref{valuation_fn_non_refl} and formalizes the earlier notion of an interpreter at level $n$ spawning a new evaluator at $n-1$ through some reflective operation. An even more relevant fact is that according to this denotational model, we are free to choose the representation of denotable values in each level. The authors assume for the rest of their study that levels are identical, however, in our work we assume the exact opposite. None of our levels are identical but can be formulated in the same framework given above. An example would be the denotation of an expression $Exp_0 = (1 + 2)$ at level 0 in our hypothetical tower of $n$ levels. At level $n = 1$ this can be represented as $Exp_1 = (+\;1\;2)_1$ or at level $n = 14$ as $Exp_{14} = (01 + 10)_{14}$, i.e. in binary. In our model we not only keep the notion of non-identical levels and non-metacirularity, but also the concept of a store, which the authors purposefully ommitted to keep the description purely functional.
-
-\subsection{Collapsing Towers}
-Taking a traditional model of interpretation, a conceptually infinite tower of interpreters adds evaluation overhead solely for the purpose of achieving reflection. In the original proposals of the reflective tower models only minimal attention was given to the imposed cost of performing new interpretation at each level of a tower. BLOND/STURDY both hint at partial evaluation potentially being a tool capable of removing some of this overhead by specializing individual levels to the interpreters below.
-
-\subsubsection{Compiling Reflective Languages}
-\cite{asai1996duplication}: Language ``Black''; has early uses of the act of collapsing modes of interpretation in a reflective setting. Its reflective model is closer to 3-LISP than to Blond or Brown
-\cite{asai2015compiling}
-
-The Truffle framework due to Wh{\"u}rthinger et al. \cite{wurthinger2017practical} demonstrate a practical partial evluation framework for interpreters independent of language by providing a language and interpreter specifically designed to partially evaluate and thus collect as much information about a dynamic language at run time as possible.
-
-\subsubsection{Examples}
-Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
-\begin{itemize}
-	\item Regular expression matcher <- Evaluator <- Virtual Machine
-	\begin{itemize}
-		\item Generate low-level VM code for a matcher specialized to one regex (through arbitrary number of intermediate interpreters)
-	\end{itemize}
-	\item Modified evaluator <- Evaluator <- Virtual Machine
-	\begin{itemize}
-		\item Modified for tracing/counting calls/be in CPS
-		\item Under modified semantics "interpreters become program transformers". E.g. CPS interpreter becomes CPS transformer
-	\end{itemize}
-\end{itemize}
-
-Recent work following on from Asai's work has demonstrated the ability to compile an potentially infinite tower of interpreters with dynamically changing semantics of individual levels using novel applications of normalization-by-evaluation \cite{amin2017collapsing}. Our work is motivated by following, rephrased, of question posed in the conclusion of their work: is it possible to extend the framework to practical towers and how?
-
-\subsection{Heterogeneity}
-A central part of our study revolves around the notion of heterogeneous towers. Prior work on towers of interpreters that inspired some these concepts includes Sturdy's work on the Platypus language framework that provided a mixed-language interpreter built from a reflective tower \cite{sturdy1993lisp}, Jones et al.'s Mix partial evaluator \cite{jones1989mix} in which systems consisting of multiple levels of interpreters could be partially evaluated and Amin et al.'s study of collapsing towers of interpreters in which the authors present a technique for turning systems of meta-circular interpreters into one-pass compilers. We continue from where the latter left of, namely the question of how one might achieve the effect of compiling multiple interpreters in heterogeneous settings. Our definition of \textit{heterogeneous} is as follows:
-\theoremstyle{definition}
-\begin{definition}
-	Towers of interpreters are systems of interpreters, $I_0, I_1, ..., I_n$ where $n \in \mathbb R_{\ge 0}$ and $I_n$ determines an interpreter at level $n$ interpreted by $I_{n-1}$, written in language $L$ such that $L_{I_n}$ is the language interpreter $I_n$ is written in.
-\end{definition}
-
-A level here is analogous to an instance of an interpreter within the tower and as such level $n$ implies $I_n$ if not mentioned explicitly otherwise.
-
-\begin{definition}
-	Heterogeneous towers of interpreters are towers which exhibit following properties:
-	\begin{enumerate}
-		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\equiv L_{I_m}$
-		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\blacktriangleleft L_{I_m}$, where $\blacktriangleleft$ implies access to the left-hand side interpreter's state and $m \ge n$
-		\item For any language used in the tower $L_m \in \Sigma_L$, $\exists L_a \not\in \Sigma_L.L_m \blacktriangleleft L_c \land L_c \blacktriangleleft L_c$
-	\end{enumerate}
-\end{definition}\label{def:het}
-A common situation where one find such properties within a system of languages is the embedding of domain-specific languages (DLSs) and we describe the consequence of these properties in the subsequent sections.
-
-\subsubsection{Absence of: Meta-circularity}
-The first constraint imposed by definition \ref{def:het} is that of necessarily mixed languages between levels of an interpretative tower. A practical challenge this poses for partial evaluators is the inability to reuse language facilities between levels of a tower. This also implies that one cannot define reflection and reification procedures as in 3-LISP \cite{smith1984reflection}, Blond \cite{danvy1988intensions}, Black \cite{asai1996duplication} or Pink \cite{amin2017collapsing}.
-
-\subsubsection{Absence of: Reflectivity}
-The ability to introspect and change the state of an interpreter during execution is a tool reflective languages use for implementation of debuggers, tracers or even language features. With reflection, however, programs can begin to become difficult to reason about and the extent of control of potentially destructive operations on a running interpreter's semantics introduces overhead. Reflection in reflective towers implies the ability to modify an interpreter's interpreter. Hierarchies of language embeddings as the ones we are interested in rarely provide reflective capabilities at every part of the embedding.
-
-\subsubsection{Mixed Language Systems}
-An early mention of non-reflective and non-metacircular towers was provided in the first step of Danvy's systematic description of the reflective tower model \cite{danvy1988intensions}. However, potential consequences were not further investigated in their study. However, their denotational explanation of general interpretation and description of interpretater state served as a useful foundation for later work and our current study.
-
-An extensive look at mixed languages in reflective towers was performed in chapter 5 of Sturdy's thesis \cite{sturdy1993lisp} where he highlighted the importance of supporting a mixture of languages within a interpretation framework. Multi-layer systems such as YACC and C or Shell and Make are common practice. Sturdy goes on to introduce into his framework support for mixed languages that transform to a Lisp parse tree to fit the reflective tower model. Our work is similar in its commmon representation of languages, however, we remove the requirement of reflectivity and argue that this provides a convenient way of collapsing, through partial evaluation a mixed level tower of interpreters. While Sturdy's framework \textit{Platypus} is a reflective interpretation of mixed languages, we construct a non-reflective tower consisting of mixed languages.
-
-The mix parial evluation framework \cite{jones1989mix}, Jones et al. demonstrate the PE of a simple interpreter into a language called Mixwell developed by the authors. This is similar in spirit to our framework except it is smaller in height. (section 5 of the paper \cite{jones1989mix}). also mentions removal of layers of metainterpretation in its conclusion
-
-Recent work due to Sampson et al. \cite{sampson2017static} differentiates between value splicing and materialization. Materialization and cross-stage references are used to persist information across stages. This provides a possible solution to pass information about staging decisions across levels.
-
-Partial Evaluation of Machine Code
-
-Put together, the three properties imposed by definition \ref{def:het} encourage a generalized solution irregardless of the language or structure of the tower at hand.
-
-One of the earliest serious mentions of collapsing levels of interpretation using partial evaluation was \cite{sturdy1993lisp}
-
-\section{Problems}
-To put our work and motivation into context consider following program architecture (originally described in \cite{amin2017collapsing}): some user script is executed by a Python interpreter running on a JavaScript emulator of a x86 CPU, all of which is run within a browser that eventually is executed on hardware. This construction resembles a practical realization of our defintion of heterogeneity in towers of interpreters, or in this case a tower of languages. Although such scenario might seem far-fetched, other forms of towers such as domain-specific languages embedded within a host are a form of tower of interpreters. Our study presents a systematic construction of a tower that resembles the structure of the tower we describe above: each level's language is different from the one it interprets and strict interpretation, where implementation is infeasible, is replaced with compilation. In addition to the issues outlined in previous work specifically on towers of interpreters, we also touch on and evaluate our results against the collection of open challenges described by Jones \cite{jones1988challenging} some of which have been tackled since but some of which remain open questions, such as the extent to which partial evaluators can perform the work by optimizing compilers and code generation by partial evaluators whose target language is different that its source. % paragraphs 3.6 - 4 in cited paper; is 4.2 basically our approach?
-
-What we envision (with reference to this hypothetical setting) is handling the two following cases:
-\begin{enumerate}
-	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
-	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
-	\begin{itemize}
-		\item Here a dynamically changing environment also implies effects that are capable of changing the semantics of interpreters within the tower at runtime
-		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
-	\end{itemize}
-\end{enumerate}
-To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{fig:tombstone}
-
-\section{Why do we want to collapse towers?}
-%SIMILAR GOALS TO COMPILATION IN GENERAL: code size, speed, etc.
-%DERIVING TRANSLATORS
-%STRIP AWAY GENERALITY
-%PLATFORM FOR FUTURE RESEARCH
-The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
-
-Binding time analysis is one of the obstacles of program specialization. The program specializer needs to decide, either automatically or with assistance from the programmer, which data to treat as static and which as dynamic. Simple divisions
-can lead to code explosion or inefficient code generation, or worse, to non-termination of the specializer. This problem is known as \textit{division} and is one of the key differences between offline and online PE techniques \cite{jones1993partial}.
-
-An interesting consequence of collapsing towers of interpreters demonstrated in \cite{amin2017collapsing} paper is the ability to derive translators in the process of collapsing.
-
-A trivial but useful example is logging. Given the tower in figure FIGURE we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
-of the IR of the level above is a mere accidental consequence of design instead of a necessity. We claim this work to be \textit{interpretative overhead} and defer its quantification by benchmarks to a later section.
-
-Collapsing the tower achieves exactly what we wanted, base-language (here the compilation target language) expressions including logging specialized to the user-level program.
-
-A restriction with this method is its reliance on meta-circularity and reflection and other unsafe techniques:
-\begin{itemize}
-	\item we are able ``inject'' the logging evaluator into tower because of its meta-circularity
-	\item we expose staging operators throughout the tower through simple string manipulation
-	\item instrumentation relies on meta-circularity since we simply redefine how constructs are evaluated before injecting the evaluator
-	\item modification of semantics of the tower are done via reflection (ELABORATE)
-\end{itemize}
-
-\section{Contributions}
 % TODO: interpreters should be evaluators
 %TODO: stronger first sentence that summarizes contributions, non-metacircular -> heterogeneous
 In our study we investigate previous work on collapsing towers of interpreters and aim to take another step towards applying these techniques to real-world settings. We demonstrate that given a multi-level language and a lift operator we can stage individual interpreters in a sequence of non-metacircular interpreters and effectively generate code specialized for a given program eliminating interpretative overhead in the process. As part of the development of this framework our contributions include:
@@ -269,9 +155,17 @@ Partial evaluators can be thought of as lightweight optimizing compilers targeti
 	\caption{A tombstone digram representation of our framework}
 \end{figure}
 
-For the rest of this thesis we systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse it. The aim of the following sections is to enumerate the steps we took to create a tower of interpreters as shown in figure \ref{fig:tombstone} and our experiments on it. Section SECTION describes the original framework due to Amin et al. \cite{amin2017collapsing} which we extend for the purposes of our work. The sections after (SECTIONS 1 2 3), each represent the addition of an individual layer in the tower. We conclude with an evaluation of experimental results followed by a discussion of potential future work.
+The aim of our study is to explore the process of turning towers of interpreters into compilers by staging appropriate interpreters and provide a launching point for further research into the optimization of mixed-language systems using partial evaluation.
 
-\section{Background}
+In section \ref{sec:background} we explain potentially useful background information that cover the fundamental topics we base our framework and experiments starting from the link between interpreters and compilers up to how previous work compiled reflective towers. Section \ref{sec:mslang} provides an overview of the partial evaluation framework we base our study on called Pink \cite{amin2017collapsing}. We systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse in sections \ref{sec:secd} through \ref{sec:collapsing}. Each of these sections discusses the steps we took to create a level in the tower of interpreters as shown in figure \ref{fig:tombstone}. We conclude with an evaluation of experimental results followed by a discussion of potential future work in sections \ref{sec:conclusion} and \ref{sec:future} respectively.
+
+\section{Background}\label{sec:background}
+\subsection{What are Interpreters?}
+Interpreters vs. compilers
+Lines are getting blurry: JIT compilation or more recently Graal
+But the Futamura showed they are fundamentally related in an elegant way by three projections that follow from the SMN theorem in recursive function theory
+What follows is the study of partial evaluation which lies at the heart of our methodology of collapsing towers of interpreters and is described in more detail in SECTION
+
 \subsection{Type-Directed Partial Evluation (TDPE)}
 NbE resources:
 %Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
@@ -382,6 +276,127 @@ base -> VM? GraalVM (could it be adapted)?
 \subsubsection{Comparison to Other Partial Evaluators}
 In the Mix partial evaluator \cite{jones1989mix} interpretative overhead is removed in a similar fashion from a sample interpreter when partially evaluated to terms in the Mixwell language of the same paper. However, the method by which they achieve PE differs ...
 
+\subsection{Reflective Towers}
+%TODO represent diagrammatically
+The earliest mentions of towers of interpreters appeared in the study of reflection in LISP and its derivatives.
+
+In his proposal for a language extension to Lisp called 3-LISP \cite{smith1984reflection}, Smith introduces the notion of a reflective system, a system that is able to reason about itself. The treatment of programs as data is a core concept in the Lisp family of languages and enables  convenient implementations of Lisp interpreters written in Lisp themselves. These are known as \textit{meta-circular} interpreters. Smith argued that there is a distinction between reflection and the ability to reference programs as just ordinary values. Reflection requires a way with which an embedded language can access the structures and state of the process that the embedding lives in. Crucial is the idea of implicit as opposed to explicit information that an evaluator exposes. Smith's idea of reflection is the capability to explicitly instantiate a language construct that was implicit prior. While environment and continuations, which form the state of a tradidional Lisp process, are implicitly passed around, a 3-LISP program can access both these structures explicitly at any point in time. 3-LISP achieves this by way of a, conceptually infinite, \textit{reflective tower}. Smith divides a process into two parts: a \textit{structural field} that consists of a program with accompanying data structures and an evaluator that acts on the structural field. Replacing the evaluator with a meta-circular one then provides a way to construct an infinite reflective tower. In Smith's original model, meta-circular interpreters each with its own environment and structural field, included a builtin \textit{reflective procedure}, which when called provided access to the state, i.e. environment, of it's interpreter. A meta-interpreter, also referred to as ``the ultimate machine'' is the upper-most interpreter in a tower and is itself not evaluated but simply a necessesity for the tower to exist in the first place. Questions of performance, potential uses and a complete model separate from implementation details was provided in subsequent work.
+
+%REIFICATION AND REFLECTION
+
+Reflection operators take values for expression, environment and continuation and re-install them into the interpreter state. Reification operators provide access to the interpreter state and pass it to the program as values. A packaged up state of $\epsilon$, $\rho$, and $\kappa$ that can be treated as regular values is said to be \textit{reified}. In the context of multiple-levels of interpretation in a tower, calling a reflection operator spawns a new level in the tower with the interpreter state being the one at the time of application. Once evaluation was performed in the new level control is passed back to the interpreter that spawned it. Reification operators package up the state of the interpreter at the level of application and pass it to the expression to be evaluated.
+
+% Sturdy calls the above a flat tower model
+
+A subsequent study due to Danvy et al. \cite{danvy1988intensions} provides a systematic approach to constructing reflective towers. The authors provide a denotational semantic account of their reflection model similar to the technique described above and realize these formalizations into a language built with a reflective tower called ``Blond''. The authors start with a non-reflective tower and non-meta-circular tower. An assumption that the authors carry throughout their paper is that of single-threadedness. This is both to reduce the complexity of designing an implementation and prevents racey side-effects between concurrent towers. The restriction is that the effects of each level in a tower is the interpretation of the level below it. Any non-interpretative work is performed at the last level of the tower, also referred to as its \textit{edge}. Danvy et al.'s key insight was the need for an intensional description of an interpretative tower that relates the interpreter state at different levels of a tower to the reflection and reification operations.
+
+%HINT AT HETEROGENEITY FROM BLOND AND PINK PAPERS (in Pink's conclusion)
+A $DenotableValue_n$ is any valid language construct and its representation as defined by the interpreter at level $n$. A consequence of this formulation is the fact that domains between levels are distinct but connected via a valuation function and formalizes the earlier notion of an interpreter at level $n$ spawning a new evaluator at $n-1$ through some reflective operation. An even more relevant fact is that according to this denotational model, we are free to choose the representation of denotable values in each level. The authors assume for the rest of their study that levels are identical, however, in our work we assume the exact opposite. None of our levels are identical but can be formulated in the same framework given above. An example would be the denotation of an expression $Exp_0 = (1 + 2)$ at level 0 in our hypothetical tower of $n$ levels. At level $n = 1$ this can be represented as $Exp_1 = (+\;1\;2)_1$ or at level $n = 14$ as $Exp_{14} = (01 + 10)_{14}$, i.e. in binary. In our model we not only keep the notion of non-identical levels and non-metacirularity, but also the concept of a store, which the authors purposefully ommitted to keep the description purely functional.
+
+\subsection{Collapsing Towers}
+Taking a traditional model of interpretation, a conceptually infinite tower of interpreters adds evaluation overhead solely for the purpose of achieving reflection. In the original proposals of the reflective tower models only minimal attention was given to the imposed cost of performing new interpretation at each level of a tower. BLOND/STURDY both hint at partial evaluation potentially being a tool capable of removing some of this overhead by specializing individual levels to the interpreters below.
+
+\subsubsection{Compiling Reflective Languages}
+\cite{asai1996duplication}: Language ``Black''; has early uses of the act of collapsing modes of interpretation in a reflective setting. Its reflective model is closer to 3-LISP than to Blond or Brown
+\cite{asai2015compiling}
+
+The Truffle framework due to Wh{\"u}rthinger et al. \cite{wurthinger2017practical} demonstrate a practical partial evluation framework for interpreters independent of language by providing a language and interpreter specifically designed to partially evaluate and thus collect as much information about a dynamic language at run time as possible.
+
+\subsubsection{Examples}
+Examples drawn from paper on collapsing towers \cite{amin2017collapsing}:
+\begin{itemize}
+	\item Regular expression matcher <- Evaluator <- Virtual Machine
+	\begin{itemize}
+		\item Generate low-level VM code for a matcher specialized to one regex (through arbitrary number of intermediate interpreters)
+	\end{itemize}
+	\item Modified evaluator <- Evaluator <- Virtual Machine
+	\begin{itemize}
+		\item Modified for tracing/counting calls/be in CPS
+		\item Under modified semantics "interpreters become program transformers". E.g. CPS interpreter becomes CPS transformer
+	\end{itemize}
+\end{itemize}
+
+Recent work following on from Asai's work has demonstrated the ability to compile an potentially infinite tower of interpreters with dynamically changing semantics of individual levels using novel applications of normalization-by-evaluation \cite{amin2017collapsing}. Our work is motivated by following, rephrased, of question posed in the conclusion of their work: is it possible to extend the framework to practical towers and how?
+
+\subsection{Heterogeneity}
+A central part of our study revolves around the notion of heterogeneous towers. Prior work on towers of interpreters that inspired some these concepts includes Sturdy's work on the Platypus language framework that provided a mixed-language interpreter built from a reflective tower \cite{sturdy1993lisp}, Jones et al.'s Mix partial evaluator \cite{jones1989mix} in which systems consisting of multiple levels of interpreters could be partially evaluated and Amin et al.'s study of collapsing towers of interpreters in which the authors present a technique for turning systems of meta-circular interpreters into one-pass compilers. We continue from where the latter left of, namely the question of how one might achieve the effect of compiling multiple interpreters in heterogeneous settings. Our definition of \textit{heterogeneous} is as follows:
+\theoremstyle{definition}
+\begin{definition}
+	Towers of interpreters are systems of interpreters, $I_0, I_1, ..., I_n$ where $n \in \mathbb R_{\ge 0}$ and $I_n$ determines an interpreter at level $n$ interpreted by $I_{n-1}$, written in language $L$ such that $L_{I_n}$ is the language interpreter $I_n$ is written in.
+\end{definition}
+
+A level here is analogous to an instance of an interpreter within the tower and as such level $n$ implies $I_n$ if not mentioned explicitly otherwise.
+
+\begin{definition}
+	Heterogeneous towers of interpreters are towers which exhibit following properties:
+	\begin{enumerate}
+		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\equiv L_{I_m}$
+		\item For any two levels $n, m \in \mathbb R_{\ge 0}, L_{I_n} \not\blacktriangleleft L_{I_m}$, where $\blacktriangleleft$ implies access to the left-hand side interpreter's state and $m \ge n$
+		\item For any language used in the tower $L_m \in \Sigma_L$, $\exists L_a \not\in \Sigma_L.L_m \blacktriangleleft L_c \land L_c \blacktriangleleft L_c$
+	\end{enumerate}
+\end{definition}\label{def:het}
+A common situation where one find such properties within a system of languages is the embedding of domain-specific languages (DLSs) and we describe the consequence of these properties in the subsequent sections.
+
+\subsubsection{Absence of: Meta-circularity}
+The first constraint imposed by definition \ref{def:het} is that of necessarily mixed languages between levels of an interpretative tower. A practical challenge this poses for partial evaluators is the inability to reuse language facilities between levels of a tower. This also implies that one cannot define reflection and reification procedures as in 3-LISP \cite{smith1984reflection}, Blond \cite{danvy1988intensions}, Black \cite{asai1996duplication} or Pink \cite{amin2017collapsing}.
+
+\subsubsection{Absence of: Reflectivity}
+The ability to introspect and change the state of an interpreter during execution is a tool reflective languages use for implementation of debuggers, tracers or even language features. With reflection, however, programs can begin to become difficult to reason about and the extent of control of potentially destructive operations on a running interpreter's semantics introduces overhead. Reflection in reflective towers implies the ability to modify an interpreter's interpreter. Hierarchies of language embeddings as the ones we are interested in rarely provide reflective capabilities at every part of the embedding.
+
+\subsubsection{Mixed Language Systems}
+An early mention of non-reflective and non-metacircular towers was provided in the first step of Danvy's systematic description of the reflective tower model \cite{danvy1988intensions}. However, potential consequences were not further investigated in their study. However, their denotational explanation of general interpretation and description of interpretater state served as a useful foundation for later work and our current study.
+
+An extensive look at mixed languages in reflective towers was performed in chapter 5 of Sturdy's thesis \cite{sturdy1993lisp} where he highlighted the importance of supporting a mixture of languages within a interpretation framework. Multi-layer systems such as YACC and C or Shell and Make are common practice. Sturdy goes on to introduce into his framework support for mixed languages that transform to a Lisp parse tree to fit the reflective tower model. Our work is similar in its commmon representation of languages, however, we remove the requirement of reflectivity and argue that this provides a convenient way of collapsing, through partial evaluation a mixed level tower of interpreters. While Sturdy's framework \textit{Platypus} is a reflective interpretation of mixed languages, we construct a non-reflective tower consisting of mixed languages.
+
+The mix parial evluation framework \cite{jones1989mix}, Jones et al. demonstrate the PE of a simple interpreter into a language called Mixwell developed by the authors. This is similar in spirit to our framework except it is smaller in height. (section 5 of the paper \cite{jones1989mix}). also mentions removal of layers of metainterpretation in its conclusion
+
+Recent work due to Sampson et al. \cite{sampson2017static} differentiates between value splicing and materialization. Materialization and cross-stage references are used to persist information across stages. This provides a possible solution to pass information about staging decisions across levels.
+
+Partial Evaluation of Machine Code
+
+Put together, the three properties imposed by definition \ref{def:het} encourage a generalized solution irregardless of the language or structure of the tower at hand.
+
+One of the earliest serious mentions of collapsing levels of interpretation using partial evaluation was \cite{sturdy1993lisp}
+
+\section{Problems}
+To put our work and motivation into context consider following program architecture (originally described in \cite{amin2017collapsing}): some user script is executed by a Python interpreter running on a JavaScript emulator of a x86 CPU, all of which is run within a browser that eventually is executed on hardware. This construction resembles a practical realization of our defintion of heterogeneity in towers of interpreters, or in this case a tower of languages. Although such scenario might seem far-fetched, other forms of towers such as domain-specific languages embedded within a host are a form of tower of interpreters. Our study presents a systematic construction of a tower that resembles the structure of the tower we describe above: each level's language is different from the one it interprets and strict interpretation, where implementation is infeasible, is replaced with compilation. In addition to the issues outlined in previous work specifically on towers of interpreters, we also touch on and evaluate our results against the collection of open challenges described by Jones \cite{jones1988challenging} some of which have been tackled since but some of which remain open questions, such as the extent to which partial evaluators can perform the work by optimizing compilers and code generation by partial evaluators whose target language is different that its source. % paragraphs 3.6 - 4 in cited paper; is 4.2 basically our approach?
+
+What we envision (with reference to this hypothetical setting) is handling the two following cases:
+\begin{enumerate}
+	\item A one-off run of a python script on top of this stack should be collapsed by bypassing the emulator interpretation
+	\item A continuously running emulator evaluating a continuously running python interpreter should collapse individual runs of interpretation while respecting the dynamically changing environment
+	\begin{itemize}
+		\item Here a dynamically changing environment also implies effects that are capable of changing the semantics of interpreters within the tower at runtime
+		\item In literature, the closest to compiling a dynamically changing tower is \cite{asai1997partial, amin2017collapsing} (for a \textit{reflective} language Black) and GraalVM \cite{wurthinger2013one}
+	\end{itemize}
+\end{enumerate}
+To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{fig:tombstone}
+
+\section{Why do we want to collapse towers?}
+%SIMILAR GOALS TO COMPILATION IN GENERAL: code size, speed, etc.
+%DERIVING TRANSLATORS
+%STRIP AWAY GENERALITY
+%PLATFORM FOR FUTURE RESEARCH
+The main reason is performance. The key realization of partial evaluation that lead to its development is that interpreters do redundant work but we can make it so they don't. Program specialization is simple and attractive on paper but poses significant engineering challenges and has not seen widespread adoption (until recent increasingly successful work on interpreter virtualization \cite{wurthinger2013one}).
+
+Binding time analysis is one of the obstacles of program specialization. The program specializer needs to decide, either automatically or with assistance from the programmer, which data to treat as static and which as dynamic. Simple divisions
+can lead to code explosion or inefficient code generation, or worse, to non-termination of the specializer. This problem is known as \textit{division} and is one of the key differences between offline and online PE techniques \cite{jones1993partial}.
+
+An interesting consequence of collapsing towers of interpreters demonstrated in \cite{amin2017collapsing} paper is the ability to derive translators in the process of collapsing.
+
+A trivial but useful example is logging. Given the tower in figure FIGURE we want to keep the added \textit{useful} behaviour of $I_3$ while removing the \textit{unuseful} other work of interpreting an intermediate representation. The interpretation
+of the IR of the level above is a mere accidental consequence of design instead of a necessity. We claim this work to be \textit{interpretative overhead} and defer its quantification by benchmarks to a later section.
+
+Collapsing the tower achieves exactly what we wanted, base-language (here the compilation target language) expressions including logging specialized to the user-level program.
+
+A restriction with this method is its reliance on meta-circularity and reflection and other unsafe techniques:
+\begin{itemize}
+	\item we are able ``inject'' the logging evaluator into tower because of its meta-circularity
+	\item we expose staging operators throughout the tower through simple string manipulation
+	\item instrumentation relies on meta-circularity since we simply redefine how constructs are evaluated before injecting the evaluator
+	\item modification of semantics of the tower are done via reflection (ELABORATE)
+\end{itemize}
+
 \section{Level 1: \texorpdfstring{\mslang}{Lg}}\label{sec:mslang}
 Stage only user-most interpreter (we investigate configurations in this thesis): \textit{wire tower} such that the \textbf{staging commands in $L_{n}$ are interpreted directly in terms of staging commands in $L_{0}$} i.e. staging commands pass through all other layers handing down commands to layers below without performing any staging commands
 
@@ -411,7 +426,7 @@ SHOW OPERATIONAL SEMANTICS
 
 % Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
 
-\section{Level 2: SECD}
+\section{Level 2: SECD}\label{sec:secd}
 The SECD machine due to Landin CITE is a mature stack-based abstract machine initially developed in order to provide a machine model capable of interpreting LISP programs. The full small-step semantics of the machine are given in APPENDIX and figures FIGURES demonstrate examples of how the machine operates. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a STOP or WRITEC instruction, at which point the machine returns all values or a single value from the S-register respectively.
 
 Our reasoning behind choosing the SECD abstract machine as one of our levels is three-fold:
@@ -422,7 +437,7 @@ Our reasoning behind choosing the SECD abstract machine as one of our levels is 
 \end{enumerate}
 An additional benefit of using a LISP machine is that the \mslang framework we use as our partial evaluator also features a LISP front-end and supports all the list-processing primitives that it's inventors described the operational semantics with and aided the development complexity. Our first step in constructing the heterogeneous tower is implementing the standard SECD machine (described by the operational semantics in APPENDIX) using \mslang's LISP front-end. We model the machine through a case-based evaluator with a step function at its core that advances the state of the machine until a STOP or WRITEC instruction is encountered.
 
-\subsection{Staging a SECD Machine}\label{sec:secd_staged}
+\subsection{Staging a SECD Machine}\label{subsec:secd_staged}
 Since a part of our experiments of collapsing towers is concerned with the effect of staging at different levels in the tower, we want to design the SECD machine to aid this process. This poses a question of what it means for an abstract machine to be staged.
 
 From the architecture of a SECD machine the intended place for free variables to live in is the environment register. A simple example in terms of SECD instructions is as follows:
@@ -601,29 +616,43 @@ Were we to simply reduce this program by evaluating the machine we would hit non
 Instead of evaluating the recursive call we want to instead generate the call and function in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are to-be-called recursively. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a ``set-car!'' in the underlying language.
 
 %TODO revisit AP semantics
-%TODO add LIFT operator and associated semantics changes
+%TODO add LIFT operator and associated semantics change
+%TODO revisit recEnv in RAP rec assignment. should be (recOps recEnv) probably
+%TODO comment on mem in RAP; its used as state bookkeeping for later reconstruction of closure in LIFT
 \begin{figure}[ht!]
 \centering
 \begin{alignat}{5}
 		\text{s e (} \mathbf{LDF} \text{ ops.c) d fns} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(machine {\ts}() e{\ts} ops {\ts}ret fns)) ops.e).s e c d fns} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
+		%
 		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d fns} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c fns.d) (rec entryEnv {\ts}()).fns} \label{eq:secd_sem_rap} \\
 		\text{where entryClo} & := && \text{(entryFn (entryOps entryEnv))} \nonumber \\
 		\text{recClo} & := && \text{(recFn (recOps recEnv))} \nonumber \\
-		\text{rec} & := && \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec recEnv.{\ts}()).fns)} \nonumber
+		\text{rec} & := && \text{$\lambda$env.(machine {\ts}() env recOps {\ts}ret (rec mem recEnv.{\ts}()).fns)} \nonumber \\
+		\text{mem} & := && \text{((s e c fns.d) (recOps recEnv).fns)} \nonumber \\
 		\nonumber \\%
-		\nonumber \\%
+		%
 		\text{s e (} \mathbf{LDR} \text{ (i j).c) d fns} & \longrightarrow \: && \text{(($\lambda$.(locate i j fns)).s) e c {\ts}fromldr.d fns} \\
 		\nonumber \\%
-		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c\ts  d\ts  fns\ts.d) fns} & \longrightarrow \:
+		%
+		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c{\ts}  d{\ts}  fns{\ts}.d) fns} & \longrightarrow \:
 		 && \text{(lift-all v)} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
 		 & && \text{($\lambda$x.((car s{\ts}) (cons (car x) (cddr s{\ts}))) (cddr s1)	} \nonumber \\
 		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
 		 & && \qquad\text{where s1} := \text{(car s)@\_} \nonumber \\
  		 & && \text{(v.s\ts)  e\ts  c\ts  d\ts  fns\ts}	\qquad\;\;\text{otherwise} \nonumber \\
  		\nonumber \\%
+ 		%
 		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} & \longrightarrow \: && \text{res.s env c d fns} \\
-		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber
+		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber \\
+		\nonumber \\%
+		%
+		\text{(v m.s) e (} \mathbf{LIFT}\text{.c) d fns} & \longrightarrow \: \label{eq:secd_sem_lift}
+		 && \text{res.s e c d fns} \\
+		 \text{where res} & := && \text{(lift v)\quad if (num? v) or (sym? v)} \nonumber \\
+		 & && \text{(lift ($\lambda$rec,env.(machine {\ts}() env c{\ts}} \nonumber \\
+		 & && \qquad\quad \text{({\ts}ret d{\ts}) (rec (recOps recEnv).fns)))} \quad \text{if (lambda? v)} \nonumber \\
+		 & && \text{(lift ($\lambda$env.(machine {\ts}() (env m) c{\ts} {\ts}ret fns} \quad\text{otherwise} \nonumber
 \end{alignat}
 \caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
 \label{fig:secd_semantics_noset}
@@ -690,7 +719,7 @@ As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructio
 \section{Level 3: Meta-Eval}
 Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} @ELABORATE. \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine but also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
 
-\begin{figure}[ht]
+\begin{figure}[ht!]
 \begin{align*}
 	\langle \text{program} \rangle \Coloneqq & \: \langle \text{expression} \rangle \\
 	\langle \text{expression} \rangle \Coloneqq & \: \langle \text{variable} \rangle \\
@@ -698,39 +727,63 @@ Armed with a staged SECD machine and a language to target it with we build to ne
 															   & | \: \text{(lambda (} \langle \text{variable} \rangle\text{)} \: \langle \text{expression} \rangle\text{)} \\
 															   & | \: \text{(} \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(} op_{2} \: \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
-															   & | \: \text{(} op_{1} \: \langle \text{expression} \rangle \text{)} \\
 															   & | \: \text{(if} \: \langle \text{expression}_\text{condition} \rangle \: \langle \text{expression}_\text{consequence} \rangle \: \langle \text{expression}_\text{alternative} \rangle \text{)} \\
 															   & | \: \text{(let} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
 															   & | \: \text{(letrec} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression}_\text{recursive} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
 															   & | \: \text{(quote} \: \langle \text{expression} \rangle \text{)} \\
 	\langle \text{variable} \rangle \Coloneqq & \: \text{ID} \\
 	\langle \text{literal} \rangle \Coloneqq & \: \text{NUM} \: | \: \text{{\ts}ID} \\
-	op_{1} \Coloneqq & \: \text{num?} \\
 	op_{2} \Coloneqq & \: \text{and} \: | \: \text{or} \: | \: - \: | \: + \: | \: * \: | \: < \: | \: \text{eq?}
 \end{align*}
 \caption{Syntax of \mevl which gets compiled into SECD instructions for interpretation by the SECD machine}
 \label{fig:mevl_syntax}
 \end{figure}
 
-\mevl supports the traditional functional features such as recursion, first-class functions, currying but also LISP-like quotation. We implement the language as a case-based interpreter again shown in APPENDIX.
+\mevl supports the traditional functional features such as recursion, first-class functions, currying but also LISP-like quotation. We implement the language as a case-based interpreter shown in figure \ref{lst:mevl}. Note that to reduce complexity in our implementation we define our interpreter within a Scala string. Line \ref{mline:mevl_scala_assign} starts the definition of a function, \texttt{meta\_eval}, that allows us to inject a string representing the \mevl program and another representing the implementation of a \textbf{lift} operator. This mimics the polymorphic \textbf{maybe-lift} we define in \mslang. We demonstrate examples of running the interpreter on our staged virtual machine in section \ref{sec:experiments}.
 
-We demonstrate examples of running the interpreter on our staged virtual machine in section \ref{sec:experiments}. Our study is also concerned with the process of staging interpreters at varying levels in the tower and we thus enumerate the steps we took to stage \mevl. Once we are able to specialize with respect to this user-most evaluator we can start investigating the effect of collapsing our tower in various configurations on the generated code.
+\begin{figure}[ht!]
+\centering
+\begin{minted}[escapeinside=||,linenos]{scala}
+def meta_eval(program: String, lift: String = "(lambda (x) x)") =  |\label{mline:mevl_scala_assign}| s|"|
+    (letrec (eval) ((lambda (exp env)
+        (if (sym? exp)
+            (env exp)
+        (if (num? exp)
+            (|\colorbox{green}{\$lift}| exp) |\label{mline:mevl_lift_num}|
+        (if (eq? (car exp) '+)
+            (+ (eval (cadr exp) env) (eval (caddr exp) env))
+        ...
+        ...
+        (if (eq? (car exp) 'lambda)
+            (|\colorbox{green}{\$lift}| (lambda (x) |\label{mline:mevl_lift_lam}|
+                (eval (caddr exp)
+                    (lambda (y) (if (eq? y (car (cadr exp)))
+                                        x
+                                        (env y))))))
+                    ((eval (car exp) env) (eval (cadr exp) env))))))))))))))
+        (eval (quote |\$|program) '())) |\label{mline:mevl_quote_input}|
+\end{minted}
+\caption{Staged interpreter for \mevl}
+\label{lst:mevl}
+\end{figure}
 
-%LIFT INJECTED INTO INTERPRETER
-%HOW INTERPRETER WILL GET USED
-%WITHOUT LIFTING CODE SNIPPET=>ACHIEVE FIRST EVIDENCE  OF COLLAPSING=>NEED LIFT
+%we define a polymorphic lift again which is injected as a string into the definition of meta-eval
+%lift at literal and closure
+Our study is also concerned with the process of staging interpreters at varying levels in the tower and we thus enumerate the steps we took to stage \mevl. Once we are able to specialize with respect to this user-most evaluator we can start investigating the effect of collapsing our tower in various configurations on the generated code.
 
-Staging the \mevl interpreter is performed just as in Pink \cite{amin2017collapsing} by lifting all literals, symbols and closures returned by the interpreter and let \mslang's evaluator generate code of operations performed on the lifted values. The main caveat unique to our setting is a consequence of heterogeneity: \mevl does not have access to a builtin \textit{lift} operator. This poses the crucial question of how one can propagate the concept of lifting expressions through levels of the tower without having to expose it at all levels. We take the route of making a \textit{lift} operator available to the levels above the SECD machine which requires the implementation of a new SECD \textbf{LIFT} instruction.
+Staging the \mevl interpreter is performed just as in Pink \cite{amin2017collapsing} by lifting all literals and closures returned by the interpreter and let \mslang's evaluator generate code of operations performed on the lifted values. The main caveat unique to \mevl's interpreter is a consequence of heterogeneity: \mevl does not have access to a builtin \textit{lift} operator. This poses the crucial question of how one can propagate the concept of lifting expressions through levels of the tower without having to expose it at all levels. We take the route of making a \textit{lift} operator available to the levels above the SECD machine which requires the implementation of a new SECD \textbf{LIFT} instruction.
 
-CODE SNIPPET OF STAGED VERSION
+The state transitions for the \textbf{LIFT} operation in the staged SECD machine is shown in equation \ref{eq:secd_sem_lift}. The intended use of the instruction is to signal \mslang to lift the top element of the stack. We do this by dispatching to the builtin \textit{lift} operator provided by the LISP front-end to \mslang. Thus, \mint{lisp}|LDC 10 LIFT STOP| would generate \mslang code representing the constant 10. The other two cases that our \textbf{LIFT} semantics permit are regular functions constructed via \textbf{LDF} and closures set up by \textbf{RAP}.
+%If we \textbf{LIFT} a regular function we want to (denoted \textit{lambda?} in the transition rules) we want to reconstruct
 
-% TODO: describe op_1 and op_2 and give description of <program> ::= and description of <variable> ::=
+Behind the apparent complexity again lies the same recipe for staging an interpreter as we identified before. First we make sure to lift the top of the stack if it is 
+\quickwordcount{lit_review} (out of 15000)
 
 %TODO: show generated code
 %TODO: mention staging of meta-eval, further changes to compiler/SECD machine and effects on generated code
 %TODO: show or speculate how ths trend continues for staging even further levels
 
-\section{Collapsing the Tower}
+\section{Collapsing the Tower}\label{sec:collapsing}
 HOW ARE USER-MOST INTERPRETERS STAGED=>NEED TO EXPOSE LIFT
 
 \subsection{String Matcher}
@@ -826,7 +879,7 @@ Technical difficulties: implementation of letrec/multi-arg lambdas, implementati
 
 A partial evaluator is referred to as \textit{strong} if, when the result of partially evaluating to an interpreter with respect to a target program yields the target proram as output. This is called Jones' optimality directly implies the removal of a layer of interpretation. Our experiments show that depending on which level of a tower we apply our partial evaluator on we can have this strong property of partial evaluators hold. When staging the user-most interpreter we are able to generate ANF code that is equivalent to the subject program the user wrote. If we stage at the level of the SECD machine we generate code that resembles some the structure of the SECD machine and are not able to get completely rid of the stack-based operations of the SECD machine.
 
-\section{Conclusion}
+\section{Conclusion}\label{sec:conclusion}
 %Partial evaluation is a conceptually powerful technique and its potential applications go far beyond what the largest case studies have shown. The idea of specialization is not limited to improving performance of language interpreters but removing generality imposed by generic interfaces. This extends to programming languages, systems and even hardware design.
 
 Demonstrated a recipe for constructing heterogeneous towers
@@ -855,7 +908,7 @@ A key strategy in our methodology for collapsing towers of interpreters is the e
 The lower in the tower one stages the more noise the generated code outputs and traces of the structure of the underlying machine are noticeable although reducing further would require changing its semantics which is what staging at upper levels essentially does
 Main challenge in collapsing in presence of heterogeneity is the propagating of the \textit{lift} operator throughout each level. "lifting of closures particularly needs to be rewritten at every level which would make applying our methodology to real-world towers infeasible.
 
-\section{Future Work}
+\section{Future Work}\label{sec:future}
 Future work:
 abstract machine for partial evaluation? multi-level language abstract machine
 

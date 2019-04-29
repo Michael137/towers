@@ -29,6 +29,6 @@
 \contentsline {section}{\numberline {8}Collapsing the Tower}{21}{section.8}
 \contentsline {subsection}{\numberline {8.1}String Matcher}{21}{subsection.8.1}
 \contentsline {subsection}{\numberline {8.2}Experiments}{21}{subsection.8.2}
-\contentsline {subsection}{\numberline {8.3}Benchmarks}{21}{subsection.8.3}
-\contentsline {section}{\numberline {9}Conclusion}{22}{section.9}
+\contentsline {subsection}{\numberline {8.3}Benchmarks}{22}{subsection.8.3}
+\contentsline {section}{\numberline {9}Conclusion}{23}{section.9}
 \contentsline {section}{\numberline {10}Future Work}{23}{section.10}

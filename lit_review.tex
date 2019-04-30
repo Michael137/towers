@@ -558,7 +558,7 @@ Now that we clarified how static and dynamic values are classified in our SECD m
 \subsubsection{The Interpreter}\label{subsec:secd_interp}
 \begin{figure}[ht]
 \centering
-\begin{minted}[escapeinside=||,linenos]{lisp}
+\begin{minted}[fontsize=\small,escapeinside=||,linenos]{lisp}
 (let machine (lambda _ stack (lambda _ dump (lambda _ control (lambda _ environment
     (if (eq? 'LDC (car control))
         (((((machine (cons (cadr control) stack)) dump) (cdr control)) environment)
@@ -582,7 +582,7 @@ Similar to how the Pink interpreter is staged \cite{amin2017collapsing} we annot
 
 \begin{figure}[ht]
 \centering
-\begin{minted}[escapeinside=||,linenos]{lisp}
+\begin{minted}[escapeinside=||,linenos,fontsize=\footnotesize]{lisp}
 (let machine (lambda _ stack (lambda _ dump (lambda _ control (lambda _ environment
     (if (eq? 'LDC (car control))
         (((((machine (cons |\colorbox{green}{(maybe-lift }|(cadr control)|\colorbox{green}{)}| stack)) dump) (cdr control)) environment)
@@ -623,7 +623,7 @@ Another issue we dealt with in the process of writing the staged SECD interprete
 We now provide a substantial redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in-tact in order to allow SECD style recursive function calls without the need for mutable variables and more crucially enable their partial evaluation. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level, perform residualization on the closure and distinguish between returning from a regular as opposed to recursive function to ensure termination of our specializer. We demonstrate the issue of partially evaluating a recursive call in the standard SECD semantics on the example in figure \ref{lst:secd_recursion_ex1} which shows a recursive function that decrements a user provided number down to zero.
 
 \begin{figure}[ht]
-\begin{minted}[escapeinside=||,linenos]{lisp}
+\begin{minted}[escapeinside=||,linenos,fontsize=\footnotesize]{lisp}
 DUM NIL LDF ;|\small{Definition of recursive function starts here}\label{mline:rec_ex1_rec_fn}|
     (LD (1 1)
      LDC 0 EQ ;|\small{counter == 0?}\label{mline:rec_ex1_base_chk}|
@@ -641,7 +641,7 @@ DUM NIL LDF ;|\small{Definition of recursive function starts here}\label{mline:r
 Were we to simply reduce this program by evaluating the machine we would hit non-termination of our PE. Our exit out of the recursive function (defined on line \ref{mline:rec_ex1_rec_fn}) occurs on line \ref{mline:rec_ex1_base_exit} but is guarded by a conditional check on line \ref{mline:rec_ex1_base_chk}. This conditional compares a dynamic value (\texttt{LD (1 1)}) with a constant 0. By virtue of congruence the 0 and the whole if-statement are classified as dynamic. However, for TDPE this dynamic check does not terminate the PE but instead attempts to reduce both branches of the statement. Since both branches are simply a recursive call of the step function in the actual machine we hit this choice again repeatedly without stopping because we have no way of signalling to stop partially evaluating. Figure \ref{lst:secd_recursion_machine_ex1} highlights this in the internals of the VM.
 
 \begin{figure}[ht!]
-\begin{minted}[escapeinside=||,linenos]{lisp}
+\begin{minted}[escapeinside=||,linenos,fontsize=\footnotesize]{lisp}
 (if (eq? 'SEL (car control))
   |\colorbox{green}{(if (car stack)}| ;Do not know the result because value on stack is dynamic
     ;Make another step in machine. Will eventually hit this condition again
@@ -800,7 +800,7 @@ Figure \ref{lst:secd_fac_lisp} shows a program to compute factorial numbers recu
     \end{subfigure}%
     \begin{subfigure}{.5\linewidth}
          \centering
-         \begin{minted}{lisp}
+         \begin{minted}[fontsize=\footnotesize]{lisp}
 DUM NIL LDF
     (LDC 0 LD (1 1) EQ SEL
         (LD (1 2) JOIN)
@@ -1006,7 +1006,7 @@ Through the addition of a \textit{lift} built-in into \secdlisp{} we can now res
 
 \begin{figure}[htp!]
 \centering
-         \begin{minted}[escapeinside=||]{lisp}
+         \begin{minted}[escapeinside=||,fontsize=\footnotesize]{lisp}
 DUM NIL LDF
     (LD (1 1) SYM? SEL |\textcolor{red}{<=== \mevl{} Dispatch Logic}|
          (NIL LD (1 1) CONS LD (1 2) AP JOIN )

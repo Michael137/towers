@@ -1,34 +1,35 @@
-\contentsline {section}{\numberline {1}Introduction}{2}{section.1}
-\contentsline {section}{\numberline {2}Background}{4}{section.2}
-\contentsline {subsection}{\numberline {2.1}What are Interpreters?}{4}{subsection.2.1}
-\contentsline {subsection}{\numberline {2.2}Type-Directed Partial Evluation (TDPE)}{4}{subsection.2.2}
-\contentsline {subsection}{\numberline {2.3}Staging}{4}{subsection.2.3}
-\contentsline {subsection}{\numberline {2.4}Abstract Machines}{5}{subsection.2.4}
-\contentsline {subsection}{\numberline {2.5}Definitional Interpreter}{5}{subsection.2.5}
-\contentsline {subsection}{\numberline {2.6}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$ Overview}{5}{subsection.2.6}
-\contentsline {subsection}{\numberline {2.7}Parallels To Towers In the Wild}{6}{subsection.2.7}
-\contentsline {subsubsection}{\numberline {2.7.1}Comparison to Other Partial Evaluators}{6}{subsubsection.2.7.1}
-\contentsline {subsection}{\numberline {2.8}Reflective Towers}{6}{subsection.2.8}
-\contentsline {subsection}{\numberline {2.9}Collapsing Towers}{7}{subsection.2.9}
-\contentsline {subsubsection}{\numberline {2.9.1}Compiling Reflective Languages}{7}{subsubsection.2.9.1}
-\contentsline {subsubsection}{\numberline {2.9.2}Examples}{7}{subsubsection.2.9.2}
-\contentsline {subsection}{\numberline {2.10}Heterogeneity}{8}{subsection.2.10}
-\contentsline {subsubsection}{\numberline {2.10.1}Absence of: Meta-circularity}{8}{subsubsection.2.10.1}
-\contentsline {subsubsection}{\numberline {2.10.2}Absence of: Reflectivity}{8}{subsubsection.2.10.2}
-\contentsline {subsubsection}{\numberline {2.10.3}Mixed Language Systems}{9}{subsubsection.2.10.3}
-\contentsline {section}{\numberline {3}Problems}{9}{section.3}
-\contentsline {section}{\numberline {4}Why do we want to collapse towers?}{10}{section.4}
-\contentsline {section}{\numberline {5}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{10}{section.5}
-\contentsline {subsection}{\numberline {5.1}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{11}{subsection.5.1}
-\contentsline {section}{\numberline {6}Level 2: SECD}{11}{section.6}
-\contentsline {subsection}{\numberline {6.1}Staging a SECD Machine}{12}{subsection.6.1}
-\contentsline {subsubsection}{\numberline {6.1.1}The Interpreter}{12}{subsubsection.6.1.1}
-\contentsline {subsubsection}{\numberline {6.1.2}Tying the Knot}{15}{subsubsection.6.1.2}
-\contentsline {subsection}{\numberline {6.2}SECD Compiler}{17}{subsection.6.2}
-\contentsline {section}{\numberline {7}Level 3: Meta-Eval}{19}{section.7}
-\contentsline {section}{\numberline {8}Collapsing the Tower}{21}{section.8}
-\contentsline {subsection}{\numberline {8.1}String Matcher}{21}{subsection.8.1}
-\contentsline {subsection}{\numberline {8.2}Experiments}{21}{subsection.8.2}
-\contentsline {subsection}{\numberline {8.3}Benchmarks}{22}{subsection.8.3}
-\contentsline {section}{\numberline {9}Conclusion}{23}{section.9}
-\contentsline {section}{\numberline {10}Future Work}{23}{section.10}
+\contentsline {section}{\numberline {1}Introduction}{1}{section.0.1}
+\contentsline {section}{\numberline {2}Background}{4}{section.0.2}
+\contentsline {subsection}{\numberline {2.1}What are Interpreters?}{4}{subsection.0.2.1}
+\contentsline {subsection}{\numberline {2.2}Type-Directed Partial Evluation (TDPE)}{4}{subsection.0.2.2}
+\contentsline {subsection}{\numberline {2.3}Staging}{6}{subsection.0.2.3}
+\contentsline {subsection}{\numberline {2.4}Abstract Machines}{6}{subsection.0.2.4}
+\contentsline {subsection}{\numberline {2.5}Definitional Interpreter}{6}{subsection.0.2.5}
+\contentsline {subsection}{\numberline {2.6}$\lambda _{\delimiter "3222378 \delimiter "3223379 }$ Overview}{6}{subsection.0.2.6}
+\contentsline {subsection}{\numberline {2.7}Parallels To Towers In the Wild}{8}{subsection.0.2.7}
+\contentsline {subsubsection}{\numberline {2.7.1}Comparison to Other Partial Evaluators}{8}{subsubsection.0.2.7.1}
+\contentsline {subsection}{\numberline {2.8}Reflective Towers}{8}{subsection.0.2.8}
+\contentsline {subsection}{\numberline {2.9}Collapsing Towers}{10}{subsection.0.2.9}
+\contentsline {subsubsection}{\numberline {2.9.1}Compiling Reflective Languages}{10}{subsubsection.0.2.9.1}
+\contentsline {subsubsection}{\numberline {2.9.2}Examples}{11}{subsubsection.0.2.9.2}
+\contentsline {subsection}{\numberline {2.10}Heterogeneity}{11}{subsection.0.2.10}
+\contentsline {subsubsection}{\numberline {2.10.1}Absence of: Meta-circularity}{12}{subsubsection.0.2.10.1}
+\contentsline {subsubsection}{\numberline {2.10.2}Absence of: Reflectivity}{12}{subsubsection.0.2.10.2}
+\contentsline {subsubsection}{\numberline {2.10.3}Mixed Language Systems}{13}{subsubsection.0.2.10.3}
+\contentsline {section}{\numberline {3}Problems}{14}{section.0.3}
+\contentsline {subsection}{\numberline {3.1}Why do we want to collapse towers?}{15}{subsection.0.3.1}
+\contentsline {section}{\numberline {4}Level 1: $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{16}{section.0.4}
+\contentsline {subsection}{\numberline {4.1}Changes to $\lambda _{\delimiter "3222378 \delimiter "3223379 }$}{16}{subsection.0.4.1}
+\contentsline {section}{\numberline {5}Level 2: SECD}{17}{section.0.5}
+\contentsline {subsection}{\numberline {5.1}Staging a SECD Machine}{18}{subsection.0.5.1}
+\contentsline {subsubsection}{\numberline {5.1.1}The Interpreter}{20}{subsubsection.0.5.1.1}
+\contentsline {subsubsection}{\numberline {5.1.2}Tying the Knot}{23}{subsubsection.0.5.1.2}
+\contentsline {subsection}{\numberline {5.2}SECD Compiler}{27}{subsection.0.5.2}
+\contentsline {subsection}{\numberline {5.3}Example}{29}{subsection.0.5.3}
+\contentsline {section}{\numberline {6}Level 3: Meta-Eval}{29}{section.0.6}
+\contentsline {subsection}{\numberline {6.1}Staging $M_{e}$ and Collapsing the Tower}{32}{subsection.0.6.1}
+\contentsline {subsection}{\numberline {6.2}String Matcher}{36}{subsection.0.6.2}
+\contentsline {subsection}{\numberline {6.3}Experiments}{36}{subsection.0.6.3}
+\contentsline {subsection}{\numberline {6.4}Benchmarks}{38}{subsection.0.6.4}
+\contentsline {section}{\numberline {7}Conclusion}{39}{section.0.7}
+\contentsline {section}{\numberline {8}Future Work}{41}{section.0.8}

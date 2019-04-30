@@ -1,8 +1,12 @@
 %\documentclass[fleqn]{article}
-\documentclass{article}
-\title{Collapsing Heterogeneous Towers of Interpreters}
-\author{Michael Buch}
-\date{\today}
+\documentclass[a4paper,12pt,twoside,openright]{report}
+\def\authorname{Michael Buch\xspace}
+\def\authorcollege{Queens' College\xspace}
+\def\authoremail{mb2244@cam.ac.uk}
+\def\dissertationtitle{Collapsing heterogeneous towers of evaluators}
+\def\wordcount{0}
+
+\usepackage{epsfig,parskip,tabularx,xspace}
 
 \usepackage[inline]{enumitem} % inline numbered lists
 \usepackage[left=2cm,right=2cm]{geometry}
@@ -12,6 +16,7 @@
 \usepackage{amssymb}
 \usepackage[tdiagram]{semantic}
 \usepackage{amsthm}
+\usepackage{setspace}
 \usepackage{textcomp}
 \usepackage{txfonts}
 %\usepackage{tikz}
@@ -68,30 +73,44 @@
   \input{#1-chars.sum} characters (not including spaces)%
 }
 
+% Section style
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesection.\arabic{subsection}.\arabic{subsubsection}}
+
 \begin{document}
-\maketitle
-\frenchspacing
+\pagestyle{empty}
+\singlespacing
 
-%%TC:ignore
-\quickwordcount{lit_review} (out of 15000)
-%\quickcharcount{lit_review}
-%\detailtexcount{lit_review}
-%%TC:endignore
+\input{titlepage}
+\onehalfspacing
+\input{declaration}
+\singlespacing
+\input{abstract}
 
+\pagenumbering{roman}
+\setcounter{page}{0}
+\pagestyle{plain}
 \tableofcontents
+\listoffigures
+\listoftables
 
-\begin{abstract}
-Intuitively towers of interpreters are a program architecture by which sequences of interpreters interpret each other and a user program is evaluated at the end of this chain. While one can imagine such
-construct in everyday applications, prior research made use of towers of interpreters as a foundation to model reflection. As such, towers of interpreters in literature are synonymous with reflective towers and provide a tractable method with which to reason about reflection and design reflective languages. As a result, the assumptions and constraints that govern tower models make them unapplicable to practical or non-functional
-settings. Prior formalizations of reflective towers have identified partial evaluation and reflection to harmonize in the development of such towers. We lift several restrictions of reflective towers including reflectivity, meta-circularity and homogeneity of data representation and then construct non-reflective towers
-of interpreters to explore how partial evaluation techniques can be used to effectively remove levels of interpretation within such systems. %We then extend formalisms to such setting and go on to generalize previous techniques on partially evaluating towers of interpreters.
-\end{abstract}
+\onehalfspacing
+\pagenumbering{arabic}
 
 %TODO redraw tombstone diagarm using semantic pkg
 %\begin{picture}(220,75)(0,-35)
 %\put(10,0){\interpreter{S,L’}}
 %\put(110,0){\program{P,\compiler{C,\machine{M},\program{P,M}}}}
 %\end{picture}
+
+%%TC:ignore
+\quickwordcount{lit_review} (out of 15000)
+%\quickcharcount{lit_review}
+%\detailtexcount{lit_review}
+%%TC:endignore
 
 \section{Introduction}
 Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an adjacent interpreter in the tower. On one hand, it has been used in the formalization of reflection in LISP and serves as a model in the development of reflective languages. On the other hand, towers of interpreters are a frequent occurrence in application development. Examples include interpreters for embedded domain-specific languages (DSLs) or string parsers embedded in a language both of which form towers of two levels. Advances in virtualization technology has driven increasing interest in software emulation. Viewing emulation as a form of interpretation we can view interpreters running on virtual hardware as towers of interpreters as well.
@@ -157,13 +176,13 @@ Partial evaluators can be thought of as lightweight optimizing compilers targeti
 \begin{figure}[t]
 	\centering
 	\includegraphics[scale=2]{tombstone_tower.png}
+	\caption{A tombstone diagram representation of our framework}
 	\label{fig:tombstone}
-	\caption{A tombstone digram representation of our framework}
 \end{figure}
 
 The aim of our study is to explore the process of turning towers of interpreters into compilers by staging appropriate interpreters and provide a launching point for further research into the optimization of mixed-language systems using partial evaluation.
 
-In section \ref{sec:background} we explain potentially useful background information that cover the fundamental topics we base our framework and experiments starting from the link between interpreters and compilers up to how previous work compiled reflective towers. Section \ref{sec:mslang} provides an overview of the partial evaluation framework we base our study on called Pink \cite{amin2017collapsing}. We systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse in sections \ref{sec:secd} through \ref{sec:collapsing}. Each of these sections discusses the steps we took to create a level in the tower of interpreters as shown in figure \ref{fig:tombstone}. We conclude with an evaluation of experimental results followed by a discussion of potential future work in sections \ref{sec:conclusion} and \ref{sec:future} respectively.
+In section \ref{sec:background} we explain potentially useful background information that cover the fundamental topics we base our framework and experiments starting from the link between interpreters and compilers up to how previous work compiled reflective towers. Section \ref{sec:mslang} provides an overview of the partial evaluation framework we base our study on called Pink \cite{amin2017collapsing}. We systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse in sections \ref{sec:secd} through \ref{sec:experiments}. Each of these sections discusses the steps we took to create a level in the tower of interpreters as shown in figure \ref{fig:tombstone}. We conclude with an evaluation of experimental results followed by a discussion of potential future work in sections \ref{sec:conclusion} and \ref{sec:future} respectively.
 
 \section{Background}\label{sec:background}
 \subsection{What are Interpreters?}
@@ -444,33 +463,37 @@ SHOW OPERATIONAL SEMANTICS
 % Power of a dedicated "lift" instruction -> turns interpreter into compiler with ease and can, as we demonstrated, even remove a translation layer (metaeval -> SECD translator)
 
 \section{Level 2: SECD}\label{sec:secd}
-The SECD machine due to Landin \cite{landin1964mechanical} is a mature stack-based abstract machine initially developed in order to provide a machine model capable of interpreting LISP programs. The full small-step semantics of the machine are given in APPENDIX and figures FIGURES demonstrate examples of how the machine operates. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a STOP or WRITEC instruction, at which point the machine returns all values or a single value from the S-register respectively.
+%The full small-step semantics of the machine are given in APPENDIX and figures FIGURES demonstrate examples of how the machine operates.
+The SECD machine due to Landin \cite{landin1964mechanical} is a well-studied stack-based abstract machine initially developed in order to provide a machine model capable of interpreting LISP programs. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a STOP or WRITEC instruction, at which point the machine returns all values or a single value from the S-register respectively.
 
 Our reasoning behind choosing the SECD abstract machine as one of our levels is three-fold:
 \begin{enumerate}
-	\item \textbf{Maturity}: SECD was the first LISP machine of its kind developed by Landin in DATE. Since then it has thoroughly been revised and verified CITE and well-documented making it a strong foundation to build on.
-	\item \textbf{Large Semantic Gap}: a central part of our definition of heterogeneity is that languages that adjacent interpreters interpret are different from each other. ELABORATE
-	\item \textbf{Extensible}: Extensions to the machine, many of which are described by Kogge \cite{kogge1990architecture}, have been developed to support richer features then the ones available in its most basic form.
+	\item \textbf{Maturity}: SECD was the first abstract machine of its kind developed by Landin in 1964 \cite{landin1964mechanical}. Since then it has thoroughly been studied and documented \cite{danvy2004rational,ramsdell1999tail,henderson1980functional} making it a strong foundation to build on.
+	%SECD doesn't have first-class functions
+	\item \textbf{Large Semantic Gap}: A central part of our definition of heterogeneity is that languages that adjacent interpreters interpret are significantly different from each other. In the case of SECD's operational semantics, the representation of program constructs such as closures and also the use of stacks to perform all computation deviates from the semantics of \mslang{} and it's LISP front-end such that SECD satisfies this property well.
+	\item \textbf{Extensibility}: Extensions to the machine, many of which are described by Kogge \cite{kogge1990architecture}, have been developed to support richer features then the ones available in its most basic form including parallel computation, lazy evaluation and call/cc semantics.
 \end{enumerate}
-An additional benefit of using a LISP machine is that the \mslang framework we use as our partial evaluator also features a LISP front-end and supports all the list-processing primitives that it's inventors described the operational semantics with and aided the development complexity. Our first step in constructing the heterogeneous tower is implementing the standard SECD machine (described by the operational semantics in APPENDIX) using \mslang's LISP front-end. We model the machine through a case-based evaluator with a step function at its core that advances the state of the machine until a STOP or WRITEC instruction is encountered.
+An additional benefit of using a LISP machine is that the \mslang framework we use as our partial evaluator also features a LISP front-end and supports all the list-processing primitives that it's inventors described the operational semantics with and aided the development complexity. Our first step in constructing the heterogeneous tower is implementing the standard SECD machine (described by the small-step semantics and compiler from Kogge's book on symbolic computation \cite{kogge1990architecture}) using \mslang's LISP front-end. We model the machine through a case-based evaluator with a step function at its core that advances the state of the machine until a \textbf{STOP} or \textbf{WRITEC} instruction is encountered.
 
 \subsection{Staging a SECD Machine}\label{subsec:secd_staged}
+%https://www.researchgate.net/publication/220989730_Staging_Transformations_for_Abstract_Machines
+%Diffs to above: use actual SECD machine, show implementation on the compiler and semantics described in Kogge, approach it from a practical (?) point of view because we need a level with a semantic gap, use partial evaluation instead of pass separation (?), present issues in the process of using TDPE on a stack-based machine, show a general recipe for dealing with non-termination and recursion in SECD-like machine
 Since a part of our experiments of collapsing towers is concerned with the effect of staging at different levels in the tower, we want to design the SECD machine to aid this process. This poses a question of what it means for an abstract machine to be staged.
 
 From the architecture of a SECD machine the intended place for free variables to live in is the environment register. A simple example in terms of SECD instructions is as follows:
 
-NIL LDC 10 CONS LDF (LD (1 1) LD (2 1) ADD RTN) AP STOP
+\mint{lisp}|   NIL LDC 10 CONS LDF (LD (1 1) LD (2 1) ADD RTN) AP STOP|
 
 Here we load only a single value of 10 into the environment and omit the second argument that the LDF expects and uses inside its body. Instead it simply loads at a location not yet available and trusts the user to provide the missing value at run-time. Rewriting the above in LISP-like syntax we have the following:
 
-$\lambda x.(x + y)@10$
+\mint{lisp}|    ((lambda (x) (x + y)) 10)|
 
-where $f@x$ denotes the application of function $f$ to an expression $x$. By definition, a staged evaluator should have a means of generating some form of intermediate representation, for example residual code, and evaluate in multiple stages. In our case we split the evaluation of the SECD machine into reduction of static values and residualization for dynamic values. We make use of the notion of \textit{stage-polymorphism} introduced by Offenbeck et al. \cite{ofenbeck2017staging} to support two modes of operation:
+where \texttt{y} is a free variable. By definition, a staged evaluator should have a means of generating some form of intermediate representation, for example residual code, and evaluate in multiple stages. In our case we split the evaluation of the SECD machine into reduction of static values and residualization for dynamic values. We make use of the notion of \textit{stage-polymorphism} introduced by Offenbeck et al. \cite{ofenbeck2017staging} to support two modes of operation:
 \begin{enumerate*}[label=(\arabic*)]
 	\item regular evaluation
 	\item generation of \mslang code and its subsequent execution
 \end{enumerate*}.
-\textit{Stage-polymorphism} allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in figure \ref{lst:stage_poly_ex}.
+Stage-polymorphism allows abstraction over how many stages an evaluation is performed with. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in figure \ref{lst:stage_poly_ex}.
 
 \begin{figure}[ht]
 \centering
@@ -632,9 +655,20 @@ Were we to simply reduce this program by evaluating the machine we would hit non
 
 Instead of evaluating the recursive call we want to instead generate the call and function in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are to-be-called recursively. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a ``set-car!'' in the underlying language.
 
-%TODO revisit AP semantics
+%TODO revisit AP/RTN semantics
 %TODO revisit recEnv in RAP rec assignment. should be (recOps recEnv) probably
 %TODO comment on mem in RAP; its used as state bookkeeping for later reconstruction of closure in LIFT
+% Actual RTN semantics:
+%\text{v.s e (} \mathbf{RTN}\text{.c) state.d fns} & \longrightarrow \:
+%		 && \text{(lift-all v)} 									\quad	\text{if d-register is %tagged with {\ts}ret}	\\
+%		 & && \text{($\lambda$x.((car s{\ts}) (cons (car x) (cddr s{\ts}))) (cddr s1)	} \nonumber %\\
+%		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
+%		 & && \qquad\text{where s1} := \text{v@\_} \nonumber \\
+% 		 & && \text{(v.s{\ts})  e{\ts}  c{\ts}  d{\ts}  fns{\ts}} \nonumber \\
+% 		 & && \qquad\text{otherwise} \nonumber \\
+% 		 & && \qquad\text{where state} := \text{s{\ts} e{\ts} c{\ts} d{\ts} fns{\ts}}
+\begingroup
+\allowdisplaybreaks
 \begin{figure}[ht!]
 \centering
 \begin{alignat}{5}
@@ -675,6 +709,7 @@ Instead of evaluating the recursive call we want to instead generate the call an
 \caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
 \label{fig:secd_semantics_noset}
 \end{figure}
+\endgroup
 
 %TODO essence of new semantics
 Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to a function that accepts an environment and upon invocation takes a step in the abstract machine with the instructions defined by \textbf{LDF} in control-register, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which showed that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts. Note also that we add a new functions register, which we refer to as the \textbf{fns-register} or simply \textbf{fns} which is responsible for holding the recursive instructions of a \textbf{RAP} call.
@@ -683,8 +718,7 @@ In equation \ref{eq:secd_sem_rap} the \textbf{RAP} instruction still expects two
 
 In the traditional SECD machine both the recursive and the calling function are kept in the environment and then loaded on the stack using \textbf{LD}, subsequently called using \textbf{AP}. However, for simplicity we keep recursive functions on the fns-register. Thus we introduce a new \textbf{LDR} instruction that returns the contents of the fns-register by index, just as \textbf{LD} does for the E-register. However, we wrap the action of finding a function in fns in a thunk to be able to generate code for this operation during partial evaluation.
 
-%TODO
-The \textbf{RTN} instruction works on the state set up by the modified instructions above to decide the SECD evaluators behaviour upon returning from a SECD function.
+The \textbf{RTN} instruction works on the state set up by the modified instructions above to decide the interpreter's behaviour upon returning from a SECD function. In the original semantics of SECD, \textbf{RTN} would reinstall the state of all registers from the dump and add the top most value of the current stack-register back onto the restored stack-register. This modelled the return from a function application. As we previously showed, taking another step in the machine when specializing a recursive function will lead to non-termination of our specializer. Thus, we simply stop evaluation when returning from a function by tagging the register with a \textit{{\ts}ret} symbol and returning the top-most value on the stack to the call site of a lambda. This works because function definitions reside in lambdas in the interpreter now and SECD function application is lambda invocation. The last case we are concerned with is the currying of SECD functions. This occurs when we invoke a \textbf{RTN} immediately after an \textbf{LDR} which loaded a thunk into the return location on the stack. To properly return a lambda we unpack the closure from \textbf{LDR}'s thunk, construct a \textbf{LDF}-style closure, lift and then return it.
 
 %TODO explain AP
 
@@ -709,16 +743,32 @@ DUM NIL LDF
 The above changes to the machine show that to permit partial evaluation of the original SECD semantics, an intrusive set of changes which necessitate knowledge of the inner workings of the machine are required. The complexity partially arises from the fact that the stack-based semantics do not lend themselves well to TDPE through \mslang. We have to convert representations of program constructs, particularly closures, from how SECD stores them to what the underlying PE expects and is able to lift. Since \mslang is built around lifting closures, literals and cons-pairs we have to wrap function definitions in thunks which complicates calling conventions within the machine. Additionally, deciding on and implementing a congruent division for a SECD-style abstract machine, where values can move between a set of stack registers, requires careful bookkeeping of non-recursive versus recursive function applications and online binding-time analysis checks. On one hand, the most efficient code is generated by allowing as much of the register contents to be static. On the other hand, the finer-grained the division the more difficult to reason about and potentially less extensible a division becomes.
 
 \subsection{SECD Compiler}\label{subsec:secd_comp}
-To continue the construction of a tower where each level is performing actual interpretation of the level above we would have to implement an interpreter written in SECD instructions as the next level in the tower. To speed up the development process and aid debuggability we implement compiler that parses a LISP-like language, which we refer to as \secdlisp{}, and generates SECD instructions. It is based on the compiler described by Kogge \cite{kogge1990architecture} though with modifications to support our modified calling conventions and additional registers described in section \ref{ssubsec:knot}.
+To continue the construction of a tower where each level is performing actual interpretation of the level above we would have to implement an interpreter written in SECD instructions as the next level in the tower. To speed up the development process and aid debuggability we implement compiler that parses a LISP-like language, which we refer to as \textit{\secdlisp{}}, and generates SECD instructions. It is based on the compiler described by Kogge \cite{kogge1990architecture} though with modifications (see figure \ref{fig:secd_comp_semantics}) to support our modified calling conventions and additional registers described in section \ref{ssubsec:knot}. Since we hold recursive function definitions in the fns-register we want to index into it instead of the regular environment register that holds variable values. Additionally, we need to make sure our compiler supports passing values from the user through the environment. We keep track of and increment an offset into the E-register during compilation whenever a free variable is detected via an missed look-up in the environment. The \textbf{quote} built-in (equation \ref{eq:secd_comp_sem_quote}) is used to build lists of identifiers from s-expressions. This is useful when we extend the tower in later sections and want to pass \secdlisp{} programs as static data to the machine.
 
-%TODO MODIFICATIONS TO COMPILER
-%Index function: has to account for free variables
-%LDR: is in recursive vs non-recursive function
-% LETREC
+%TODO modification of quote built-in
+\begin{figure}[ht!]
+\centering
+\begin{alignat}{5}
+		\text{Syntax}   & : && \: \text{$\langle$identifier$\rangle$} \\
+		\text{Code}     & : && \: \texttt{(\textbf{LDR} (i, j))} \quad \text{if lookup is in a \textbf{letrec}} \nonumber \\
+		& && \qquad\text{where \texttt{(i,j)} is an index into the \textbf{fns-register}} \nonumber \\
+		& && \: \texttt{(\textbf{LD} (i, j))} \quad\:\: \text{otherwise} \nonumber \\
+		& && \qquad\text{where \texttt{(i,j)} is an index into the \textbf{E-register}} \nonumber \\
+		\nonumber \\%
+		\text{Syntax}   & : && \: \text{(\textbf{lift} $\langle$expr$\rangle$)} \\
+		\text{Code}     & : && \: \text{$\langle$expr$\rangle$ \texttt{LIFT}} \nonumber \\
+		\nonumber \\%
+		\text{Syntax}   & : && \: \text{(\textbf{quote} $\langle$expr$\rangle$)} \label{eq:secd_comp_sem_quote} \\
+		\text{Code}     & : && \: \text{\texttt{LDC} $\langle id_{0} \rangle$ \texttt{LDC} $\langle id_{1} \rangle$ \texttt{CONS ... LDC} $\langle id_{n-1} \rangle$ \texttt{LDC} $\langle id_{n} \rangle$ \texttt{CONS}} \nonumber \\
+		& && \text{where $\langle id_{n} \rangle$ is the nth identifier in the string representing $\langle$expr$\rangle$} \nonumber
+\end{alignat}
+\caption{Modifications to the SECD compiler described by Kogge \cite{kogge1990architecture}}
+\label{fig:secd_comp_semantics}
+\end{figure}
 
-Given a source program in \secdlisp{} we invoke the compiler as shown in figure \ref{lst:secd_comp_ex1}.
+Given a source program in \secdlisp{} we invoke the compiler as shown in figure \ref{lst:secd_comp_ex1}. As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
 
-\begin{figure}[ht]
+\begin{figure}[htp!]
 \centering
 \begin{minted}[escapeinside=||,linenos]{scala}
         val instrs = compile(parseExp(src))
@@ -729,11 +779,9 @@ Given a source program in \secdlisp{} we invoke the compiler as shown in figure 
 \label{lst:secd_comp_ex1}
 \end{figure}
 
-As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
-
 \subsection{Example}
 %SECD front-end on: regular machine, staged machine, smart constructors (?)
-Figure \ref{lst:secd_fib_lisp} shows a program to compute Fibonacci numbers recursively written in our SECD LISP front-end. The program is translated into SECD instructions by our compiler (see section \ref{subsec:secd_comp}) and then input to our staged machine. Figure \ref{lst:secd_fib_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to the modifications to \textbf{RAP}, \textbf{AP} and \textbf{LDF}. The residual program contains two lambdas, one that executes factorial and another that takes input from the user in form of the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of the underlying SECD semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
+Figure \ref{lst:secd_fac_lisp} shows a program to compute factorial numbers recursively written in our SECD LISP front-end. The program is translated into SECD instructions by our compiler (see section \ref{subsec:secd_comp}) and then input to our staged machine. Figure \ref{lst:secd_fac_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to the modifications to \textbf{RAP}, \textbf{AP} and \textbf{LDF}. The residual program contains two lambdas, one that executes factorial and another that takes input from the user in form of the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of the underlying SECD semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
 
 \begin{figure}[htp!]
 \centering
@@ -748,7 +796,7 @@ Figure \ref{lst:secd_fib_lisp} shows a program to compute Fibonacci numbers recu
                 (fact 10 1))
          \end{minted}
          \caption{LISP Front-end}
-         \label{lst:secd_fib_lisp}
+         \label{lst:secd_fac_lisp}
     \end{subfigure}%
     \begin{subfigure}{.5\linewidth}
          \centering
@@ -765,7 +813,7 @@ DUM NIL LDF
         LDR (1 1) AP RTN) RAP STOP
          \end{minted}
     \caption{SECD Instructions}
-    \label{lst:secd_fib_ops}
+    \label{lst:secd_fac_ops}
     \end{subfigure}\\[1ex]
     \par\bigskip
     \begin{subfigure}{\linewidth}
@@ -798,15 +846,13 @@ DUM NIL LDF
     (let x7 (x2 x6) (cons x7 '.)))))))) (x0 '.)) |\label{mline:factorial_input}|
         \end{minted}
         \caption{Prettified Generated Code}
-        \label{lst:secd_fib_ped}
+        \label{lst:secd_fac_ped}
     \end{subfigure}
-\caption{Example Fibonacci}
-\label{lst:secd_fib_all}
+\caption{Example Factorial}
+\label{lst:secd_fac_all}
 \end{figure}
 
 \section{Level 3: Meta-Eval}
-Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} in the sense the toy language is a LISP derivative and \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine. However, we omit a built-in operator such as Mixwell's \textbf{read} that helps identify binding times of a user program and stage our interpreter instead. \mevl also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
-
 \begin{figure}[ht!]
 \begin{align*}
 	\langle \text{program} \rangle \Coloneqq & \: \langle \text{expression} \rangle \\
@@ -827,9 +873,11 @@ Armed with a staged SECD machine and a language to target it with we build to ne
 \label{fig:mevl_syntax}
 \end{figure}
 
+Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} in the sense the toy language is a LISP derivative and \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine. However, we omit a built-in operator such as Mixwell's \textbf{read} that helps identify binding times of a user program and stage our interpreter instead. \mevl also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
+
 \mevl supports the traditional functional features such as recursion, first-class functions, currying but also LISP-like quotation. We implement the language as a case-based interpreter shown in figure \ref{lst:mevl}. Note that to reduce complexity in our implementation we define our interpreter within a Scala string. Line \ref{mline:mevl_scala_assign} starts the definition of a function, \texttt{meta\_eval}, that allows us to inject a string representing the \mevl program and another representing the implementation of a \textbf{lift} operator. This mimics the polymorphic \textbf{maybe-lift} we define in \mslang. We demonstrate examples of running the interpreter on our staged virtual machine in section \ref{sec:experiments}.
 
-\begin{figure}[ht!]
+\begin{figure}[htp!]
 \centering
 \begin{minted}[escapeinside=||,linenos]{scala}
 def meta_eval(program: String, lift: String = "(lambda (x) x)") =  |\label{mline:mevl_scala_assign}| s|"|
@@ -855,18 +903,10 @@ def meta_eval(program: String, lift: String = "(lambda (x) x)") =  |\label{mline
 \label{lst:mevl}
 \end{figure}
 
+Figure \ref{lst:mevl_secd_all} shows the \mevl interpreter running a program computing factorial using the Y-combinator for recursion (figure \ref{lst:mevl_secd_lisp}) on our staged VM. As opposed to producing an optimal residual program we now see the dispatch logic of our \mevl interpreter in the generated code (figure \ref{lst:mevl_secd_ped}). As the programmer we know this control flow can be reduced even further since the \mevl source program is static data.
+
 %we define a polymorphic lift again which is injected as a string into the definition of meta-eval
 %lift at literal and closure
-Our study is also concerned with the process of staging interpreters at varying levels in the tower and we thus enumerate the steps we took to stage \mevl. Once we are able to specialize with respect to this user-most evaluator we can start investigating the effect of collapsing our tower in various configurations on the generated code.
-
-Staging the \mevl interpreter is performed just as in Pink \cite{amin2017collapsing} by lifting all literals and closures returned by the interpreter and let \mslang's evaluator generate code of operations performed on the lifted values. The main caveat unique to \mevl's interpreter is a consequence of heterogeneity: \mevl does not have access to a builtin \textit{lift} operator. This poses the crucial question of how one can propagate the concept of lifting expressions through levels of the tower without having to expose it at all levels. We take the route of making a \textit{lift} operator available to the levels above the SECD machine which requires the implementation of a new SECD \textbf{LIFT} instruction.
-
-The state transitions for the \textbf{LIFT} operation in the staged SECD machine is shown in equation \ref{eq:secd_sem_lift}. The intended use of the instruction is to signal \mslang to lift the top element of the stack. We do this by dispatching to the builtin \textit{lift} operator provided by the LISP front-end to \mslang. Thus, \mint{lisp}|LDC 10 LIFT STOP| would generate \mslang code representing the constant 10. The other two cases that our \textbf{LIFT} semantics permit are regular functions constructed via \textbf{LDF} and closures set up by \textbf{RAP}.
-%If we \textbf{LIFT} a regular function we want to (denoted \textit{lambda?} in the transition rules) we want to reconstruct
-
-Behind the apparent complexity again lies the same recipe for staging an interpreter as we identified before operating on the top most value of the stack. We make sure to lift the operand if it is a number or a string. In the case that the operand is a closure or function we construct, lift and return a new lambda from the state we stored \textbf{fns} and \textbf{dump}. Note the subtle difference in behaviour between when lifting a SECD closure or lambda. The former is defined by \textbf{LDF} or \textbf{RAP} and includes instructions to execute wrapped in a lambda and auxiliary state information such as the environment. In this case we simply construct a lambda that takes an environment and performs a step in the machine with the instructions that were wrapped. A function on the stack only occurs as a result of a call to \textbf{LDR} in which case we unpack the instructions and state, \textit{recOps} and \textit{recEnv} respectively, from the thunk and construct again wrap a call to the \textit{step} function in a lambda.
-
-%The process of implementing the \textbf{LIFT} instruction gives us a glimpse into the issues associated with heterogeneity in towers of interpreters. In our proof-of-concept SECD machine, whose semantics are simpler to reason about than a virtual machine in practice, the complexity in propagating binding time information in the form of \textit{lift} operations arises from the need to adapt representation of closures
 
 %TODO: show generated
 %Meta-eval on regular VM
@@ -897,40 +937,140 @@ Behind the apparent complexity again lies the same recipe for staging an interpr
          \centering
          \begin{minted}{lisp}
  DUM NIL LDF
-         (LD (1 1) SYM? SEL
-                 (NIL LD (1 1) CONS LD (1 2) AP JOIN) (LD (1 1) NUM? SEL
-         (NIL LD (1 1) CONS LDF
-                 (LD (1 1) RTN) AP JOIN) (LDC + LD (1 1) CAR EQ SEL
-         (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
-            CADR CONS LDR (1 1) AP ADD JOIN) (LDC - LD (1 1) CAR EQ SEL
-         (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
-            CADR CONS LDR (1 1) AP SUB JOIN) (LDC * LD (1 1) CAR EQ SEL
-            ...
-            JOIN) JOIN) JOIN) JOIN) RTN) CONS LDF
-            ...
-            LDC 1 CONS LDC n CONS LDC - CONS CONS LDC factorial CONS CONS
-            LDC n CONS LDC * CONS CONS LDC 1 CONS LDC . LDC 0 CONS LDC n CONS
-            LDC eq? CONS CONS LDC if CONS CONS LDC . LDC n CONS CONS LDC lambda
-            ...
-            LDR (1 1) AP RTN ) RAP STOP
+     (LD (1 1) SYM? SEL
+             (NIL LD (1 1) CONS LD (1 2) AP JOIN) (LD (1 1) NUM? SEL
+     (NIL LD (1 1) CONS LDF
+             (LD (1 1) RTN) AP JOIN) (LDC + LD (1 1) CAR EQ SEL
+     (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
+        CADR CONS LDR (1 1) AP ADD JOIN) (LDC - LD (1 1) CAR EQ SEL
+     (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
+        CADR CONS LDR (1 1) AP SUB JOIN) (LDC * LD (1 1) CAR EQ SEL
+        ...
+        JOIN) JOIN) JOIN) JOIN) RTN) CONS LDF
+        ...
+        LDC 1 CONS LDC n CONS LDC - CONS CONS LDC factorial CONS CONS
+        LDC n CONS LDC * CONS CONS LDC 1 CONS LDC . LDC 0 CONS LDC n CONS
+        LDC eq? CONS CONS LDC if CONS CONS LDC . LDC n CONS CONS LDC lambda
+        ...
+        LDR (1 1) AP RTN ) RAP STOP
          \end{minted}
     \caption{SECD Instructions}
     \label{lst:mevl_secd_ops}
     \end{subfigure}
-\caption{Example Fibonacci on \mevl}
+\caption{Example factorial on \mevl}
 \label{lst:mevl_secd_all}
 \end{figure}
 
-Figure \ref{lst:mevl_secd_all} shows the \mevl interpreter running a program computing factorial using the Y-combinator for recursion (figure \ref{lst:mevl_secd_lisp}) on our staged VM. As opposed to producing an optimal residual program we now see the dispatch logic of our \mevl interpreter in the generated code (figure \ref{lst:mevl_secd_ped}). As the programmer we know this control flow can be reduced even further since the \mevl source program is static data.
+\begin{figure}[htp!]
+\centering
+    \begin{minted}[escapeinside=||]{lisp}
+(let x0
+  (lambda f0 x1
+    (let x2
+      (lambda f2 x3
+        (let x4 (car x3)
+        (let x5 (car x4)
+        |\colorbox{green}{(let x6 (sym? x5)}|
+        |\colorbox{green}{(if x6}|
+          ...
+          (let x8 (car x7)
+          |\colorbox{green}{(let x9 (num? x8)}|
+          |\colorbox{green}{(if x9}|
+            ...
+            (let x12 (car x11)
+            |\colorbox{green}{(let x13 (eq? x12 '+)}|
+            |\colorbox{green}{(if x13}|
+              (let x14 (car x3)
+              ...
+              (let x28 (cons x27 x23)
+              (let x29 (f2 x28) (+ x29 x25)))))))))))))))))
+              ...
+              |\colorbox{green}{(let x17 (eq? x16 '-)}|
+              |\colorbox{green}{(if x17}|
+                (let x18 (car x3)
+                ...
+    \end{minted}
+\caption{Generated code running the example in \ref{lst:mevl_secd_all} on a staged SECD machine. Traces of the \mevl's dispatch logic is highlighted in green.}
+\label{lst:mevl_secd_ped}
+\end{figure}
+\pagebreak
 
-%TODO: changes to compiler
+\subsection{Staging \texorpdfstring{\mevl}{Lg} and Collapsing the Tower}
+In an effort to further optimize our generated code from the example in figure \ref{lst:mevl_secd_all} we stage the \mevl interpreter. As indicated by Amin et al. during their demonstration of collapsing towers written in Pink \cite{amin2017collapsing}, staging at the user-most level of a tower of interpreters should yield the most optimal code. In this section we aim to demonstrate that staging at other levels than the top-most interpreter does indeed generate less efficient residual programs.
 
-\subsection{Staging \texorpdfstring{\mevl}{Lg}}
-%TODO: mention staging of meta-eval, further changes to compiler/SECD machine and effects on generated code
-%TODO: show or speculate how ths trend continues for staging even further levels
+Staging the \mevl{} interpreter is performed just as in Pink \cite{amin2017collapsing} by lifting all literals and closures returned by the interpreter and let \mslang's evaluator generate code of operations performed on the lifted values. The main caveat unique to \mevl's interpreter is a consequence of heterogeneity: \mevl{} does not have access to a builtin \textit{lift} operator. This poses the crucial question of how one can propagate the concept of lifting expressions through levels of the tower without having to expose it at all levels. We take the route of making a \textit{lift} operator available to the levels above the SECD machine which requires the implementation of a new SECD \textbf{LIFT} instruction.
 
-\section{Collapsing the Tower}\label{sec:collapsing}
-HOW ARE USER-MOST INTERPRETERS STAGED=>NEED TO EXPOSE LIFT
+The state transitions for the \textbf{LIFT} operation in the staged SECD machine is shown in equation \ref{eq:secd_sem_lift}. The intended use of the instruction is to signal \mslang{} to lift the top element of the stack. We do this by dispatching to the builtin \textit{lift} operator provided by the LISP front-end to \mslang. Thus, \mint{lisp}|   LDC 10 LIFT STOP| would generate \mslang{} code representing the constant 10. The other two cases that our \textbf{LIFT} semantics permit are regular functions constructed via \textbf{LDF} and closures set up by \textbf{RAP}. Behind the apparent complexity again lies the same recipe for staging an interpreter as we identified before but in this case operating on the top most value of the stack. We make sure to lift the operand if it is a number or a string. In the case that the operand is a closure or function we construct, lift and return a new lambda using the state we stored in \textbf{fns} and \textbf{dump}. Note the subtle difference in behaviour between lifting a SECD closure or a lambda. The former is defined by \textbf{LDF} or \textbf{RAP} and includes instructions waiting to be execute wrapped in a lambda and auxiliary state information such as the environment. In this case we simply construct a lambda that takes an environment and performs a step in the machine with the instructions that were wrapped. However, a lambda on the stack only occurs as a result of a call to \textbf{LDR} in which case we unpack the instructions and state from the thunk, \textit{recOps} and \textit{recEnv} respectively, and again wrap a call to the step function in a lambda.
+
+Through the addition of a \textit{lift} built-in into \secdlisp{} we can now residualize the \mevl{} interpreter and run it on our SECD interpreter. The residual program for the factorial example (figure \ref{lst:mevl_secd_all}) is shown in figure \ref{lst:mevl_staged_secd_ped} and the corresponding SECD instructions that \mevl compiled down to in figure \ref{lst:mevl_staged_secd_ops}. The generated SECD instructions are the same as in the unstaged \mevl{} interpreter with the exception of the newly inserted \textbf{LIFT} instructions as we have specified in the interpreter definition. This has the effect that the residual program resembles exactly the \mevl{} definition of our program but now in terms of \mslang{} and all traces of the SECD machine have vanished. This demonstrates that we successfully removed all layers of interpretation between the base evaluator (\mslang{}) and the user-most interpreter (\mevl{}). Comparing this configuration to running our example on the staged machine (and unstaged \mevl{}) we can see that the structure of the generated code resembles the structure of the interpreter that we staged. When staging at the SECD level we could see traces of stack-like operations that to the programmer seemed to be optimizable. When we stage at the \mevl{} layer these operations are gone and we are left with LISP-like semantics of \mevl{}.
+
+\begin{figure}[htp!]
+\centering
+         \begin{minted}[escapeinside=||]{lisp}
+DUM NIL LDF
+    (LD (1 1) SYM? SEL |\textcolor{red}{<=== \mevl{} Dispatch Logic}|
+         (NIL LD (1 1) CONS LD (1 2) AP JOIN )
+    (LD (1 1) NUM? SEL
+        (LD (1 1) |\colorbox{green}{LIFT}| JOIN ) |\textcolor{red}{<=== Lift literals}|
+  ...
+ (LDC letrec LD (1 1) CAR EQ SEL
+     (NIL NIL LDF
+         (LD (2 1) CADR CAR LD (1 1) EQ SEL
+             (LD (12 1) |\colorbox{green}{LIFT}| JOIN) |\textcolor{red}{<=== Lift recursive lambdas}|
+  ...
+  (LDC |lambda| LD (1 1) CAR EQ SEL
+         (LDF (NIL LDF
+             (LD (3 1) CADR CAR LD (1 1) EQ SEL
+                 (LD (2 1) JOIN) (NIL LD (1 1) CONS LD (3 2) AP JOIN) RTN)
+                    CONS LD (2 1) CADDR CONS LDR (1 1) AP RTN) |\colorbox{green}{LIFT}| JOIN) |\textcolor{red}{<=== Lift lambdas}|
+  ...
+         \end{minted}
+\caption{SECD instructions for example an factorial on a staged \mevl interpreter}
+\label{lst:mevl_staged_secd_ops}
+\end{figure}
+
+\begin{figure}[htp!]
+\centering
+     \begin{minted}[escapeinside=||]{lisp}
+(lambda f0 x1
+  (let x2
+    (lambda f2 x3
+      (let x4
+        (lambda f4 x5 |\textcolor{red}{<=== Definition of factorial}|
+          (let x6 (eq? x3 0)
+          (let x7
+            (if f4 1
+              (let x7 (- x3 1)
+              (let x8 (x1 x5)
+              (let x9 (* x3 x6) x7)))) x5))) f2))
+  (let x3
+    (lambda f3 x4 |\textcolor{red}{<=== Definition of Y-combinator}|
+      (let x5
+        (lambda f5 x6
+          (let x7
+            (lambda f7 x8
+              (let x9 (x4 x4)
+              (let x10 (f7 x6) x8)))
+          (let x8 (x2 f5) x6)))
+      (let x6
+        (lambda f6 x7
+          (let x8 (x5 x5) f6))
+      (let x7 (x4 f3) x5))))
+  (let x4 (x1 f0)
+  (let x5 (x2 6) x3)))))
+         \end{minted}
+         \caption{Prettified Residual Program in \mslang for an example factorial on a staged \mevl interpreter}
+         \label{lst:mevl_staged_secd_ped}
+\end{figure}
+\pagebreak
+
+%The process of implementing the \textbf{LIFT} instruction gives us a glimpse into the issues associated with heterogeneity in towers of interpreters. In our proof-of-concept SECD machine, whose semantics are simpler to reason about than a virtual machine in practice, the complexity in propagating binding time information in the form of \textit{lift} operations arises from the need to adapt representation of closures
+
+%TODO: changes to semantics: RTN code? path, AP, possible-lift
+%LIFT semantics
+%(let lifting? 1 (let possible-lift (lambda _ e (lift e)) (let maybe-lift (lambda _ e e) $src)))
+%TODO: show or speculate how the trend continues for staging even further levels
+%TODO show staged meta-eval generated code
 
 \subsection{String Matcher}
 To evaluate our extended tower to the one used in the original Pink implementation we wrote a string matcher KNUTH to be executed on our staged SECD machine. Running the SECD in evalms's compilation mode we see SECD instructions as literals being included in the generated code. What's worse is that these literals are never used. Their presence is an example of a trade-off we make between implementation complexity and intrusiveness versus removal of interpretative overhead. Although we removed most of the evaluation overhead of the SECD machine itself, these instructions are present in the generated code because our implementation converts anything in the \textit{env} and \textit{stack} registers into dynamic values in the whenever we use lambdas as firt-class citizens for instance when using them as return values. If we wanted to reduce generated code further we could either reuse the \textit{fns} register for non-recursive functions as well and prevent instructions loaded as part of the \textit{LDF} instruction to be lifted.

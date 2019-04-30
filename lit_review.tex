@@ -17,8 +17,14 @@
 %\usepackage{tikz}
 %\usetikzlibrary{matrix}
 \usepackage{booktabs}
-\usepackage{makecell} % For table formatting
-\usepackage{multirow} % For table formatting
+
+% For subfigures
+\usepackage{caption}
+\usepackage{subcaption}
+
+% For table formatting
+\usepackage{makecell}
+\usepackage{multirow}
 \renewcommand\theadfont{\bfseries}
 
 \theoremstyle{definition}
@@ -67,7 +73,7 @@
 \frenchspacing
 
 %%TC:ignore
-%\quickwordcount{lit_review} (out of 15000)
+\quickwordcount{lit_review} (out of 15000)
 %\quickcharcount{lit_review}
 %\detailtexcount{lit_review}
 %%TC:endignore
@@ -167,6 +173,22 @@ But the Futamura showed they are fundamentally related in an elegant way by thre
 What follows is the study of partial evaluation which lies at the heart of our methodology of collapsing towers of interpreters and is described in more detail in SECTION
 
 \subsection{Type-Directed Partial Evluation (TDPE)}
+Partial evaluation (PE) is a program optimization technique based on the principle of \textit{specialization}. The idea is to produce a program that is specialized to a particular input. A partial evaluator determines whether operations involving inputs to specialize against can be reduced or have to be left in the program. A specialized program, also referred to as \textit{residual program}, is a version of the original program where as much computation has been performed as possible with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called \textit{static} and otherwise \textit{dynamic}. For variables in the program to-be-specialized we refer to it's \textit{binding-time} as static if the data it holds during the lifetime of the program is static. Otherwise a variable's binding-time is dynamic.
+
+The result of a \textit{binding-time analysis} is called a \textit{division} and assigns to each function and variable in a program a binding-time. A division is said to be congruent if it assures that every expression that involves dynamic data is marked as data and otherwise as static.
+
+% EXAMPLE OF CONGRUENCE AND NON-TERMINATION THAT IS APPLICABLE TO STAGED SECD
+%Polyvariant binding-time analysis for applicative languages
+%http://pages.cs.wisc.edu/~horwitz/CS704-NOTES/9.PARTIAL-EVALUATION.html#div
+
+safe vs. congruent division
+
+There are two types of partial evaluation methodologies \cite{jones1993partial}:
+\begin{itemize}
+	\item Offline partial evaluation
+	\item Online partial evaluation \cite{cook2011tutorial}
+\end{itemize}
+
 NbE resources:
 %Useful \href{http://cs.ioc.ee/ewscs/2009/dybjer/mainPalmse-revised.pdf}{Slides}
 %\href{http://www.cse.chalmers.se/~abela/univnbe.pdf}{NBE paper}
@@ -200,11 +222,6 @@ page 403: benefits of NbE
 \cite{jones1993partial} page 103: monovariance, polyvariance, congruence in PE
 
 \subsection{Staging}
-There are two types of partial evaluation methodologies \cite{jones1993partial}:
-\begin{itemize}
-	\item Offline partial evaluation
-	\item Online partial evaluation \cite{cook2011tutorial}
-\end{itemize}
 Namin et al. \cite{amin2017collapsing}, propose two languages Pink and Purple. Pink uses a form of online partial evaluation (driven by whether values are "code?" or not) but requires manual staging facilities. Purple relies on LMS for automatic binding time analysis and staging
 which limits it to offline partial evaluation and thus relies on further optimization heuristics to achieve the same level of program specialization in the generated code as Pink.
 at its heart it uses the fact that $\beta$-reduction to $\beta$-normal form can be viewed as a form of specialization (taken further by NbE \cite{berger1991inverse,berger1998normalization})
@@ -372,7 +389,7 @@ What we envision (with reference to this hypothetical setting) is handling the t
 \end{enumerate}
 To tackle the first of these problems we construct a similar yet condensed form of the setting as shown in \ref{fig:tombstone}
 
-\section{Why do we want to collapse towers?}
+\subsection{Why do we want to collapse towers?}
 %SIMILAR GOALS TO COMPILATION IN GENERAL: code size, speed, etc.
 %DERIVING TRANSLATORS
 %STRIP AWAY GENERALITY
@@ -643,7 +660,7 @@ Instead of evaluating the recursive call we want to instead generate the call an
  		\nonumber \\%
  		%
 		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) fns} & \longrightarrow \: && \text{res.s env c d fns} \\
-		\text{where res} & := && \text{(fn (lift-all (v s.env{\ts})))} \nonumber \\
+		\text{where res} & := && \text{fn@(lift-all (v s.env{\ts}))\textbf{\textbf{}}} \nonumber \\
 		\nonumber \\%
 		%
 		\text{(v m.s) e (} \mathbf{LIFT}\text{.c) d fns} & \longrightarrow \: \label{eq:secd_sem_lift}
@@ -658,7 +675,6 @@ Instead of evaluating the recursive call we want to instead generate the call an
 \caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
 \label{fig:secd_semantics_noset}
 \end{figure}
-
 
 %TODO essence of new semantics
 Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to a function that accepts an environment and upon invocation takes a step in the abstract machine with the instructions defined by \textbf{LDF} in control-register, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which showed that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts. Note also that we add a new functions register, which we refer to as the \textbf{fns-register} or simply \textbf{fns} which is responsible for holding the recursive instructions of a \textbf{RAP} call.
@@ -690,12 +706,9 @@ DUM NIL LDF
 \label{lst:secd_recursion_ex1_newsem}
 \end{figure}
 
-The above changes to the machine show that to permit partial evaluation of the original SECD semantics an intrusive set of changes which necessitated knowledge of the inner workings of the machine were required. This arises from the fact that
-TDPE ON SMALL-STEP SEMANTICS
-\mslang WORKS BEST ON LITERALS AND CLOSURES
-STACK-BASED SO DIVISION HAS TO BE MIXED BUT NEED TO BE CAREFUL TO NOT POLLUTE STATIC AND DYNAMIC CONTEXTS FOR EFFICIENCY AND CORRECTNESS REASONS
+The above changes to the machine show that to permit partial evaluation of the original SECD semantics, an intrusive set of changes which necessitate knowledge of the inner workings of the machine are required. The complexity partially arises from the fact that the stack-based semantics do not lend themselves well to TDPE through \mslang. We have to convert representations of program constructs, particularly closures, from how SECD stores them to what the underlying PE expects and is able to lift. Since \mslang is built around lifting closures, literals and cons-pairs we have to wrap function definitions in thunks which complicates calling conventions within the machine. Additionally, deciding on and implementing a congruent division for a SECD-style abstract machine, where values can move between a set of stack registers, requires careful bookkeeping of non-recursive versus recursive function applications and online binding-time analysis checks. On one hand, the most efficient code is generated by allowing as much of the register contents to be static. On the other hand, the finer-grained the division the more difficult to reason about and potentially less extensible a division becomes.
 
-\subsection{SECD Compiler}
+\subsection{SECD Compiler}\label{subsec:secd_comp}
 To continue the construction of a tower where each level is performing actual interpretation of the level above we would have to implement an interpreter written in SECD instructions as the next level in the tower. To speed up the development process and aid debuggability we implement compiler that parses a LISP-like language, which we refer to as \secdlisp{}, and generates SECD instructions. It is based on the compiler described by Kogge \cite{kogge1990architecture} though with modifications to support our modified calling conventions and additional registers described in section \ref{ssubsec:knot}.
 
 %TODO MODIFICATIONS TO COMPILER
@@ -717,6 +730,79 @@ Given a source program in \secdlisp{} we invoke the compiler as shown in figure 
 \end{figure}
 
 As line \ref{mline:secd_comp_call} suggests we feed the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begin interpretation or partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
+
+\subsection{Example}
+%SECD front-end on: regular machine, staged machine, smart constructors (?)
+Figure \ref{lst:secd_fib_lisp} shows a program to compute Fibonacci numbers recursively written in our SECD LISP front-end. The program is translated into SECD instructions by our compiler (see section \ref{subsec:secd_comp}) and then input to our staged machine. Figure \ref{lst:secd_fib_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to the modifications to \textbf{RAP}, \textbf{AP} and \textbf{LDF}. The residual program contains two lambdas, one that executes factorial and another that takes input from the user in form of the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of the underlying SECD semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
+
+\begin{figure}[htp!]
+\centering
+    \begin{subfigure}{.5\linewidth}
+         \centering
+         \begin{minted}{lisp}
+(letrec (fact)
+    ((lambda (n m)
+        (if (eq? n 0)
+            m
+            (fact (- n 1) (* n m)))))
+                (fact 10 1))
+         \end{minted}
+         \caption{LISP Front-end}
+         \label{lst:secd_fib_lisp}
+    \end{subfigure}%
+    \begin{subfigure}{.5\linewidth}
+         \centering
+         \begin{minted}{lisp}
+DUM NIL LDF
+    (LDC 0 LD (1 1) EQ SEL
+        (LD (1 2) JOIN)
+        (NIL LD (1 2) LD (1 1) MPY CONS
+            LDC 1 LD (1 1) SUB CONS LDR (1 1) AP
+            JOIN)
+        RTN)
+    CONS LDF
+    (NIL LDC 1 CONS LDC 10 CONS
+        LDR (1 1) AP RTN) RAP STOP
+         \end{minted}
+    \caption{SECD Instructions}
+    \label{lst:secd_fib_ops}
+    \end{subfigure}\\[1ex]
+    \par\bigskip
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minted}[escapeinside=||,linenos]{lisp}
+(let x0
+  |\colorbox{green}{(lambda f0 x1}\textcolor{red}{<=== Takes user input}|
+    (let x2
+      |\colorbox{green}{(lambda f2 x3}\textcolor{red}{<=== Definition of factorial} \label{mline:factorial_body_start}|
+        (let x4 (car x3)
+        (let x5 (car x4)
+        (let x6 (eq? x5 0)
+        (if x6
+          (let x7 (car x3)
+          (let x8 (cdr x7) (car x8)))
+          (let x7 (car x3)
+          (let x8 (cdr x7)
+          (let x9 (car x8)
+          (let x10 (car x7)
+          (let x11 (* x10 x9)
+          (let x12 (- x10 1)
+          (let x13 (cons x11 '.)
+          (let x14 (cons x12 x13)
+          (let x15 (cons '. x1)
+          (let x16 (cons x14 x15) |\colorbox{green}{(f2 x16)}|))))))))))))))) |\textcolor{red}{<=== Recursive Call}\label{mline:factorial_body_end}|
+    (let x3 (cons 1 '.)
+    (let x4 (cons 10 x3)
+    (let x5 (cons '. x1)
+    (let x6 (cons x4 x5)
+    (let x7 (x2 x6) (cons x7 '.)))))))) (x0 '.)) |\label{mline:factorial_input}|
+        \end{minted}
+        \caption{Prettified Generated Code}
+        \label{lst:secd_fib_ped}
+    \end{subfigure}
+\caption{Example Fibonacci}
+\label{lst:secd_fib_all}
+\end{figure}
 
 \section{Level 3: Meta-Eval}
 Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} in the sense the toy language is a LISP derivative and \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine. However, we omit a built-in operator such as Mixwell's \textbf{read} that helps identify binding times of a user program and stage our interpreter instead. \mevl also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
@@ -781,12 +867,67 @@ The state transitions for the \textbf{LIFT} operation in the staged SECD machine
 Behind the apparent complexity again lies the same recipe for staging an interpreter as we identified before operating on the top most value of the stack. We make sure to lift the operand if it is a number or a string. In the case that the operand is a closure or function we construct, lift and return a new lambda from the state we stored \textbf{fns} and \textbf{dump}. Note the subtle difference in behaviour between when lifting a SECD closure or lambda. The former is defined by \textbf{LDF} or \textbf{RAP} and includes instructions to execute wrapped in a lambda and auxiliary state information such as the environment. In this case we simply construct a lambda that takes an environment and performs a step in the machine with the instructions that were wrapped. A function on the stack only occurs as a result of a call to \textbf{LDR} in which case we unpack the instructions and state, \textit{recOps} and \textit{recEnv} respectively, from the thunk and construct again wrap a call to the \textit{step} function in a lambda.
 
 %The process of implementing the \textbf{LIFT} instruction gives us a glimpse into the issues associated with heterogeneity in towers of interpreters. In our proof-of-concept SECD machine, whose semantics are simpler to reason about than a virtual machine in practice, the complexity in propagating binding time information in the form of \textit{lift} operations arises from the need to adapt representation of closures
-\quickwordcount{lit_review} (out of 15000)
 
-%TODO: show generated code
+%TODO: show generated
+%Meta-eval on regular VM
+%Meta-eval on staged VM
+%Staged Meta-eval on VM
+\begin{figure}[htp!]
+\centering
+    \begin{subfigure}{.5\linewidth}
+         \centering
+         \begin{minted}{lisp}
+((lambda (fun)
+          ((lambda (F)
+             (F F))
+           (lambda (F)
+             (fun (lambda (x) ((F F) x))))))
+
+      (lambda (factorial)
+        (lambda (n)
+          (if (eq? n 0)
+              1
+              (* n (factorial (- n 1)))))))
+         \end{minted}
+         \caption{LISP Front-end}
+         \label{lst:mevl_secd_lisp}
+    \end{subfigure}\\[1ex]
+    \par\bigskip
+    \begin{subfigure}{\linewidth}
+         \centering
+         \begin{minted}{lisp}
+ DUM NIL LDF
+         (LD (1 1) SYM? SEL
+                 (NIL LD (1 1) CONS LD (1 2) AP JOIN) (LD (1 1) NUM? SEL
+         (NIL LD (1 1) CONS LDF
+                 (LD (1 1) RTN) AP JOIN) (LDC + LD (1 1) CAR EQ SEL
+         (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
+            CADR CONS LDR (1 1) AP ADD JOIN) (LDC - LD (1 1) CAR EQ SEL
+         (NIL LD (1 2) CONS LD (1 1) CADDR CONS LDR (1 1) AP NIL LD (1 2) CONS LD (1 1)
+            CADR CONS LDR (1 1) AP SUB JOIN) (LDC * LD (1 1) CAR EQ SEL
+            ...
+            JOIN) JOIN) JOIN) JOIN) RTN) CONS LDF
+            ...
+            LDC 1 CONS LDC n CONS LDC - CONS CONS LDC factorial CONS CONS
+            LDC n CONS LDC * CONS CONS LDC 1 CONS LDC . LDC 0 CONS LDC n CONS
+            LDC eq? CONS CONS LDC if CONS CONS LDC . LDC n CONS CONS LDC lambda
+            ...
+            LDR (1 1) AP RTN ) RAP STOP
+         \end{minted}
+    \caption{SECD Instructions}
+    \label{lst:mevl_secd_ops}
+    \end{subfigure}
+\caption{Example Fibonacci on \mevl}
+\label{lst:mevl_secd_all}
+\end{figure}
+
+Figure \ref{lst:mevl_secd_all} shows the \mevl interpreter running a program computing factorial using the Y-combinator for recursion (figure \ref{lst:mevl_secd_lisp}) on our staged VM. As opposed to producing an optimal residual program we now see the dispatch logic of our \mevl interpreter in the generated code (figure \ref{lst:mevl_secd_ped}). As the programmer we know this control flow can be reduced even further since the \mevl source program is static data.
+
+%TODO: changes to compiler
+
+\subsection{Staging \texorpdfstring{\mevl}{Lg}}
 %TODO: mention staging of meta-eval, further changes to compiler/SECD machine and effects on generated code
 %TODO: show or speculate how ths trend continues for staging even further levels
-%TODO: changes to compiler
 
 \section{Collapsing the Tower}\label{sec:collapsing}
 HOW ARE USER-MOST INTERPRETERS STAGED=>NEED TO EXPOSE LIFT

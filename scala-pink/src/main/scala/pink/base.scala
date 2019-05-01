@@ -83,7 +83,7 @@ object Base {
         s match {
           // smart constructors
           case Fst(Cons(a, b)) => a
-          case Snd(Cons(a, b)) => a
+          case Snd(Cons(a, b)) => b
           case Plus(Lit(a), Lit(b)) => Lit(a + b)
           case Minus(Lit(a), Lit(b)) => Lit(a - b)
           case Times(Lit(a), Lit(b)) => Lit(a * b)
@@ -184,7 +184,6 @@ object Base {
       Sym(s)
     case Tup(a,b) => (a, b) match {
       case (Code(u),Code(v)) => reflect(Cons(u,v))
-      case (u,v) => reflect(Cons(lift(u),lift(v)))
     }
     case Clo(env2,e2) => // function
       // NOTE: We memoize functions here. This is not essential, and 

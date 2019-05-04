@@ -27,6 +27,13 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+% Enumerate without spaces in between items
+\newenvironment{tight_enumerate}{
+\begin{enumerate}
+  \setlength{\itemsep}{0pt}
+  \setlength{\parskip}{0pt}
+}{\end{enumerate}}
+
 % For table formatting
 \usepackage{makecell}
 \usepackage{multirow}
@@ -140,6 +147,8 @@ We aim to bring previous work of removing interpretative overhead using partial 
 	%TODO: define NbE
 	\item demonstrate the ability to use NbE-style lift operators to perform partial evaluation across levels in the tower that are compilers
 	\item and finally evaluation of the structure of the generated code and possible optimizations
+	%TODO: introduce and discuss the problem of propagating BTA information through a tower of interpreters
+	%TODO: show difficulties of using TDPE on abstract machines
 \end{enumerate*}.
 
 In section \ref{sec:background} we explain potentially useful background information that cover the fundamental topics we base our framework and experiments on, starting from the link between interpreters and compilers up to how previous work managed to compile reflective towers. Section \ref{sec:mslang} provides an overview of the partial evaluation framework we base our study on called Pink \cite{amin2017collapsing}. We systematically describe the process by which we create a heteregeneous tower of interpreters and incrementally collapse it in sections \ref{sec:secd} through \ref{sec:string_matcher}. Each of these sections discusses the steps we took to create a level in the tower of interpreters as shown in figure \ref{fig:tombstone}. We conclude with an evaluation of our findings followed by a discussion of potential future work in sections \ref{sec:conclusion} and \ref{sec:future} respectively.
@@ -154,14 +163,14 @@ In section \ref{sec:background} we explain potentially useful background informa
     \begin{subfigure}{0.5\linewidth}
     	\centering
     	\includegraphics[scale=2]{tombstone_tower.png}
-    	\caption{A tombstone diagram representation of our framework}
+    	\caption{A tombstone diagram representation of our experimental tower}
     	\label{fig:tombstone}
     \end{subfigure}\\[1ex]
     \par\bigskip
     \begin{subfigure}{0.5\linewidth}
         \centering
         \includegraphics[scale=2]{tombstone_practical.png}
-        \caption{A hypothetical tower of interpreters that serves as the model for the tower we built (shown in figure \ref{fig:tombstone}}
+        \caption{A hypothetical tower of interpreters that serves as the model for the tower we built (shown in figure \ref{fig:tombstone}). The diagram depicts a JavaScript x86 emulator running a Python interpreter that in turn executes a python script.}
         \label{fig:tombstone_practical}
     \end{subfigure}
 \caption{Comparison between the tower we develop and the one we modelled it after.}
@@ -177,7 +186,7 @@ A compiler translates a program into another representation that can subsequentl
 
 %Just-In-Time (JIT) compilation is the process of compiling or recompiling pieces of a program after execution of it has begun. %The benefit of such on-demand compilation is the ability to make use of a program's execution profiles to make guide optimization %choices. Interpreters for widespread languages such as Python and Julia and frameworks such as GraalVM all make use of JIT %compilation to decrease the cost of interpretation and execute pieces of a program at native speeds. The fact that interpreters %perform compilation as well has blurred the lines between what we can term a compiler as opposed to an interpreter.
 
-In the 1970s Futamura showed that compilers and interpreters are fundamentally related in elegant way by three equations also known as the Futamura projections \cite{futamura1999partial}. At its core, the three projections are based on the theory of function \textit{specialization} (or in mathematical terms \textit{projection}). Given a function $f(x,y)$, one can produce a new specialized function $f_{x}(y)$ fixed against the input $x$. Program specialization considers $f$ to be a program and $x$ and $y$ some inputs to said program:
+In the 1970s Futamura showed that compilers and interpreters are fundamentally related in  an elegant way by three equations also known as the Futamura projections \cite{futamura1999partial}. At its core, the three projections are based on the theory of function \textit{specialization} (or in mathematical terms \textit{projection}). Given a function $f(x,y)$, one can produce a new specialized function $f_{x}(y)$ fixed against the input $x$. Program specialization considers $f$ to be a program and $x$ and $y$ some inputs to said program:
 \begin{align*}
     p_{x} & = \llbracket mix \rrbracket \:\: (p, x) \\
     out & = \llbracket p_{x} \rrbracket \:\: (y)
@@ -215,53 +224,74 @@ The result of a \textit{binding-time analysis} is called a \textit{division} and
 In the literature we distinguish between \textit{online} and \textit{offline} \cite{jones1993partial} partial evaluation (or more recently a hybrid between the two due to Shali et al. \cite{shali2011hybrid}). Offline PE performs a BTA before it begins specialization whereas the online approach makes decisions about whether to residualize expressions once partial evaluation has begun.
 
 Danvy realized a method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation (TDPE)} which enables the implementation of remarkably simple residualizers with a binding-time analysis that is completely driven by the types of the expressions being specialized. TDPE is built on three core concepts:
-\begin{enumerate}
+%TODO: well-annotatedness
+\begin{tight_enumerate}
     \item BTA produces an expression annotated with the static or dynamic binding-times such that reducing static terms yields a completely dynamic expression (i.e., permits optimal residualization)
-    %TODO: well-annotatedness
     \item BTA should generate code that includes \textit{binding-time coercions}, which are modifications to the original terms that aid the correct classification of expressions as static
     \item Static reduction is performed by evaluation of an expression
-\end{enumerate}
+\end{tight_enumerate}
 
 Consider the example from Danvy's description of TDPE \cite{danvy1999type} in \eqref{eq:tdpe_ex1}. The aim is to annotate the function applications (denoted by $@$) and definitions with a static (underline) or dynamic (overline) binding-time.
 \begin{align}
-    \lambda d.(\lambda f.g@(f@d)@f)@\lambda a.a \label{eq:tdpe_ex1}
+    \lambda g.\lambda d.(\lambda f.g \:@ \: (f \: @ \: d)\: @ \:f) \: @ \: \lambda a.a \label{eq:tdpe_ex1}
 \end{align}
-Binding time coercion
 
-In literature and throughout our work, we refer to a binding-time coercion called $\eta$-expansion.
+A correct binding-time could be that shown in \eqref{eq:tdpe_ex2a} because after static reduction we obtain \eqref{eq:tdpe_ex2b} which is a completely dynamic expression. However, the duplication of $f$ after reduction and a dynamic redex, $(\underline{\lambda}a.a) \: \underline{@} \: d$, could be optimized away further with a modification to the source expression that causes a beneficial binding-time coercion. The challenge we are faced with is that $f$ is applied statically but cannot be completely reduced because we also pass it as an argument to a dynamic expression.
+\begin{figure}[hbp!]
+    \begin{align}
+        & \underline{\lambda g}.\underline{\lambda} d.(\overline{\lambda} f.g \: \underline{@} \: (f \: \underline{@} \: d) \: \underline{@} \: f) \: \overline{@} \: \underline{\lambda} a.a) \label{eq:tdpe_ex2a} \\
+        & \triangleright \:\: \emph{\small{\text{(via static reduction)}}} \nonumber \\
+        & \underline{\lambda g}.\underline{\lambda} d.(\lambda g \: \underline{@} \: ((\underline{\lambda} a.a) \: \underline{@} \: d) \: \underline{@} \: \underline{\lambda} a.a \label{eq:tdpe_ex2b}
+    \end{align}
+\end{figure}
 
-A TDPE implementation mainly requires the ability to distinguish between static and dynamic expressions and operators that 
+Instead we can use an $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, a single unfolding of $f$ and $\beta$-redexes. Danvy then generalizes the $eta$-expansion and introduces a general class of coercions that permit residualization of static values in dynamic contexts. We represent such coercions with a $\downarrow^t$ which represents the conversion from a static value of type $t$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
 
-The \textit{type-directed} in TDPE stems from the fact that binding-time analysis operates based on type-information. As figure \ref{fig:tdpe_rules} shows ...
+\begin{figure}[htp!]
+    \begin{align}
+        & \underline{\lambda g}.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{$\underline{\lambda} x.f \: \overline{@} x$}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex3a} \\
+        & \triangleright \:\: \emph{\small{\text{(via static reduction)}}} \nonumber \\
+        & \underline{\lambda g}.\underline{\lambda} d.g \: \underline{@} \: d \: \underline{@} \: \underline{\lambda} a.a \label{eq:tdpe_ex3b}
+    \end{align}
+\end{figure}
+
+\begin{figure}[htp!]
+    \begin{align}
+        & \underline{\lambda g}.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{$\downarrow^{t_{1} \rightarrow t_{2}} f$}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex4} \\
+        & \quad \text{where $t_{1} \rightarrow t_{2}$ is the type of $f$} \nonumber
+    \end{align}
+\end{figure}
+
+%\subsection{\texorpdfstring{$\eta$-expansion}{Lg} in TDPE}
+To summarize
+TDPE: residualization that performs BTA based on types, static reduction is normalization, need coercion operators to yield optimal code, define reify (which we call lift to be consistent with Pink)/reflect shown in figure \ref{fig:tdpe_rules} from \cite{danvy1999type}, residulazation amounts to reification of a term and then static reduction, implementation used in \mslang{} follows the table and uses a methodology attributed to Eijiro Sumii in \cite{danvy1999type}
 
 \begin{figure}[htp!]
     \centering
     \begin{alignat}{2}
         \text{\underline{\textbf{\emph{Reification (Lifting)}}}}\nonumber \\
-        \downarrow^{t} v & = && v \\
+        \downarrow^{t} v & = \: && v \\
         \nonumber \\%
-        \downarrow^{t_{1} \rightarrow t_{2}} v & = && \underline{\lambda} x.\downarrow^{t_{2}}(v\overline{@}(\uparrow_{t_{1}} x)) \\
+        \downarrow^{t_{1} \rightarrow t_{2}} v & = \: && \underline{\lambda} x.\downarrow^{t_{2}}(v\overline{@}(\uparrow_{t_{1}} x)) \\
         & && \quad\text{where $x$ is not a free variable in v} \nonumber \\
         \nonumber \\%
-        \downarrow^{t_{1} \times t_{2}} v & = && \underline{cons}(\downarrow^{t_{1}} \overline{car} \, v, \downarrow^{t_{2}} \overline{cdr} \, v) \\
+        \downarrow^{t_{1} \times t_{2}} v & = \: && \underline{cons}(\downarrow^{t_{1}} \overline{car} \, v, \downarrow^{t_{2}} \overline{cdr} \, v) \\
         \nonumber \\%
-        lift & = && \lambda t. \lambda v. \downarrow^{t} v \\
+        lift & = \: && \lambda t. \lambda v. \downarrow^{t} v \\
         \nonumber \\%
         %
         \text{\underline{\textbf{\emph{Reflection}}}}\nonumber \\
-        \uparrow_{t} e & = && e \\
+        \uparrow_{t} e & = \: && e \\
         \nonumber \\%
-        \uparrow_{t_{1} \rightarrow t_{2}} e & = && \overline{\lambda} v.\uparrow_{t_{2}}(e\underline{@}(\downarrow^{t_{1}} v)) \\
+        \uparrow_{t_{1} \rightarrow t_{2}} e & = \: && \overline{\lambda} v.\uparrow_{t_{2}}(e\underline{@}(\downarrow^{t_{1}} v)) \\
         \nonumber \\%
-        \uparrow_{t_{1} \times t_{2}} e & = && \overline{cons}(\uparrow_{t_{1}} \underline{car} \, e, \uparrow_{t_{2}} \underline{cdr} \, e) \\
+        \uparrow_{t_{1} \times t_{2}} e & = \: && \overline{cons}(\uparrow_{t_{1}} \underline{car} \, e, \uparrow_{t_{2}} \underline{cdr} \, e) \\
         \nonumber \\%
-        reflect & = && \lambda t. \lambda e. \uparrow_{t} e
+        reflect & = \: && \lambda t. \lambda e. \uparrow_{t} e
     \end{alignat}
     \caption{Reduction rules for reification (static to dynamic) and reflection (dynamic to static) in TDPE as defined by Danvy \cite{danvy1999type} where $t$ denotes types, $v$ denotes static values, $e$ denotes dynamic expressions. $cons/car/cdr$ correspond to the LISP functions of the same name that create a pair, reference the first element of a pair and reference the second element of a pair respectively.}
     \label{fig:tdpe_rules}
 \end{figure}
-
-Implementation used in \mslang{} follows \cite{danvy1999type} and uses a methodology attributed to Eijiro Sumii in the same paper
 
 %Early partial evaluators, including Jones et al.'s MIX \cite{jones1989mix}, operated exclusively on %untyped languages because it simplified binding time analysis: a single universal type could %represent all static values and would not need to care about whether BTA violated a type-system. To %broaden the applicability of partial evaluation 
 %
@@ -429,23 +459,12 @@ A tower can then be constructed using a, potentially infinite, set of meta-circu
 When we now execute the tower (i.e., invoking the partial evaluator at the base) only the top-most evaluator residualizes while all others evaluate. Because of meta-circularity, instead of evaluating a user-value it is now being lifted at all stages essentially propagating binding-time information from top-most interpreter to the base PE. At the last interpreter above the base evaluator the lift now dispatches to the actual reify operation as specified by TDPE. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time since they were not evaluated in code-generation mode.
 
 \subsection{Effect of Heterogeneity}
-    now:
-        new lift implementation
-        have to be careful with TDPE and recursion, semantic gap and small-step semantics
-        tricks involve eta-expansion again
-        stack-based semantics require carful division
-        recipe should now include: deconstruct and process closures at the level that is the first not to expose "lift"
+%TODO: explain using diagram
+In mixed-language towers a \textit{lift} operation is not necessarily available to all interpreters unless explicitly provided at that level. Hence, one approach to propagating binding-time information in heterogeneous towers is to implement a built-in lift at all levels below the interpreter that should be staged. As we discuss in more detail in section \ref{subsec:secd_staged}, the implementation of lift may require us to transform the representation of closures, pairs or other constructs which the lift at the base expects.
 
-lambda
-lift lambda
-eq? lift
-    lift eval exp
-        eval exp: evaluates
+Additionally, the TDPE residualization algorithm uses evaluation of expressions to drive its BTA and static reductions. While a definitional interpreter can be staged using TDPE by simply lifting user-values it returns, the process of staging an abstract machine, as we show in \ref{subsec:secd_staged}, requires careful design of its division rules and the locations which to lift. Representation of closures can cause issues with non-termination if there is no inherent distinction between regular and recursive function definitions. To avoid these issues one can transform the representation of closures to how fit the underlying lift operation's interface and use tags on closures that signal the PE when to terminate in the unfolding of recursive function calls.
+%tricks involve eta-expansion again
 
-
-
-%what are the insights
-%   lifting is now a more involved operation that can't simply be propagated
 %challenges of staging SECD
 %TODO: tower is not framework
 %Describe results found: difficulties in heterogeneous setting
@@ -875,25 +894,25 @@ DUM NIL LDF
 \subsection{Level 3: Meta-Eval}
 \begin{figure}[ht!]
 \begin{align*}
-	\langle \text{program} \rangle \Coloneqq & \: \langle \text{expression} \rangle \\
-	\langle \text{expression} \rangle \Coloneqq & \: \langle \text{variable} \rangle \\
-															   & | \: \langle \text{literal} \rangle \\
-															   & | \: \text{(lambda (} \langle \text{variable} \rangle\text{)} \: \langle \text{expression} \rangle\text{)} \\
-															   & | \: \text{(} \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
-															   & | \: \text{(} op_{2} \: \langle \text{expression} \rangle \: \langle \text{expression} \rangle \text{)} \\
-															   & | \: \text{(if} \: \langle \text{expression}_\text{condition} \rangle \: \langle \text{expression}_\text{consequence} \rangle \: \langle \text{expression}_\text{alternative} \rangle \text{)} \\
-															   & | \: \text{(let} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
-															   & | \: \text{(letrec} \: \text{(} \langle \text{variable} \rangle \text{)} \: \text{(}\langle \text{expression}_\text{recursive} \rangle \text{)} \: \langle \text{expression}_\text{body} \rangle \text{)} \\
-															   & | \: \text{(quote} \: \langle \text{expression} \rangle \text{)} \\
-	\langle \text{variable} \rangle \Coloneqq & \: \text{ID} \\
-	\langle \text{literal} \rangle \Coloneqq & \: \text{NUM} \: | \: \text{{\ts}ID} \\
-	op_{2} \Coloneqq & \: \text{and} \: | \: \text{or} \: | \: - \: | \: + \: | \: * \: | \: < \: | \: \text{eq?}
+	\langle \text{program} \rangle \Coloneqq & \:\: \langle \text{exp} \rangle \\
+	\langle \text{exp} \rangle \Coloneqq & \:\: \langle \text{variable} \rangle \\
+															   & | \:\: \langle \text{literal} \rangle \\
+															   & | \:\: \text{(lambda \: (} \langle \text{variable} \rangle\text{)} \:\: \langle \text{exp} \rangle\text{)} \\
+															   & | \:\: \text{(} \langle \text{exp} \rangle \:\: \langle \text{exp} \rangle \text{)} \\
+															   & | \:\: \text{(} op_{2} \:\: \langle \text{exp} \rangle \:\: \langle \text{exp} \rangle \text{)} \\
+															   & | \:\: \text{(if} \:\: \langle \text{exp}_\text{cond} \rangle \:\: \langle \text{exp}_\text{conseq} \rangle \:\: \langle \text{exp}_\text{alt} \rangle \text{)} \\
+															   & | \:\: \text{(let} \:\: \text{(} \langle \text{variable} \rangle \text{)} \:\: \text{(}\langle \text{exp} \rangle \text{)} \:\: \langle \text{exp}_\text{body} \rangle \text{)} \\
+															   & | \:\: \text{(letrec} \:\: \text{(} \langle \text{variable} \rangle \text{)} \:\: \text{(}\langle \text{exp}_\text{recursive} \rangle \text{)} \:\: \langle \text{exp}_\text{body} \rangle \text{)} \\
+															   & | \:\: \text{(quote} \:\: \langle \text{exp} \rangle \text{)} \\
+	\langle \text{variable} \rangle \Coloneqq & \:\: \text{ID} \\
+	\langle \text{literal} \rangle \Coloneqq & \:\: \text{NUM} \: | \: \text{{\ts}ID} \\
+	op_{2} \Coloneqq & \:\: \text{and} \: | \: \text{or} \: | \: - \: | \: + \: | \: * \: | \: < \: | \: \text{eq?}
 \end{align*}
 \caption{Syntax of \mevl which gets compiled into SECD instructions for interpretation by the SECD machine}
 \label{fig:mevl_syntax}
 \end{figure}
 
-Armed with a staged SECD machine and a language to target it with we build to next interpreter in the tower that gets compiled into SECD instructions. This evaluator defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} in the sense the toy language is a LISP derivative and \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine. However, we omit a built-in operator such as Mixwell's \textbf{read} that helps identify binding times of a user program and stage our interpreter instead. \mevl also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
+Armed with a staged SECD machine and a language to target it with we build the next interpreter in the tower that gets compiled into SECD instructions. The interpreter defines a language called Meta-Eval, \mevl, whose syntax is described in figure \ref{fig:mevl_syntax}. The language resembles Jones et al.'s Mixwell and M languages in their demonstration of the Mix partial evaluator \cite{jones1989mix} in the sense the toy language is a LISP derivative and \mevl serves both as a demonstration of evaluating a non-trivial program through our extended SECD machine. However, we omit a built-in operator such as Mixwell's \textbf{read} that helps identify binding times of a user program and stage our interpreter instead. \mevl also enables the possibility of implementing substantial user-level programs and further levels in the tower. The reason for choosing a LISP-like language syntax again is that it allows us to reuse our parsing infrastructure from the \mslang LISP front-end. Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang and \mevl and demonstrate even more heterogeneity than in the tower we built.
 
 \mevl supports the traditional functional features such as recursion, first-class functions, currying but also LISP-like quotation. We implement the language as a case-based interpreter shown in figure \ref{lst:mevl}. Note that to reduce complexity in our implementation we define our interpreter within a Scala string. Line \ref{mline:mevl_scala_assign} starts the definition of a function, \texttt{meta\_eval}, that allows us to inject a string representing the \mevl program and another representing the implementation of a \textbf{lift} operator. This mimics the polymorphic \textbf{maybe-lift} we define in \mslang. We demonstrate examples of running the interpreter on our staged virtual machine in section \ref{sec:experiments}.
 
@@ -1100,57 +1119,63 @@ Following the experiments performed in Amin et al.'s study of towers \cite{amin2
 %Experiments: running on staged VM, staged VM + meta-eval, VM + staged meta-eval, VM + staged matcher, staged VM + matcher, implementing set-car!, VM + meta-eval + staged matcher, VM + staged meta-eval + matcher
 
 \section{Conclusion}\label{sec:conclusion}
-%Aim:
-%   define heterogeneity in towers
-%   construct a tower resembling one in practice
-%   collapse it
-%       what does it require
-%           a way to expose the base's staging operator across levels
-%           heterogeneity complicates this process since now operator has to be re-implemented
-%       we are able to collapse even through evaluation if we expose lift in the ISA
-%   explore the effect of staging it at different points
-%       staging at user-most is indeed most efficient
-%       interestingly the structure of the generated code is solely dependent on the interpreter one staged
-%   bring together the work on PE and reflective towers with towers in practice
-%   provide platform for future experimentation on heterogeneos towers
+initial aim
+    bring closer two branches of research
+    explore process of designing and collapsing a tower in the presence of heterogeneity
+methodology
+    built own experimental tower based on hypothetical model
+    staged SECD machine
+    created mevl
+    staged mevl
+    experimented with other configurations
+results
+    demonstrated the problem that is unique to this kind of setting: need to propagate binding time information through levels
+        in TDPE this means exposing a lift operator
+            have to convert representations of types that need to be lifted
+    showed practical issues in applying TDPE to abstract machines
+        recursive vs non-recursive function applications (representation of functions are simply lists)
+            step-style and continuous evaluation can lead to non-termination
+        at which points to lift; no recipe such as "lift user values"
+    practical issues in applying PE to stack-based semantics
+        need to be careful with division
+            SOLUTION specific to TDPE: conservative division but reduce static expressions in reflect operator
+    staging at different levels has an effect on output code
+        interpretative overhead in code is reduced
+        traces of other levels (even with large semantic gap) are COMPLETELY removed even though staging at lower levels looked like it yielded less efficient code if other semantics were used
+            stack-based vs non-stack based
+        output code structure follows only the one that is being staged at
+implications
+    difficult to apply to practical setting because requires reverse engineering and knowledge of internals of a stack
+    potentially useful if stack is maintainable and easy to change e.g. in DSLs or embedded string parsers/matchers
+    any setting that TDPE applies in this could assist with
+
 The aim of our study was to connect the extensive collection of work on towers of interpreters with their occurrences in practical settings. Collapsing of towers of interpreters encompasses the techniques it takes to remove interpretative overhead that is present in such systems. We mainly focus on the overhead of the dispatch logic in an interpreter that decides which operation to perform based on the current term in a program being evaluated. The construction of towers of interpreters has previously been either limited to reflective towers, in which each interpreter is meta-circular and exposes its internals for the purpose of reflection, or a consequence of modular systems design where layers of tools that perform interpretation of some form are glued together.
 
 To the best of our knowledge, our work is one of a handful, together with Amin et al.'s previous mentions of heterogeneous towers \cite{amin2017collapsing}, that explicitly focus on the overheads and optimization of towers of interpreters that are not meta-circular. We build on the ideas from the Pink framework and re-use its partial evaluator to construct a tower of our own to experiment on. In figure \ref{fig:tombstone_practical} we imagine a hypothetical tower where an emulator written in JavaScript interpreting a Python interpreter which in turn runs a script. In our final proof-of-concept tower, depicted in figure \ref{fig:tombstone}, we take the emulated machine to be a SECD machine for simplicity and the Python interpreter to be an interpreter for our toy functional language, Meta-eval. Of course the individual levels of the tower differ substantially in complexity and ability to perform side-effects. However, in this study we mainly focused on the process of constructing and collapsing a tower with a simple but significant property: heterogeneity.
 
-Type-directed partial evaluation has the advantage of being an effective specialization tool without the need of a binding-time analyzer to. Using the language Pink previous work has demonstrated a recipe for constructing and collapsing towers. A tower of meta-circular interpreters can be collapsed into a residual program in a single pass by only staging a single interpreter in the tower and relying on the meta-circular definitions of lift to propagate binding-time information to the multi-level base which handles the actual code generation. We started by asking the question of how a collapse of a tower can be achieved without a meta-circular definition of lift and what difficulties could arise when an interpreter in the tower differs in its semantics from interpreters adjacent to it.
+Type-directed partial evaluation has the advantage of being an effective specialization tool without the need of a binding-time analyzer. Using the language Pink previous work has demonstrated a recipe for constructing and collapsing towers. A tower of meta-circular interpreters can be collapsed into a residual program in a single pass by only staging a single interpreter in the tower and relying on the meta-circular definitions of lift to propagate binding-time information to the multi-level base which handles the actual code generation. We started by asking the question of how a collapse of a tower can be achieved without a meta-circular definition of lift and what difficulties could arise when an interpreter in the tower differs in its semantics from interpreters adjacent to it.
 
-We first implemented a staged SECD interpreter as the interpreter to add heterogeneity to the tower. The lack of a built-in lift operator and the difference in how it represents program constructs such as closures required us to adapt the process of collapsing meta-circular towers.
+We first implemented a staged SECD interpreter as the interpreter to add heterogeneity to the tower. The lack of a built-in lift operator and the difference in how it represents program constructs such as closures required us to adapt the internals of the machine to aid the termination and efficient residualization of TDPE.
 
 Firstly, removing a layer of interpretation requires a way of propagating the decision of whether to generate or evaluate an expression through levels in the tower which we tackle by implementing a \textbf{LIFT} instruction at the level which previously did not support such an operation (in our case the SECD machine level). This required the implementation of a transformation from a SECD-style closure to the one that the level below it expects.
 
 Secondly, representation of closures and the semantics of recursive function applications in SECD proved problematic during the process of staging the machine.
+lack of distinction between recursive and non-recursive function application
 
-to tackle small-step style semantics problematic with TDPE
-            need to convert to big-step
-        no distinction between recursive vs. non-recursive
-        representation of closures different
-    SPECIFIC TO SECD:
-        set-car not available
-SOLUTIONS: chose to implement lift, changed small-step style to big-step, changed representation of closures and internal calling convention to ensure termination (by evaluation)
-RESULT: removed overhead, had to deal with missing lift, heterogeneity provides difficulties because one would have to reverse engineer the 
+suitability of TDPE on abstract machines
+
+We show a recipe for staging an stack-based abstract machine based on small-step semantics by converting it into an annotated definitional interpreter and using eta-expansion to prevent pollution of binding-times between segments of the machine and prevent non-termination of the type-directed partial evaluator.
+
+heterogeneity provides difficulties because one would have to reverse engineer the 
 in real tower would need to deconstruct representation of closure and convert, changed representation of closure in the heterogeneous level permanently: both are intrusive and infeasible in a real tower
-
-In Pink staging the user-most interpreter was a key in collapsing towers of interpreters. With a tower in hand we were able to investigate the effect of collapsing at different heights. We showed evidence that staging at lower levels in the tower produces less optimal code since it includes the interpretative overhead of all interpreters above it. Staging at the SECD level produced code with stack-based semantics and traces of the interpreter structure of \mevl. Staging at the level of the \mevl{} interpreter removed all traces of SECD in the residual program. Finally, staging at the string-matcher level removed even more overhead (REWORD). This supported our hypothesis that staging at the top-most interpreter in a tower yields the optimal output and additionally showed that by staging at higher-levels in the tower one can remove noise from lower levels in the towers completely that suffer from inflexible semantics such as the stack-based nature of a SECD machine.
-
-Motivate the experimentation of other abstract machines and potentially target real-world systems
-Method of staging use exposed LIFT construct applies across evaluators, as opposed to only interpreters, as well if you instrument the compiler appropriately
 
 However, it is not feasible in real-world stacks to simply stage or even just instrument interpreters such as JavaScript or Python. What is potentially applicable though is the application of this strategy to domain-specific languages where control of the internals of a language is realistic.
 
-Cost of Emulation (or interpretation)
-% https://www.quora.com/Why-are-emulators-so-badly-optimized
-% https://stackoverflow.com/questions/448673/how-do-emulators-work-and-how-are-they-written
-\cite{steil2004dynamic}
-\href{http://materials.dagstuhl.de/files/17/17061/17061.PaulH.J.Kelly.Slides.pdf}{Turing Tax}
-\href{https://www.doc.ic.ac.uk/~phjk/AdvancedCompArchitecture/Lectures/pdfs/Ch01-TuringTaxDiscussionV02.pdf}{Turing Tax specific slides}
+In Pink staging the user-most interpreter was a key in collapsing towers of interpreters. With a tower in hand we were able to investigate the effect of collapsing at different heights. We showed evidence that staging at lower levels in the tower produces less optimal code since it includes the interpretative overhead of all interpreters above it. Staging at the SECD level produced code with stack-based semantics and traces of the interpreter structure of \mevl. Staging at the level of the \mevl{} interpreter removed all traces of SECD in the residual program. This supported our hypothesis that staging at the top-most interpreter in a tower yields the optimal output and additionally showed that by staging at higher-levels in the tower one can remove noise from lower levels in the towers completely that suffer from inflexible semantics such as the stack-based nature of a SECD machine.
+% TODO: mention string matcher
 
-
-We show that the trace of any intermediate interpreter can mostly be eliminated from compiled code when staging at the user-most interpreter level. We show a recipe for staging an stack-based abstract machine based on small-step semantics by converting it into an annotated definitional interpreter and using eta-expansion to prevent pollution of binding-times between segments of the machine and prevent non-termination of the type-directed partial evaluator.
+Motivate the experimentation of other abstract machines and potentially target real-world systems
+Method of staging use exposed LIFT construct applies across evaluators, as opposed to only interpreters, as well if you instrument the compiler appropriately
 
 Kogge's extensive study of machines for symbolic computation \cite{kogge1990architecture} and Diehl et al.'s survey of abstract machines provide several attractive opportunities for future investigations. The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}, MultiLisp
 
@@ -1162,12 +1187,12 @@ A key strategy in our methodology for collapsing towers of interpreters is the e
 
 %TODO: noise is due to interpretation overhead
 The lower in the tower one stages the more noise the generated code outputs and traces of the structure of the underlying machine are noticeable although reducing further would require changing its semantics which is what staging at upper levels essentially does
-Main challenge in collapsing in presence of heterogeneity is the propagating of the \textit{lift} operator throughout each level. "lifting of closures particularly needs to be rewritten at every level which would make applying our methodology to real-world towers infeasible.
 
-Technical difficulties: implementation of letrec/multi-arg lambdas, implementation of mutable cells, decision on how to stage (i.e. where to annotate) but is essential to performance, leaking implementations between layers, base language getting bloated with features, non-termination when performing recursive calls from within SECD machine (no differentiation between a function being recursive or not)
-A partial evaluator is referred to as \textit{strong} if, when the result of partially evaluating to an interpreter with respect to a target program yields the target proram as output. This is called Jones' optimality directly implies the removal of a layer of interpretation. Our experiments show that depending on which level of a tower we apply our partial evaluator on we can have this strong property of partial evaluators hold. When staging the user-most interpreter we are able to generate ANF code that is equivalent to the subject program the user wrote. If we stage at the level of the SECD machine we generate code that resembles some the structure of the SECD machine and are not able to get completely rid of the stack-based operations of the SECD machine.
+leaking implementations between layers, base language getting bloated with features
 
 \section{Future Work}\label{sec:future}
+Kogge's extensive study of machines for symbolic computation \cite{kogge1990architecture} and Diehl et al.'s survey of abstract machines provide several attractive opportunities for future investigations. The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}, MultiLisp
+
 Future work:
 abstract machine for partial evaluation? multi-level language abstract machine
 

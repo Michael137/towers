@@ -201,11 +201,11 @@ Furthermore, \textit{self-applying} $mix$ and specializing it to an interpreter,
 
 A practical realization of the Futamura projections has since been an active area of research. The difficulty in their implementation is the question of \textit{how} one can specialize an interpreter and meanwhile also generate the most efficient and correct code, a question that is being explored in the design of partial evaluators to this day \cite{jones1988challenging,jones1993partial}.
 
-\subsection{Type-Directed Partial Evluation}
+\subsection{Type-Directed Partial Evaluation}
 %https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf
 Partial evaluation (PE) is a program optimization technique based on the insight that there is room in programs for statically reducing and producing a specialized and thus hopefully more efficient version of itself. A \textit{partial evaluator} determines whether operations involving inputs to specialize against can be reduced or have to be left in the program. A \textit{residual program}, is a version of the original program where as much computation as possible has been performed with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called \textit{static} and otherwise \textit{dynamic}. For variables in the program to-be-specialized we refer to it's \textit{binding-time} as static if the data it holds during the lifetime of the program is static. Otherwise a variable's binding-time is dynamic.
 
-The result of a \textit{binding-time analysis} is called a \textit{division} and assigns to each function and variable in a program a binding-time. A division is said to be congruent if it assures that every expression that involves dynamic data is marked as dynamic and otherwise as static. A partial evaluator being just a regular program, a problem one can run into is non-termination. A congruent division does not always guarantee termination of a PE but when it does we call the division \textit{safe}.
+The result of a \textit{binding-time analysis} is called a \textit{division} and assigns to each function and variable in a program a binding-time. A division is said to be \textit{congruent} if it assures that every expression that involves dynamic data is marked as dynamic and otherwise as static. A partial evaluator being just a regular program, a problem one can run into is non-termination. A congruent division does not always guarantee termination of a PE but when it does we call the division \textit{safe}.
 %In our case our division does not ensure termination but rather our implementation and special treatment of function specialization
 
 % EXAMPLE OF CONGRUENCE AND NON-TERMINATION THAT IS APPLICABLE TO STAGED SECD
@@ -221,7 +221,8 @@ The result of a \textit{binding-time analysis} is called a \textit{division} and
 %TODO: Pink really online? TDPE is actually an offline PE technique
 In the literature we distinguish between \textit{online} and \textit{offline} partial evaluation \cite{jones1993partial} (or more recently a hybrid between the two due to Shali et al. \cite{shali2011hybrid}). Offline PE performs a BTA before it begins specialization whereas the online approach makes decisions about whether to residualize expressions once partial evaluation has begun.
 
-Danvy realized a method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation (TDPE)} \cite{danvy1999type}. The result is a remarkably simple methodology of implementing residualizers with a binding-time analysis that is completely driven by the types of the expressions being specialized. TDPE is built on three core concepts \cite{danvy1999type,grobauer2001second}:
+%TODO: "A type-directed partial evaluator is thus unconventional in that it does not process the text of a source program, but its compiled (higher-order) value. The normalization effect is not obtained by symbolic interpretation -- it happens en passant in the residualization algorithm" - Pragmatics of type-directed partial evaluation \cite{danvy1996pragmatics}
+Danvy realized a method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation (TDPE)} \cite{danvy1999type}. The result is a remarkably simple methodology of implementing residualizers with a binding-time analysis that is completely driven by the types of the expressions being specialized. TDPE is built on three core concepts \cite{danvy1997online,grobauer2001second}:
 %TODO: well-annotatedness
 \begin{tight_enumerate}
     \item BTA produces an expression annotated with the static or dynamic binding-times such that reducing static terms yields a completely dynamic expression (i.e., permits optimal residualization)
@@ -272,6 +273,7 @@ To summarize TDPE makes use of the type system of a two-level language to direct
 
 As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to handle order of evaluation of side-effects.
 %TODO: revisit reification for recursive functions in TDPE paper
+%TODO: lift of recursive functions in Pink
 %TODO: Pink also introduces a ``run'' operator
 
 \begin{figure}[htp!]
@@ -512,6 +514,7 @@ def reflect(s:Exp) = {
           |\colorbox{green}{case Plus(Lit(a), Lit(b)) => Lit(a + b)}|
           |\colorbox{green}{case Minus(Lit(a), Lit(b)) => Lit(a - b)}|
           |\colorbox{green}{case Times(Lit(a), Lit(b)) => Lit(a * b)}|
+          ...
           case _ =>
             stBlock :+= (stFresh, s)
             fresh()
@@ -1131,9 +1134,133 @@ DUM NIL LDF
 %TODO show staged meta-eval generated code
 
 \subsection{Level 4: String Matcher}\label{sec:string_matcher}
-\begin{comment}
-Following the experiments performed in Amin et al.'s study of towers \cite{amin2017collapsing}, we extend our tower one level further and implement a regular expression matcher proposed by Kernighan et al. \cite{kernighan2007regular} in \mevl{}.
-\end{comment}
+
+Following the experiments performed in Amin et al.'s study of towers \cite{amin2017collapsing}, we extend our tower further one last time and implement a regular expression matcher proposed by Kernighan et al. \cite{kernighan2007regular} in \mevl. The source is shown in figure \ref{lst:regexp}.
+
+\begin{figure}[htp!]
+    \centering
+    \begin{minted}[fontsize=\footnotesize,escapeinside=||]{lisp}
+(letrec (star_loop) ((lambda (m) (lambda (c) (letrec (inner_loop)
+                        ((lambda (s)
+                            (if (eq? 'yes (m s)) 'yes
+                            (if (eq? 'done (car s)) 'no
+                            (if (eq? '_ c) (inner_loop (cdr s))
+                            (if (eq? c (car s)) (inner_loop (cdr s)) 'no))))))
+                        inner_loop))))
+    (letrec (match_here) ((lambda (r) (lambda (s)
+                (if (eq? 'done (car r))
+                    'yes
+                    (let (m) ((lambda (s)
+                        (if (eq? '_ (car r))
+                            (if (eq? 'done (car s))
+                                'no
+                                ((match_here (cdr r)) (cdr s)))
+                            (if (eq? 'done (car s)) 'no
+                            (if (eq? (car r) (car s))
+                                ((match_here (cdr r)) (cdr s))
+                                'no)))))
+                        (if (eq? 'done (car (cdr r))) (m s)
+                        (if (eq? '* (car (cdr r)))
+                            (((star_loop (match_here (cdr (cdr r)))) (car r)) s)
+                            (m s))))))))
+                (let (match) ((lambda (r)
+                    (if (eq? 'done (car r))
+                        (lambda (s) 'yes)
+                        (match_here r))))
+                        match))
+    \end{minted}
+    \caption{Unstaged regular expression (RE) matcher written in \mevl. The matcher checks whether a string satisfies a given RE pattern containing letters, underscores or wildcards.}
+    \label{lst:regexp}
+\end{figure}
+
+We then collapse two different configurations of the tower:
+\begin{enumerate}
+    \item Staged \mevl{} interpreter running the plain matcher
+    \item Unstaged \mevl{} interpreter running a staged version of the matcher
+\end{enumerate} The pattern we specialize against is
+\mint{lisp}|    '(a * done)|
+which should match zero or more occurrences of character ``a'' where ``done'' serves as a terminal marker for the matcher. Logically, this pattern will match any string and thus the optimal specialized version of the matcher should simply return a ``yes'' on any input indicating a successful match.
+
+The residualized program when we collapse the tower while staging the \mevl{} interpreter is presented in figure \ref{lst:mevl_staged_regexp}. It is far from the most efficient version and we can see clear traces of the matcher logic in the generated code such as a check for an ``\_'' character on line \ref{mline:matcher_redundant_cmp} while our pattern against which we specialize does not contain any.
+
+Now we stage the matcher according to the implementation provided in the Pink experiments \cite{amin2017collapsing} by simply lifting all symbols on return from the matcher and the initial recursive call to begin matching (see figure \ref{lst:regexp_staged}).
+
+\begin{figure}[htp!]
+    \centering
+    \begin{minted}[fontsize=\footnotesize,escapeinside=||]{lisp}
+(letrec (star_loop) ((lambda (m) (lambda (c) (letrec (inner_loop)
+                        ((lambda (s)
+                            (if (eq? 'yes (m s)) |\colorbox{green}{(lift 'yes)}|
+                            (if (eq? 'done (car s)) |\colorbox{green}{(lift 'no)}|
+                            ...
+    (letrec (match_here) ((lambda (r) (lambda (s)
+                (if (eq? 'done (car r))
+                    |\colorbox{green}{(lift 'yes)}|
+                    ...
+                    |\colorbox{green}{(lift (lambda (s) 'yes))}|
+                    |\colorbox{green}{(lift (match\_here r)))))}|
+                    match))
+    \end{minted}
+    \caption{Staged regular expression matcher by wrapping returned symbols in \mevl's \textit{lift}.}
+    \label{lst:regexp_staged}
+\end{figure}
+
+Continuing the trend, the generated code when staging the user-most interpreter (in this case the string matcher) yields the optimal residual program. As we wanted, the specialized matcher in figure \ref{lst:mevl_regexp_staged} will succeed on any input string.
+
+\begin{figure}[htp!]
+\centering
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minted}[linenos,escapeinside=||,fontsize=\footnotesize]{lisp}
+(lambda f0 x1
+  (let x2
+    (lambda f2 x3
+      (let x4 (car x3)
+      (let x5 (car x4)
+      (let x6 (eq? 'done x5)
+      (if x6
+        (lambda f7 x8 'yes)
+        (let x7 (car x3)
+        (let x8
+          (lambda f8 x9
+            (lambda f10 x11
+              (let x12 (car x9)
+              (let x13 (car x12)
+              (let x14 (eq? 'done x13)
+              (if x14 'yes
+                (let x15
+                  (lambda f15 x16
+                    (let x17 (car x9)
+                    (let x18 (car x17)
+                    (let x19 (eq? '_ x18) |\label{mline:matcher_redundant_cmp}|
+                    (if x19
+                      (let x20 (car x16)
+                      (let x21 (car x20)
+                      (let x22 (eq? 'done x21)
+                      (if x22 'no
+                      ...
+        \end{minted}
+        \caption{Residual program when collapsing our experimental tower while staging at the \mevl{} level.}
+        \label{lst:mevl_staged_regexp}
+    \end{subfigure}
+    \\[1ex]
+    \par\bigskip
+    \begin{subfigure}{\linewidth}
+        \centering
+        \begin{minted}[escapeinside=||]{lisp}
+(lambda f0 x1
+  (let x2 (car x1)
+  (let x3
+    (lambda f3 x4
+      (let x5 (car x4) 'yes))
+  (let x4 (cons x2 '.) (x3 x4)))))
+        \end{minted}
+        \caption{Residual program when collapsing our experimental tower while staging at the regular expression matcher level.}
+        \label{lst:mevl_regexp_staged}
+    \end{subfigure}
+\end{figure}
+\pagebreak
+
 %Running the SECD in evalms's compilation mode we see SECD instructions as literals being included in the generated code. What's worse is that these literals are never used. Their presence is an example of a trade-off we make between implementation complexity and intrusiveness versus removal of interpretative overhead. Although we removed most of the evaluation overhead of the SECD machine itself, these instructions are present in the generated code because our implementation converts anything in the \textit{env} and \textit{stack} registers into dynamic values in the whenever we use lambdas as firt-class citizens for instance when using them as return values. If we wanted to reduce generated code further we could either reuse the \textit{fns} register for non-recursive functions as well and prevent instructions loaded as part of the \textit{LDF} instruction to be lifted.
 
 %\subsection{Experiments}\label{sec:experiments}

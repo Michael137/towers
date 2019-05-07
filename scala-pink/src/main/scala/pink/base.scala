@@ -96,6 +96,9 @@ object Base {
           case Plus(Lit(a), Lit(b)) => Lit(a + b)
           case Minus(Lit(a), Lit(b)) => Lit(a - b)
           case Times(Lit(a), Lit(b)) => Lit(a * b)
+          case Equ(Lit(a), Lit(b)) => Lit(if(a == b) 1 else 0)
+          case Equ(Sym(a), Sym(b)) => Lit(if(a == b) 1 else 0)
+          case If(Lit(a), b: Exp, c: Exp) => if(a == 1) b else c
           case _ =>
             stBlock :+= (stFresh, s)
             fresh()

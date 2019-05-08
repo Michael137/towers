@@ -14,6 +14,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage[toc,page]{appendix}
 \usepackage[tdiagram]{semantic}
 \usepackage{amsthm}
 \usepackage{setspace}
@@ -420,11 +421,54 @@ Stage-polymorphism allows abstraction over how many stages an evaluation is perf
 An advantage of TDPE and why \mslang{} serves as an appropriate candidate PE in our experiments is that it requires no additional dedicated static analysis tools to perform its residualization, keeping complexity at a minimum. Given an interpreter we can stage it by following Amin et al.'s \cite{amin2017collapsing} recipe: lift all terminal values an interpreter returns. Once the returned values are dynamic, any operation that includes them is also marked dynamic and will occur in the residual program.
 
 %TODO: explain SECD such that code snippets in later sections are understandable to new reader
-\subsection{Abstract Machines}
+\subsection{The SECD Machine and Instruction Set (ISA)}
 %The full small-step semantics of the machine are given in APPENDIX and figures FIGURES demonstrate examples of how the machine operates.
-The SECD machine due to Landin \cite{landin1964mechanical} is a well-studied stack-based abstract machine initially developed in order to provide a model for evaluation of terms in the $\lambda$-calculus. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a STOP or WRITEC instruction, at which point the machine returns all values or a single value from the S-register respectively.
+The SECD machine due to Landin \cite{landin1964mechanical} is a well-studied stack-based abstract machine initially developed in order to provide a model for evaluation of terms in the $\lambda$-calculus. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores free-variables, function arguments, function return values and functions themselves. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A step function makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a \textbf{STOP} or \textbf{WRITEC} instruction, at which point the machine returns all values or a single value from the S-register respectively.
+
+We now describe the instruction set and implementation details described by Kogge \cite{kogge1990architecture}, which itself is a followup to Henderson's LispKit SECD machine \cite{henderson1980functional}. The three types of SECD instructions are:
+\begin{enumerate*}[label=(\arabic*)]
+    \item functions definition and application
+    \item special forms including if-statements
+    \item anything else such as arithmetic
+\end{enumerate*}. While a table describing all instructions and their transitions is available in figure \ref{fig:secd_kogge}, below we present examples using the instructions needed to comprehend later sections.
+
+\subsubsection{Examples}\label{ssubsec:secd_example}
+
+\begin{itemize}
+    \item \textbf{LDC} is used to load an operand (a string or constant) onto the stack (i.e., S-register). \textbf{SEL} is used to branch to two different sets of instructions depending on whether the top of \textit{S} is 0 (i.e., false) or not. \textbf{JOIN} jumps back from a branch to resume the rest of the program while placing the value computed in a branch on top of the stack.
+\begin{minted}[escapeinside=||]{lisp}
+    LDC 10 LDC 20 SUB
+    LDC 0 GT SEL
+        (LDC 5 JOIN)
+        (LDC -5 JOIN)
+    LDC done
+    STOP
+    
+    |\textcolor{red}{Result: (done -5)}|
+\end{minted}
+    \item \textbf{LDF} defines a SECD function (i.e., a list of instructions stored as an element in \textit{S}). \textbf{AP} applies a SECD function to the second element on the stack which in the example below is NIL (i.e., the LISP empty list {\ts}()). \textbf{RTN} places the value computed in the function onto the top of the stack and resumes the rest of the program.
+\begin{minted}[escapeinside=||]{lisp}
+    NIL LDF
+        (LDC 10 LDC 20 MPY RTN)
+    AP
+    STOP
+
+    |\textcolor{red}{Result: (200)}|
+\end{minted}
+
+    \item A recursive call consists of two SECD functions: a recursive function and a function that initiates the first recursive call. \textbf{RAP} will set the argument to the recursive function such that it will always find itself in the environment, thus allowing recursion. Additionally it will initiate the first recursive call. In the below example the recursive function does not have an exit condition and will continuously call itself with the closure found through \textbf{LD} in the environment. For a better understanding of recursive SECD function applications see the \textbf{RAP}/\textbf{letrec} analogy in figure \ref{fig:secd_kogge_rap} and the transition table in figure \ref{fig:secd_kogge}.
+\begin{minted}[escapeinside=||]{lisp}
+DUM NIL LDF
+    (NIL LD (2 1) AP RTN)
+CONS LDF
+    (NIL LD (2 1) AP RTN) RAP STOP
+
+    |\textcolor{red}{Result: \textit{does not terminate}}|
+\end{minted}
+\end{itemize}
 
 \section{Heterogeneity}\label{sec:heterogeneity}
+%TODO: discuss how sid-effects fit into heterogeneity
 A central part of our study revolves around the notion of heterogeneous towers. Prior work on towers of interpreters that inspired some these concepts includes Sturdy's work on the Platypus language framework that provided a mixed-language interpreter built from a reflective tower \cite{sturdy1993lisp}, Jones et al.'s Mix partial evaluator \cite{jones1989mix} in which systems consisting of multiple levels of interpreters could be partially evaluated and Amin et al.'s study of collapsing towers of interpreters in which the authors present a technique for turning systems of meta-circular interpreters into one-pass compilers. We continue from where the latter left of, namely the question of how one might achieve the effect of compiling multiple interpreters in heterogeneous settings. Our definition of \textit{heterogeneous} is as follows:
 \theoremstyle{definition}
 \begin{definition}
@@ -1174,10 +1218,10 @@ Following the experiments performed in Amin et al.'s study of towers \cite{amin2
 \end{figure}
 
 We then collapse two different configurations of the tower:
-\begin{enumerate}
+\begin{enumerate*}[label=(\arabic*)]
     \item Staged \mevl{} interpreter running the plain matcher
     \item Unstaged \mevl{} interpreter running a staged version of the matcher
-\end{enumerate} The pattern we specialize against is
+\end{enumerate*}. The pattern we specialize against is
 \mint{lisp}|    '(a * done)|
 which should match zero or more occurrences of character ``a'' where ``done'' serves as a terminal marker for the matcher. Logically, this pattern will match any string and thus the optimal specialized version of the matcher should simply return a ``yes'' on any input indicating a successful match.
 
@@ -1343,5 +1387,51 @@ Further work would benefit from changing representation of data structures like 
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}
+
+%%TC:ignore
+\begin{appendices}
+\chapter{SECD}
+\begin{figure}[htp!]
+    \centering
+    \begin{align*}
+    & \text{s e (\textbf{NIL}.c) d} \longrightarrow \text{(nil.s) e c d} \\
+    & \text{s e (\textbf{LDC} x.c) d} \longrightarrow \text{(x.s) e c d} \\
+    & \text{s e (\textbf{LD} (i.j).c) d} \longrightarrow \text{(locate((i.j),e).s) e c d} \\ 
+    & \quad\text{where locate((i.j), lst) returns the element at} \\
+    & \quad\text{the ith row and jth column in the multi-dimensional list ``lst''} \\ \\%
+    & \text{(a.s) e (\textit{OP}.c) d} \longrightarrow \text{((\textit{OP} a).s) e c d)} \\
+    & \quad\text{where \textit{OP} is one of CAR, CDR, ...} \\
+    & \text{(a b.s) e (\textit{OP}.c) d} \longrightarrow \text{((a \textit{OP} b).s) e c d} \\
+    & \quad\text{where \textit{OP} is one of CONS, ADD, SUB, MPY, ...} \\ \\%
+    & \text{(x.s) e (\textbf{SEL} ct cf.c) d} \longrightarrow \text{s e c? (c.d)} \\
+    & \quad\text{where c? = ct if x} \neq \text{0, and cf if x = 0} \\
+    & \text{s e (\textbf{JOIN}.c) (cr.d)} \longrightarrow \text{s e cr d} \\ \\%
+    & \text{s e (\textbf{LDF} f.c) d} \longrightarrow \text{((f.e).s) e c d} \\
+    & \text{((f.e{\ts}) v.s) e (\textbf{AP}.c) d} \longrightarrow \text{NIL (v.e{\ts}) f (s e c.d)} \\
+    & \text{(x.z) e{\ts} (\textbf{RTN}.q) (s e c.d)} \longrightarrow \text{(x.s) e c d} \\ \\%
+    & \text{s e (\textbf{DUM}.c) d} \longrightarrow \text{s (nil.e) c d} \\
+    & \text{((f.(nil.e)) v.s) (nil.e) (\textbf{RAP}.c) d} \longrightarrow \text{nil (set-car!((nil.e),v).e) f (s e c.d)} \\
+    & \quad\text{where set-car!(x, y) sets the first element of ``x'' to ``y'' and returns ``x''} \\ \\%
+    & \text{s e (\textbf{STOP}.c) d} \longrightarrow \text{halt the machine and return \textit{s}} \\
+    & \text{(x.s) e (\textbf{WRITEC}.c) d} \longrightarrow \text{halt the machine and return \textit{x}}
+    \end{align*}
+    \caption{SECD Machine instruction transitions mostly according to Kogge's description \cite{kogge1990architecture}}
+    \label{fig:secd_kogge}
+\end{figure}
+
+\begin{figure}[htp!]
+    \centering
+    \begin{align*}
+        & \text{Assume: letrec f1 = A1 ... fn = An in E} \\
+        & \qquad\qquad\quad\text{= (} \lambda \: \text{f1 ... fn } | \text{ E) A1 ... An} \\ \\%
+        & \text{Code = (DUM NIL LDF (..code for An... RTN) CONS} \\
+        & \qquad\qquad\qquad\qquad\,\text{LDF (..code for A1.. RTN) CONS} \\
+        & \qquad\qquad\qquad\qquad\,\text{LDF (..code for E.. RTN) RAP)}
+    \end{align*}
+    \caption{Kogge's \cite{kogge1990architecture} explanation of \textbf{RAP}'s semantics. A \textbf{letrec} gets translated into a series of SECD function definitions where the last one initiates a recursive call.}
+    \label{fig:secd_kogge_rap}
+\end{figure}
+\end{appendices}
+%%TC:endignore
 
 \end{document}

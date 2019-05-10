@@ -2,11 +2,29 @@
 {\Huge \bf Abstract}
 \vspace{24pt} 
 
-A tower of interpreters is a program architecture that consists of a, conceptually infinite, sequence of interpreters each interpreting the one adjacent to it. Towers of interpreters in literature are synonymous with reflective towers and provide a tractable method with which to reason about reflection and design reflective languages. The overhead induced by additional layers of evaluation can be optimized away using a program specialization technique called \textit{partial evaluation}, a process which previous work has termed \textit{collapsing of towers of interpreters}. However, work on reflective towers rarely considered the implications and applicability of associated optimization techniques on practical settings in which the presence of redundant interpretation is commonplace. Our work recontextualizes prior work on reflective towers and the their collapse to \textit{heterogenous} configurations in which individual interpreters lack reflection, meta-circularity and homogeneity of data representation. First we demonstrate the construction of an experimental heterogeneous tower. Then we show evidence to support the hypothesis discussed in previous work that staging at different levels in the tower affects the optimality of the residual program. We identify obstacles that occur during the implementation of our experimental tower and the corresponding collapse procedure driven by \textit{type-directed partial evaluation (TDPE)}. As part of our tower we implement and stage a SECD abstract machine using TDPE which required the modification of its small-step semantics to support a TDPE-style reification operator and ensure termination of static reduction by normalization in the presence of recursive calls. Two core challenges we faced and provide approaches to are
+A tower of interpreters is a program architecture that consists of a sequence of interpreters each interpreting the one adjacent to it. The overhead induced by multiple layers of evaluation can be optimized away using a program specialization technique called \textit{partial evaluation}, a process referred to as \textit{collapsing of towers of interpreters}. %TDPE
+Towers of interpreters in literature are synonymous with reflective towers and provide a tractable method with which to reason about reflection and design reflective languages. Reflective towers studied thus far are \textit{homogeneous}, meaning individual interpreters are meta-circular and have a common data representation between each other.
+Research into homogeneous towers rarely considered the applicability of associated optimization techniques in practical settings where multiple interpretation layers are commonplace but the towers are \textit{heterogeneous} (i.e., interpreters lack meta-circularity, reflection and data homogeneity).
+The aim of our study was to investigate the extent to which previous methodologies for collapsing reflective towers apply to heterogeneous configurations.
+
+To collapse a tower means to \textit{stage} an interpreter in the tower (i.e., convert the interpreter into a compiler by splitting its execution into several stages) and statically reduce all the evaluation performed preceeding interpreters. Where the procedure to collapse homogeneous towers is trivial because computation performed in one interpreter can be represented in terms of its interpreter and information of which operations to partially evaluate can be propagated using the same built-in operators, this is not the case in a heterogeneous setting. There, one would need to convert representations of program constructs at each interpreter boundary and find a way to pass information needed by the partial evaluator through the tower. Our contributions include:
 \begin{enumerate*}[label=(\arabic*)]
-    \item in the absence of meta-circularity binding-time information has to be passed through all interpreters in a tower for optimal residualization
-    \item due to the differences in the partial evaluator's and individual interpreters' representations of closures, we need a method of transforming between the two
+    \item we construct and collapse an experimental heterogeneous tower using Pink, a framework that was used to collapse reflective towers through a modified variant of partial evaluation called \textit{type-directed partial evaluation (TDPE)}
+    \item we stage a SECD abstract machine using TDPE which required modification of its operational semantics to ensure termination in the presence of recursive calls
+    \item we investigate the hypothesis that staging at different levels in the tower affects its optimality after collapse
 \end{enumerate*}.
+
+%%%%%%%
+\begin{comment}
+    \begin{itemize}
+        \item what are towers
+        \item add overhead that can be collapsed using TDPE
+        \item in literature research has gone into reflective towers where collapsing is ``trivial'': homogeneous
+        \item towers exist in practice and we call them heterogeneous
+        \item aim was to bring the two together
+        \item contributions: 1. construct experimental tower and collapse it 2. stage at different levels in the tower 3. stage an abstract machine 4. with meta-circularity collapsing is trivial because operations can at one level in the tower can be performed by any other, however, with heterogeneous towers this is no longer the case and we demonstrate a possible approach in dealing with this issue 5. discuss challenges in staging an abstract machine using TDPE
+    \end{itemize}
+\end{comment}
 
 \newpage
 \vspace*{\fill}

@@ -82,11 +82,8 @@ object SECD {
           (cdr d)
           d)
       (let s1 ((car s) 1)
-        (if (code? s1) ;lifting
-          (let s0 (s1 (car (cadr s)))
-          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env))
         (let s0 ((car s1) (mla (cons (cadr s) (cddr s1))))
-          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env))))))
+          ((((((machine (cons s0 (cddr s))) d) fns) bt) (cdr ops)) env)))))
   (let _ _ ;(debug 'else?====>)
   (if (lambda? (caar s))
     (let _ _ ;(debug 'lambda?====>)
@@ -269,8 +266,9 @@ object SECD {
     // println(EVMComp.runOnVM("""(letrec (x) ((+ 2 2)) (- x 4))""", "'()"))
 
     // println(EVMComp.runOnVM("""(lambda (x) (+ x y))""", "'()"))
-    println(EVMComp.runOnVM("""((lambda (x) (* (+ x y) (- x 1))) 5)""", "'()", run = false, liftEnv = true))
-	println(pretty(reifyc(ev(s"""($cmp '(LDC 10 LDC 20 ADD WRITEC))""")), Nil));
+//    println(EVMComp.runOnVM("""((lambda (x) (* (+ x y) (- x 1))) 5)""", "'()", run = false, liftEnv = true))
+//    println(pretty(reifyc(ev(s"""($cmp '(LDC 10 LDC 20 ADD WRITEC))""")), Nil));
+//    check(ev(s"""(($evl '(DUM NIL LDF (LD (2 1) AP) CONS LDF (NIL LD (1 1) STOP) RAP)) '())"""))("Cst(-131)")
     testDone()
   }
 }

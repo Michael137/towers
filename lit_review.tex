@@ -1206,7 +1206,7 @@ Figure \ref{lst:mevl_secd_all} shows the \mevl{} interpreter running a program c
 \caption{Generated code running the example in \ref{lst:mevl_secd_all} on a staged SECD machine. Traces of the \mevl's dispatch logic is highlighted in green.}
 \label{lst:mevl_secd_ped}
 \end{figure}
-\pagebreak
+\newpage
 
 \subsubsection{Staging \texorpdfstring{\mevl}{Lg} and Collapsing the Tower}\label{ssubsec:mevl_staged}
 In an effort to further optimize our generated code from the example in figure \ref{lst:mevl_secd_all} we stage the \mevl{} interpreter. As indicated by Amin et al. during their demonstration of collapsing towers written in Pink \cite{amin2017collapsing}, staging at the user-most level of a tower of interpreters should yield the most optimal code. In this section we aim to demonstrate that staging at other levels than the top-most interpreter does indeed generate less efficient residual programs.
@@ -1279,7 +1279,7 @@ DUM NIL LDF
          \caption{Prettified Residual Program in \mslang for an example factorial on a staged \mevl interpreter}
          \label{lst:mevl_staged_secd_ped}
 \end{figure}
-\pagebreak
+\newpage
 
 %The process of implementing the \textbf{LIFT} instruction gives us a glimpse into the issues associated with heterogeneity in towers of interpreters. In our proof-of-concept SECD machine, whose semantics are simpler to reason about than a virtual machine in practice, the complexity in propagating binding time information in the form of \textit{lift} operations arises from the need to adapt representation of closures
 
@@ -1415,7 +1415,7 @@ Continuing the trend, the generated code when staging the user-most interpreter 
         \label{lst:mevl_regexp_staged}
     \end{subfigure}
 \end{figure}
-\pagebreak
+\newpage
 
 %Running the SECD in evalms's compilation mode we see SECD instructions as literals being included in the generated code. What's worse is that these literals are never used. Their presence is an example of a trade-off we make between implementation complexity and intrusiveness versus removal of interpretative overhead. Although we removed most of the evaluation overhead of the SECD machine itself, these instructions are present in the generated code because our implementation converts anything in the \textit{env} and \textit{stack} registers into dynamic values in the whenever we use lambdas as firt-class citizens for instance when using them as return values. If we wanted to reduce generated code further we could either reuse the \textit{fns} register for non-recursive functions as well and prevent instructions loaded as part of the \textit{LDF} instruction to be lifted.
 

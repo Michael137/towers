@@ -876,16 +876,16 @@ Instead of evaluating the recursive call we want to instead generate the call an
 % 		 & && \qquad\text{where state} := \text{s{\ts} e{\ts} c{\ts} d{\ts} f{\ts}}
 \begingroup
 \allowdisplaybreaks
-\begin{figure}[ht!]
+\begin{figure}[htp!]
 \centering
 \begin{alignat}{5}
-		\text{s e (} \mathbf{LDF} \text{ ops.c) d f} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(step {\ts}() e{\ts} ops {\ts}ret f)) ops.e).s e c d f} \label{eq:secd_sem_ldf} \\
+		\text{s e (} \mathbf{LDF} \text{ ops.c) d f} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(step@({\ts}() e{\ts} ops {\ts}ret f))) ops.e).s e c d f} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
 		%
 		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d f} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c f.d) (rec mem entryEnv {\ts}()).f} \label{eq:secd_sem_rap} \\
 		\text{where entryClo} & := && \text{(entryFn (entryOps entryEnv))} \nonumber \\
 		\text{recClo} & := && \text{(recFn (recOps recEnv))} \nonumber \\
-		\text{rec} & := && \text{$\lambda$env.(step {\ts}() env recOps {\ts}ret (rec mem recEnv.{\ts}()).f)} \nonumber \\
+		\text{rec} & := && \text{$\lambda$env.(step@({\ts}() env recOps {\ts}ret (rec mem recEnv.{\ts}()).f))} \nonumber \\
 		\text{mem} & := && \text{((s e c f.d) (recOps recEnv).f)} \nonumber \\
 		\nonumber \\%
 		%
@@ -893,30 +893,33 @@ Instead of evaluating the recursive call we want to instead generate the call an
 		\nonumber \\%
 		%
 		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c{\ts}  d{\ts}  f{\ts}.d) f} & \longrightarrow \:
-		 && \text{(lift-all v)} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
-		 & && \text{($\lambda$x.((car s{\ts}) (cons (car x) (cddr s{\ts}))) (cddr s1)	} \nonumber \\
+		 && \text{lift-all@v} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
+		 & && \text{$\lambda$x.(fn@(lift-all@(arg.env)))} \nonumber \\
 		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
-		 & && \qquad\text{where s1} := \text{v@\_} \nonumber \\
+		 & && \qquad\text{where (fn env)} := \text{v@\_} \nonumber \\
  		 & && \text{(v.s\ts)  e\ts  c\ts  d\ts  f\ts}	\qquad\;\;\text{otherwise} \nonumber \\
  		\nonumber \\%
  		%
-		\text{(fn env.v).s e (} \mathbf{AP}\text{.c) ({\ts}() env{\ts}) f} & \longrightarrow \: && \text{res.s env c d f} \\
-		\text{where res} & := && \text{fn@(lift-all (v s.env{\ts}))\textbf{\textbf{}}} \nonumber \\
+		\text{s{\ts} e (} \mathbf{AP}\text{.c) env{\ts} f} & \longrightarrow \: && \text{res.s e c d f} \\
+		\text{where res} & := && \text{fn@(lift-all@(x.env))\textbf{\textbf{}}} \quad\text{if s{\ts} $=$ ((fn (ops.env)) x.s)} \nonumber \\
+		& && \text{fn@(lift-all@(x.env))}\quad\text{if s{\ts} $=$ (thunk x.s)} \nonumber \\
+		& && \qquad\text{where (fun env) $:=$ thunk@\_} \nonumber \\
 		\nonumber \\%
 		%
 		\text{(v m.s) e (} \mathbf{LIFT}\text{.c) d f} & \longrightarrow \: \label{eq:secd_sem_lift}
 		 && \text{res.s e c d f}   \\
-		 \text{where res} & := && \text{(lift v)\quad if (num? v) or (sym? v)} \nonumber \\
-		 & && \text{(lift rec)} \quad \text{if (lambda? v)} \nonumber \\
+		 \text{where res} & := && \text{lift@v\quad if (num? v) or (sym? v)} \nonumber \\
+		 & && \text{lift@rec} \quad \text{if (lambda? v)} \nonumber \\
 		 & && \quad \text{where rec} := \nonumber \\ 
-		 & && \qquad\text{($\lambda$env.(step {\ts}() env.recEnv c{\ts}} \nonumber \\
+		 & && \qquad\text{($\lambda$env.(step@({\ts}() env.recEnv c{\ts})} \nonumber \\
 		 & && \qquad\quad \text{{\ts}ret (rec (recOps recEnv).f)))} \nonumber \\
-		 & && \text{(lift ($\lambda$env.(step {\ts}() env.m c{\ts} {\ts}ret f)))} \quad\text{otherwise} \nonumber
+		 & && \text{lift@($\lambda$env.(step@({\ts}() env.m c{\ts} {\ts}ret f)))} \quad\text{otherwise} \nonumber
 \end{alignat}
-\caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
+\caption{Modifications to the SECD operational semantics as presented by Kogge \cite{kogge1990architecture}. The original transitions are shown in figure \ref{fig:secd_kogge}. The function \textit{step} is the implicit state-transition function. The function \textit{locate} returns an element at index (i,j) from a multi-dimensional list. These modifications permit us to stage our SECD machine interpreter and enable residualization of recursive function applications.}
 \label{fig:secd_semantics_noset}
 \end{figure}
 \endgroup
+\newpage
 
 %TODO essence of new semantics
 Firstly, equation \ref{eq:secd_sem_ldf} changes the representation of functions in the SECD machine from simply lists of instructions to a function that accepts an environment and upon invocation takes a step in the abstract machine with the instructions put into control-register by \textbf{LDF}, essentially performing the role that \textbf{AP} previously did. Working with thunks makes the necessary changes to stage the machine less intrusive and effectively prevents the elements of the control register being marked as dynamic. This is in line with the ideas of Danvy et al. \cite{danvy1995essence} which showed that eta-expansion can enable partial evaluation by hiding dynamic values from static contexts. Note also that we add a new functions register, which we refer to as the \textbf{F-register} or simply \textbf{fns} which is responsible for holding the recursive instructions of a \textbf{RAP} call.
@@ -927,7 +930,8 @@ In the traditional SECD machine both the recursive and the calling function are 
 
 The \textbf{RTN} instruction works on the state set up by the modified instructions above to decide the interpreter's behaviour upon returning from a SECD function. In the original semantics of SECD, \textbf{RTN} would reinstall the state of all registers from the dump and add the top most value of the current stack-register back onto the restored stack-register. This modelled the return from a function application. As we previously showed, taking another step in the machine when specializing a recursive function will lead to non-termination of our specializer. Thus, we simply stop evaluation when returning from a function by tagging the register with a \textit{{\ts}ret} symbol and returning the top-most value on the stack to the call site of a lambda. This works because function definitions reside in lambdas in the interpreter now and SECD function application is lambda invocation. The last case we are concerned with is the currying of SECD functions. This occurs when we invoke a \textbf{RTN} immediately after an \textbf{LDR} which loaded a thunk into the return location on the stack. To properly return a lambda we unpack the closure from \textbf{LDR}'s thunk, construct a \textbf{LDF}-style closure, lift and then return it.
 
-%TODO explain AP
+%TODO more thorough explanation (?)
+Finally, we modify \textbf{AP} to adhere to the new calling convention of SECD functions required by the thunks that \textbf{RAP}/\textbf{LDF}/\textbf{LDR} add onto the stack. Where previously \textbf{AP} would call a function by simply reinstating instructions from \textit{S} into \textit{C}, now \textbf{AP} initiates a call to the lambda that we wrapped \textbf{LDF}'s instructions in. We pass a lifted environment and top of the stack to the function in case it is dynamic.
 
 To rewrite the example from figure \ref{lst:secd_recursion_ex1} with the new semantics we load the recursive function using the new \textbf{LDR} instead of the \textbf{LD} instruction as highlighted in figure \ref{lst:secd_recursion_ex1_newsem}.
 
@@ -1475,32 +1479,45 @@ Although we showed the successful collapse of a heterogeneous tower of interpret
 In smaller scale settings in which towers consist of embedded DSL interpreters or regular expression matchers, however, our experiments could help the optimization of such systems using the simple to implement TDPE even in the absence of meta-circularity.
 
 \subsection{Future Work}\label{subsec:future}
-\begin{comment}
-The benefits of choosing a SECD machine as a level in the tower is its extensibility. Kogge describes numerous extensions to the machine including instructions to perform TRY/FAIL SEMANTICS (INSERT CORRECT NAME). These enhancements to the SECD level in our tower could provide further valuable insight ... A SECD machine can additionally be made to support the dialect MultiLisp dialect of LISP. PARALLEL MACHINE
-Diehl et al.'s survey of abstract machines \cite{diehl2000abstract} also provides several attractive opportunities for future investigations: The widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine \cite{moreau1994pcks}
+One of the conditions of our definition of heterogeneity is the existence of a semantic gaps between individual interpreters. However, we left out the treatment of the effect that the semantics of a particular interpreter have on our collapse procedure. For example the ability to perform side-effects such as destructive data structure changes are essential in real-world programs regardless of their domain but were not considered in our study. Thus to get a step closer to collapsing towers in practice, one would need to investigate ways of dealing with side-effects at various levels of a tower.
+%side-effect propagatable or not (i.e., are isolated side-effects at inidividual levels a concern)? do side-effecting operations need to be implemented in all levels below to work? a tower structure adds unique issues to TDPE'ing side-effects. What effect does staging at different levels have on the treatment of side-effects? preactions \cite{masuhara1995compiling}? PE of lambda calc with effects \cite{asai1997partial}?
+%Further work would benefit from changing representation of data structures %like closures to increase the semantic gaps between \mslang{} and \mevl{} %and demonstrate even more heterogeneity than in the tower we built.
 
-%abstract machine for partial evaluation? multi-level language abstract machine
+Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp). Implementing such extensions could aid the experimentation with side-effects since with semantics such as call/cc we can implement non-traditional (?) control-flow through exceptions.
+%Mention TRY/FAIL and usability of previous techniques for staging
+% different machines e.g. WAM
+%stratification of towers
 
-%can we provide a well-annotatedness property as in \cite{gomard1991partial}
-%is there a property such as partial evaluatability?
 
-Another avenue to explore is the efficiency of binding time analysis. In our staged SECD machine we dynamize all of the stack and all of the environment because of pollution of single dynamic variables. Binding-time improvements could be explored using online partial evaluators to decide on the binding time at specialization time. Additionally one could explore polyvariant analysis to reduce inefficient dynamization of actually static values. \cite{danvy1995essence}.
+We hope our study provided a platform and the necessary techniques to make collapsing towers in practice a reality. Outstanding work involves generalizing and making our TDPE methodology less intrusive. Instead of reimplementing a reify operation at the levels that need it, feasible techniques could at least for particular domains or languages pass the TDPE binding-time information in the form of data through each level.
 
-The focus of our definition of heterogeneity is the absence of meta-circularity. A thoroughly researched topic in partial evaluation, however, is the residualization of side-effects....
-include side effects, e.g. if individual levels perform a unique task/side-effect (which is the typical use for such a tower) (we tried converting the original base but self-referencing and single arg lambdas and how the environment was designed are less suitable for our PE method), different abstract machines to collapse e.g. the WAM which not only is mature and widely used in practice but also offers a different programming paradigm to experiment on, finding ways to collapse towers without needing to expose a lift operator and without requiring a multi-level language as the base, self-applicative PE
+A classic requirement (?) in PE is the ability of a PE to output residual programs in a language different to the subject language or the one the PE was written in. This could prove useful when staging between a fixed set of levels that is not the whole tower. Such a feature would need to be supported by the underlying PE methodology (i.e., TDPE in our case). Although its benefit of being lightweight and easy to implement, more complex tasks have traditionally only been present in more complex standalone PE systems such as Mix and Similix. This poses our final intended research direction: is it possible to implement the idea of collapsing towers using a non-TDPE approach? If so, can it prove to be less intrusive to individual interpreters than the methodology we presented?
 
-Another subject of study in the field of partial evaluation is the ability of PEs to output residual programs in a language different from the one the PE is written in \cite{jones1993partial,jones1988challenging}. Further work could extend the partial evaluation framework we use to target languages other than \mslang.
-
-Even in our small-scale study of partial evaluators we encountered questions of optimizing size and structure of generated code and proposed solutions specific to the interpreters we are partially evaluating. We echo the question posed in Jones \cite{jones1988challenging} discussion of challenges in PE of whether we can generate compilers or in our case even simply generate code that rivals modern optimiing compilers. -> need more testing, all optimizations we introduced are very specific to the wiring of the tower, which is maybe how it is supposed to be, although compilers do not require optimizations based specifically on the program source they operate on
-
-stratification of towers: different shapes of towers (make/shell is a tower?, purely interpreters, interpreters and compilers, JIT compilers, parsers, DSLs, what is collapseable and what is not?, is TDPE enough?, what would it take to apply our methodologies to real towers?->reverse engineering representation of program constructs/decompilation and recompilation \& multi-level language with a TDPE-style reify operator)
-
-how can changing semantics of individual levels in real world towers work soundly?
-
-Recent work due to Sampson et al. \cite{sampson2017static} differentiates between value splicing and materialization. Materialization and cross-stage references are used to persist information across stages. This provides a possible solution to pass information about staging decisions across levels.
-
-Further work would benefit from changing representation of data structures like closures to increase the semantic gaps between \mslang{} and \mevl{} and demonstrate even more heterogeneity than in the tower we built.
-\end{comment}
+%\begin{comment}
+%The benefits of choosing a SECD machine as a level in the tower is its %extensibility. Kogge describes numerous extensions to the machine including %instructions to perform TRY/FAIL SEMANTICS (INSERT CORRECT NAME). These %enhancements to the SECD level in our tower could provide further valuable %insight ... A SECD machine can additionally be made to support the dialect %MultiLisp dialect of LISP. PARALLEL MACHINE
+%Diehl et al.'s survey of abstract machines \cite{diehl2000abstract} also %provides several attractive opportunities for future investigations: The %widely used Warren Abstract Machine (WAM) in logic programming, PCKS machine %\cite{moreau1994pcks}
+%
+%%abstract machine for partial evaluation? multi-level language abstract %machine
+%
+%%can we provide a well-annotatedness property as in \cite{gomard1991partial}
+%%is there a property such as partial evaluatability?
+%
+%Another avenue to explore is the efficiency of binding time analysis. In our %staged SECD machine we dynamize all of the stack and all of the environment %because of pollution of single dynamic variables. Binding-time improvements %could be explored using online partial evaluators to decide on the binding %time at specialization time. Additionally one could explore polyvariant %analysis to reduce inefficient dynamization of actually static values. %\cite{danvy1995essence}.
+%
+%The focus of our definition of heterogeneity is the absence of %meta-circularity. A thoroughly researched topic in partial evaluation, %however, is the residualization of side-effects....
+%include side effects, e.g. if individual levels perform a unique %task/side-effect (which is the typical use for such a tower) (we tried %converting the original base but self-referencing and single arg lambdas and %how the environment was designed are less suitable for our PE method), %different abstract machines to collapse e.g. the WAM which not only is %mature and widely used in practice but also offers a different programming %paradigm to experiment on, finding ways to collapse towers without needing %to expose a lift operator and without requiring a multi-level language as %the base, self-applicative PE
+%
+%Another subject of study in the field of partial evaluation is the ability %of PEs to output residual programs in a language different from the one the %PE is written in \cite{jones1993partial,jones1988challenging}. Further work %could extend the partial evaluation framework we use to target languages %other than \mslang.
+%
+%Even in our small-scale study of partial evaluators we encountered questions %of optimizing size and structure of generated code and proposed solutions %specific to the interpreters we are partially evaluating. We echo the %question posed in Jones \cite{jones1988challenging} discussion of challenges %in PE of whether we can generate compilers or in our case even simply %generate code that rivals modern optimiing compilers. -> need more testing, %all optimizations we introduced are very specific to the wiring of the %tower, which is maybe how it is supposed to be, although compilers do not %require optimizations based specifically on the program source they operate %on
+%
+%stratification of towers: different shapes of towers (make/shell is a %tower?, purely interpreters, interpreters and compilers, JIT compilers, %parsers, DSLs, what is collapseable and what is not?, is TDPE enough?, what %would it take to apply our methodologies to real towers?->reverse %engineering representation of program constructs/decompilation and %recompilation \& multi-level language with a TDPE-style reify operator)
+%
+%how can changing semantics of individual levels in real world towers work %soundly?
+%
+%Recent work due to Sampson et al. \cite{sampson2017static} differentiates %between value splicing and materialization. Materialization and cross-stage %references are used to persist information across stages. This provides a %possible solution to pass information about staging decisions across levels.
+%
+%\end{comment}
 
 \bibliographystyle{IEEEtran}
 \bibliography{lit_review}

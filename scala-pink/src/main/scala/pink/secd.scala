@@ -103,6 +103,15 @@ object SECD_Machine {
                 (NIL LD (2 2) CONS LD (2 1) CONS LD (1 1) AP RTN) RAP
                 RTN) AP WRITEC)"""
     check(ev(s"($evl $factorialProg)"))("Cst(720)")
+    check(ev(s"""($evl '(
+DUM NIL LDF
+(LDC 0 LD (1 1) EQ SEL
+(LDC 1 JOIN)
+(LD (1 1) NIL LDC 1 LD (1 1) SUB CONS LD (2 1) AP MPY JOIN)
+RTN)
+CONS LDF
+(NIL LDC 6 CONS LD (1 1) AP RTN) RAP WRITEC
+))"""))("Cst(720)")
   }
 }
 

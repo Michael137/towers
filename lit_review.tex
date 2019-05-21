@@ -226,39 +226,42 @@ In the original reflective tower models only minimal attention was given to the 
 %TODO: verify collapsing methodology + mention clambda (?)
 
 %Parallel to this branch of research towers of interpreters in practice have been encountered in practice at least as long as YACC/LEX exist as Sturdy points out in his analysis of mixed language towers.
-Parallel to all the above theoretical research into reflective towers, practical programmers have been working with towers of interpreters to some extent dating back to the idea of language parsers. Writing a parser in an interpreted language already implies two levels of interpretation (depicted in figure \ref{fig:tombstone_tower_parser}): one running the parser and another the parser itself. Other examples include interpreters for embedded domain-specific languages (DSLs) or string matchers embedded in a language both of which form towers of two levels. Advances in virtualization technology has driven increasing interest in software emulation. Viewing emulation as a form of interpretation we can consider interpreters running on virtual hardware, such as the bytecode interpreter in the Java Virtual Machine \cite{lindholm2014java}, as towers of interpreters as well.
+Parallel to all the above theoretical research into reflective towers, practical programmers have been working with towers of interpreters to some extent dating back to the idea of language parsers. Writing a parser in an interpreted language already implies two levels of interpretation: %(depicted in figure \ref{fig:tombstone_tower_parser}):
+one running the parser and another the parser itself. Other examples include interpreters for embedded domain-specific languages (DSLs) or string matchers embedded in a language both of which form towers of two levels. Advances in virtualization technology has driven increasing interest in software emulation. Viewing emulation as a form of interpretation we can consider interpreters running on virtual hardware, such as the bytecode interpreter in the Java Virtual Machine \cite{lindholm2014java}, as towers of interpreters as well.
 
-\begin{figure}[htp!]
-    \centering
-        \begin{tikzpicture}
-            \matrix (m) [matrix of nodes,nodes={minimum width=3em,minimum  height=1.7em}
-                        ]
-            {
-                String            \\
-                &        Level 1  \\
-                Parser            \\
-                Parser            \\
-                &        Level 0  \\
-                Perl              \\
-                |[font=\small]|M  \\
-              };
-              \draw (m-1-1.north west) |- (m-6-1.south east) |- (m-1-1.north west);
-              \draw (m-3-1.south west) -- (m-3-1.south east);
-              \draw (m-6-1.south west) -- (m-7-1.south) -- (m-6-1.south east);
-        \end{tikzpicture}
-    \caption{Example tower of two levels. Level 0 is a parser interpreted by a Perl interpreter. The next level is the parser interpreting an input string.}
-    \label{fig:tombstone_tower_parser}
-\end{figure}
+%\begin{figure}[htp!]
+%    \centering
+%        \begin{tikzpicture}
+%            \matrix (m) [matrix of nodes,nodes={minimum width=3em,minimum  height=1.7em}
+%                        ]
+%            {
+%                String            \\
+%                &        Level 1  \\
+%                Parser            \\
+%                Parser            \\
+%                &        Level 0  \\
+%                Perl              \\
+%                |[font=\small]|M  \\
+%              };
+%              \draw (m-1-1.north west) |- (m-6-1.south east) |- (m-1-1.north west);
+%              \draw (m-3-1.south west) -- (m-3-1.south east);
+%              \draw (m-6-1.south west) -- (m-7-1.south) -- (m-6-1.south east);
+%        \end{tikzpicture}
+%    \caption{Example tower of two levels. Level 0 is a parser interpreted by a Perl interpreter. %The next level is the parser interpreting an input string.}
+%    \label{fig:tombstone_tower_parser}
+%\end{figure}
 
 However, these two branches of research do not overlap and work on towers of interpreters rarely studied their counterparts in production systems. It is natural to ask the question of what it would take to apply previous techniques in partial evaluation to a practical setting. This is the question Amin et al. pose in their conclusion after describing Pink \cite{amin2017collapsing} and is the starting point for this thesis.
 
-We aim to bring previous work of removing interpretative overhead in towers using partial evaluation into practice. Our study achieves this by constructing a proof-of-concept tower (figure \ref{fig:tombstone}) of interpreters that more-closely resembles those in real-world systems.%TODO: continue explanation of diagram here
-We then collapse it under different configurations and evaluate the resulting optimized programs. We demonstrate that given a language capable of expressing types of variables available at run-time and compile-time (i.e., a \textit{multi-level language}) and a type-directed PE (TDPE), a lightweight partial evaluator due to Danvy \cite{danvy1999type} described in section \ref{subsec:tdpe}, we can partially evaluate individual interpreters in a sequence of non-metacircular interpreters and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process). Our work's contributions are:
+We aim to bring previous work of removing interpretative overhead in towers using partial evaluation into practice. Our study achieves this by constructing a proof-of-concept tower of interpreters that more-closely resembles those in real-world systems. Figure \ref{fig:tombstone} describes two versions of our experimental tower. Traditionally reflective towers can be thought of as completely vertical as the one depicted on the left. However, details such as how a tower grows and shrinks or how exactly execution of user programs gets performed worked rather mysteriously, in part also due to meta-circularity. We decided to implement our tower using occasional layers of compilation (as shown on the right). On one hand it is more convenient to implement such a tower because compilation helps translation from higher-level to less intuitive lower-level languages (such as the SECD instruction set). On the other hand, we hope to improve the understanding of the importance of the intensional structure of towers, particularly how it affects the process of collapsing towers. We can assume that extensionally the computation they perform is equivalent since they both execute a user program yielding the same output.
+
+We then collapse the experimental tower under different configurations and evaluate the resulting optimized programs. We demonstrate that given a language capable of expressing types of variables available at run-time and compile-time (i.e., a \textit{multi-level language}) and a type-directed PE (TDPE), a lightweight partial evaluator due to Danvy \cite{danvy1999type} described in section \ref{subsec:tdpe}, we can partially evaluate individual interpreters in a sequence of non-metacircular interpreters and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process). Our work's contributions are:
 \begin{enumerate}
 	\item Develop an experimental heterogeneous tower of interpreters and a strategy for collapsing it
 	\item Evaluate the effect that staging at different levels within our tower has on the residual programs
 	\item Discuss the effects that heterogeneity in towers imposes on TDPE
 	\item Demonstrate issues with and potential approaches to staging abstract machines, specifically a SECD machine, using TDPE
+	%TODO: highlight intensional structure of towers and affect on collapsing (move code between layers)
 \end{enumerate}
 
 In section \ref{sec:background} we explain background information that covers the fundamental topics we base our experiments and discussions on. We then define \textit{heterogeneity} in towers of interpreters in section \ref{sec:heterogeneity}. In section \ref{sec:recipe} we describe the recipe that the partial evaluation framework Pink \cite{amin2017collapsing} used to construct and collapse meta-circular towers and then show how this recipe changes as a result of heterogeneity. We present the implementation and evaluation of our experimental tower in section \ref{sec:tower}. Section \ref{sec:mslang} provides an overview of Pink. We systematically describe the process by which we create a heterogeneous tower of interpreters and incrementally collapse it in sections \ref{sec:secd} through \ref{sec:string_matcher}. We conclude with an evaluation of our findings followed by a discussion of potential future work in section \ref{sec:conclusion}.
@@ -322,7 +325,7 @@ In section \ref{sec:background} we explain background information that covers th
             \draw (m-4-8.north east) -- (m-4-8.south east);
             \draw (m-6-9.south west) -- (m-7-9.south) -- (m-6-9.south east);
             \end{tikzpicture}
-            \caption{Tombstone diagrams that represent our two extensionally equal versions of our experimental tower of interpreters. \mevl{} is our toy language described in section \ref{subsec:mevl}, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} is the Java Virtual Machine \cite{lindholm2014java} and in our diagram also encompasses any underlying machinery necessary to run the JVM. While the left depicts the intuitive view of a tower we implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the effect collapsing of towers has on the computation of individual levels and the power of the \textit{lift} operator described in section \ref{subsec:tdpe}}
+            \caption{Tombstone diagrams that represent our two extensionally equal versions of our experimental tower of interpreters. \mevl{} is our toy language described in section \ref{subsec:mevl}, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} is the Java Virtual Machine \cite{lindholm2014java} and in our diagram also encompasses any underlying machinery necessary to run the JVM. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the effect collapsing of towers has on the computation of individual levels and the power of the \textit{lift} operator described in section \ref{subsec:tdpe}}
             \label{fig:tombstone}
     \end{subfigure}\\[4ex]
     \begin{subfigure}[htp!]{\linewidth}
@@ -386,7 +389,7 @@ To prevent a clash of variable names typically one would perform an $\alpha$-con
     & \equiv        && \: \lambda z.yz
 \end{alignat*}
 
-De Bruijn introduced a canonical lambda notation that prevents such variable name collisions and eliminates the need for $\alpha$-conversions during substitutions \cite{de1972lambda}. De Bruijn indices denote each variable with an integer that is the number of lambda abstractions between a variable's occurrence and the lambda binding it. Assuming an initial index of $0$ for free variable $y$, the above example in de Bruijn index notation is:
+De Bruijn introduced a canonical lambda notation that prevents such variable name collisions and eliminates the need for $\alpha$-conversions during substitutions \cite{de1972lambda}. \textit{De Bruijn indices} denote each variable with an integer that is the number of lambda abstractions between a variable's occurrence and the lambda binding it. Assuming an initial index of $1$ for free variable $y$, the above example in de Bruijn index notation is:
 \begin{equation*}
     (\lambda \lambda. 1 \: 0) \: 1
 \end{equation*}
@@ -414,11 +417,16 @@ A letrec can now be implemented by using the \textit{Y-combinator} as follows:
 \begin{minted}[escapeinside=||]{ocaml}
     letrec f = Y(|$\lambda f.\lambda x.e$|) in e'
 \end{minted}
+However, this can be inefficient compared to other solutions because of the pressure on the stack.
 
 \subsubsection{Tying the Knot}
-In languages that permit lazy evaluation or mutation one can create recursive definitions using the principle of \textit{tying a knot} into data structure definitions.
+In languages that permit lazy evaluation or mutation one can create circular data structure definitions using the principle of \textit{tying a knot}.
+In a language with lazy evaluation one can create a circular efficiently by sharing parts of its definition:
+x = 0:y
+y = 1:x
+Creates a stream of ones and zeroes on-demand.
 
-SECD uses these concepts to implement its \textbf{RAP} instruction for recursive function application (more details in \ref{subsec:secd}).
+One can utilize this technique to efficiently implement recursion in functions that seek the definition of a closure from an environment. On a recursive call a location within the environment is set to the definition of the calling closure such that it can find and reuse it during repeated calls. SECD uses these concepts to implement its \textbf{RAP} instruction for recursive function application (more details in \ref{subsec:secd}) \cite{paulson1995foundations}.
 
 \subsubsection{Self-referencing Lambdas}
 A final solution is to add self-references to the definition of lambdas. In such a language a lambda named $f$ with argument $x$ and body $e$ is written as: $\lambda_f x.e$. Thus let-expressions and letrec can simply be expressed as:
@@ -1177,21 +1185,19 @@ Instead of evaluating the recursive call, we want to instead generate the functi
 		\text{mem} & := && \text{((s e c f.d) (recOps.recEnv).f)} \nonumber \\
 		\nonumber \\%
 		%
-		\text{s e (} \mathbf{LDR} \text{ (i j).c) d f} & \longrightarrow \: && \text{(($\lambda$.(locate i j f)).s) e c {\ts}fromldr.d f} \\
+		\text{s e (} \mathbf{LDR} \text{ (i j).c) d f} & \longrightarrow \: && \text{(locate@(i j f)).s e c {\ts}fromldr.d f} \\
 		\nonumber \\%
 		%
 		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c{\ts}  d{\ts}  f{\ts}.d) f} & \longrightarrow \:
-		 && \text{lift@v} 									\quad	\text{if d-register is tagged with {\ts}ret}	\\
+		 && \text{lift@v} 									\quad	\text{\textit{if d-register is tagged with {\ts}ret}}	\\
 		 & && \text{$\lambda$x.(fn@(lift@(x.env)))} \nonumber \\
-		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
-		 & && \qquad\text{where (fn env)} := \text{v@\_} \nonumber \\
- 		 & && \text{(v.s\ts)  e\ts  c\ts  d\ts  f\ts}	\qquad\;\;\text{otherwise} \nonumber \\
+		 & && \qquad\text{\textit{if d-register is tagged with {\ts}fromldr}} \nonumber \\
+		 & && \qquad\text{where (fn (ops env))} := \text{v} \nonumber \\
+ 		 & && \text{(v.s{\ts})  e{\ts}  c{\ts}  d{\ts}  f{\ts}}	\qquad\;\;\text{\textit{otherwise}} \nonumber \\
  		\nonumber \\%
  		%
-		\text{s{\ts} e (} \mathbf{AP}\text{.c) env{\ts} f} & \longrightarrow \: && \text{res.s e c d f} \\
-		\text{where res} & := && \text{fn@(lift@(x.env))\textbf{\textbf{}}} \quad\text{if s{\ts} $=$ ((fn (ops.env)) x.s)} \nonumber \\
-		& && \text{fn@(lift@(x.env))}\quad\text{if s{\ts} $=$ (thunk x.s)} \nonumber \\
-		& && \qquad\text{where (fn env) $:=$ thunk@\_} \nonumber
+		\text{s{\ts} e (} \mathbf{AP}\text{.c) env{\ts} f} & \longrightarrow \: && \text{(fn@(lift@(x.env))).s e c d f} \\
+		& && \quad\text{where ((fn (ops.env)) x.s)} := \text{s{\ts}} \nonumber
 \end{alignat}
 \caption{Modifications to the SECD operational semantics by Kogge \cite{kogge1990architecture}. The original transitions are shown in figure \ref{fig:secd_kogge}. The function \textit{run} takes state-transition steps according to \textit{C} until it halts. The function \textit{locate} returns an element at index (i,j) from a multi-dimensional list. An ``@'' denotes function application and registers \textit{S, E, C, D, F} are represented by \textit{s, e, c, d, f} respectively.}
 \label{fig:secd_semantics_noset}
@@ -1493,16 +1499,11 @@ Staging the \mevl{} interpreter is performed just as in Pink by lifting all lite
 \begin{alignat}{3}
 		\text{(v.s) e (} \mathbf{LIFT}\text{.c) d f} & \longrightarrow \: \label{eq:secd_sem_lift}
 		 && \text{res.s e c d f}   \\
-		 \text{where res} & := && \text{lift@v\quad if (num? v) or (sym? v)} \nonumber \\
-		 & && \text{lift@rec} \quad \text{if (lambda? v)} \nonumber \\
-		 & && \quad \text{where} \nonumber \\
-		 & && \qquad \text{(recOps recEnv).f{\ts}}:= \text{v@\_} \nonumber \\
-		 & && \qquad \text{rec} := \nonumber \\
-		 & && \quad\qquad\text{$\lambda$x.(run@({\ts}() x.recEnv recOps {\ts}ret (rec (recOps.recEnv)).f{\ts}))} \nonumber \\
-		 & && \text{lift@($\lambda$x.(run@({\ts}() x.env ops {\ts}ret f)))} \quad\text{if (clo? v)} \nonumber \\
+		 \text{where res} & := && \text{lift@v\quad \textit{if (num? v) or (sym? v)}} \nonumber \\
+		 & && \text{lift@($\lambda$x.(run@({\ts}() x.env ops {\ts}ret f)))} \quad\text{\textit{if (clo? v)}} \nonumber \\
 		 & && \quad \text{where (fn (ops env))}:= \text{v} \nonumber
 \end{alignat}
-\caption{State transition rules for the newly introduced \textbf{LIFT} instruction. The syntax \textit{num?/sym?/lambda?/clo?} are conditions satisfied when their argument is a number, string, lambda or a closure respectively. An ``\_'' is a void argument to a function.}
+\caption{State transition rules for the newly introduced \textbf{LIFT} instruction. The syntax \textit{num?/sym?/clo?} are conditions satisfied when their argument is a number, string or a closure respectively. An ``\_'' is a void argument to a function.}
 \label{fig:secd_lift_sem}
 \end{figure}
 

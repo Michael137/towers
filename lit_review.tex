@@ -38,7 +38,15 @@
 % T-diagrams
 \usepackage[tdiagram]{semantic}
 \usepackage{tikz}
-\usetikzlibrary{matrix}
+\usetikzlibrary{matrix,backgrounds,arrows,decorations.markings}
+\tikzset{
+  big arrow/.style={
+    decoration={markings,mark=at position 1 with {\arrow[scale=2,#1]{>}}},
+    postaction={decorate},
+    shorten >=0.4pt,
+    dashed=true},
+  big arrow/.default=red,
+  }
 
 \usepackage{amsthm}
 \usepackage{setspace}
@@ -394,7 +402,7 @@ De Bruijn introduced a canonical lambda notation that prevents such variable nam
     (\lambda \lambda. 1 \: 0) \: 1
 \end{equation*}
 
-Variables in \mslang{} (see section \ref{subsec:mslang}) follow the de Bruijn indexing scheme to avoid the complexity of managing variable names and their scopes.
+Variables and lambdas in \mslang{} (see section \ref{subsec:mslang}) follow the de Bruijn indexing scheme to avoid the complexity of managing variable names and their scopes.
 
 \subsection{Difficulties in Recursion}\label{subsec:recursion}
 \textit{Let-expressions} in functional languages are typically syntactic sugar for $\lambda$-abstraction and application. Consider following term:
@@ -429,12 +437,12 @@ Creates a stream of ones and zeroes on-demand.
 One can utilize this technique to efficiently implement recursion in functions that seek the definition of a closure from an environment. On a recursive call a location within the environment is set to the definition of the calling closure such that it can find and reuse it during repeated calls. SECD uses these concepts to implement its \textbf{RAP} instruction for recursive function application (more details in \ref{subsec:secd}) \cite{paulson1995foundations}.
 
 \subsubsection{Self-referencing Lambdas}
-A final solution is to add self-references to the definition of lambdas. In such a language a lambda named $f$ with argument $x$ and body $e$ is written as: $\lambda_f x.e$. Thus let-expressions and letrec can simply be expressed as:
+A final solution is to add self-references to the definition of lambdas. In such a language a lambda named $f$ with argument $x$ and body $e$ is written as: $\lambda_f x.e$. Thus let-expressions and letrecs can simply be expressed as:
 \begin{minted}[escapeinside=||]{ocaml}
     let f = |$\lambda_{\_} x.e$| in e'
     letrec f = |$\lambda_{f} x.e$| in e'
 \end{minted}
-Each lambda implicitly has a reference to itself available for use from within its definition. Pink (see section \ref{subsec:mslang} implements this type of recursion called \textit{open recursion} using self-referencing lambdas.
+Each lambda implicitly has a reference to itself available for use from within its definition. Pink (section \ref{subsec:mslang}) implements this type of recursion (also \textit{open recursion}) using self-referencing lambdas.
 
 \subsection{The SECD Machine and Instruction Set (ISA)}\label{subsec:secd}
 The SECD machine due to Landin \cite{landin1964mechanical} is a well-studied stack-based abstract machine initially developed in order to provide a model for evaluation of terms in the $\lambda$-calculus. All operations on the original SECD machine are performed on four registers: stack (S), environment (E), control (C), dump (D). \textit{C} holds a list of instructions that should be executed. \textit{E} stores values of free variables (including functions), function arguments and function return values. The \textit{S} register stores results of function-local operations and the \textit{D} register is used to save and restore state in the machine when performing control flow operations. A function we call \textit{step} makes sure the machine progresses by reading next instructions and operands from the remaining entries in the control register and terminates at a \textbf{STOP} or \textbf{WRITEC} instruction, at which point the machine returns all values or a single value from the S-register respectively.
@@ -911,7 +919,7 @@ A tower can then be constructed using a set of meta-circular interpreters each i
             \draw (m-4-3.north west) |- (m-4-3.south east) |- (m-4-3.north west);
             \draw (m-4-3.south west) -- (m-5-3.south) -- (m-4-3.south east);
     \end{tikzpicture}
-    \caption{Final representation of the tower in \ref{fig:tombstone_collapse_ex_int} after collapsing it. All intermediate interpretation (levels $I_1$ to $I_3$) has been eliminated and $P$ has been specialized with respect to the top-most staged interpreter, $C_3$. The residual program $P$ consists of \mslang{} terms in ANF-normal form.}
+    \caption{Final representation of the tower in \ref{fig:tombstone_collapse_ex_int} after collapsing it. All intermediate interpretation (levels $I_1$ to $I_3$) has been eliminated (by evaluating it during PE time) and $P$ has been specialized with respect to the top-most staged interpreter, $C_3$. The residual program $P$ consists of \mslang{} terms in ANF-normal form.}
     \label{fig:tombstone_collapsed}
     \end{subfigure}
     \caption{Tombstones representing the process of collapsing a tower using \mslang{}}
@@ -923,36 +931,6 @@ When we now execute the tower (i.e., invoking the partial evaluator at the base)
 In mixed-language towers a \textit{lift} operation is not necessarily available to all interpreters unless explicitly provided at a level. Hence, one approach to propagating binding-time information in heterogeneous towers is to implement a built-in \textit{lift} at all levels below the interpreter that should be staged. As we explain in more detail in section \ref{subsec:secd_staged}, the implementation of \textit{lift} may require us to transform the representation of closures, pairs or other constructs which the lift at the base expects.
 
 Additionally, the TDPE residualization algorithm uses evaluation of expressions to drive its BTA and static reductions. While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine, as we show in \ref{subsec:secd_staged}, requires careful design of its division rules and consideration of which locations to lift. Representation of closures can cause issues with non-termination if there is no inherent distinction between ordinary and recursive function definitions (an example of which is shown in section \ref{subsec:secd_staged}). To avoid these issues one can transform closures to fit the underlying lift operation's interface and use tags on them that signal the PE when to terminate in the unfolding of recursive function calls.
-
-\begin{figure}
-    \centering
-        \begin{tikzpicture}
-            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.2em}
-                        ]
-            {
-        P       &       &       &       &       &       &       &         &                     \\
-        \mevl   & \mevl & $\to$ & SECD  & SECD  &       &       &         &                     \\
-                &       & Scala &       &       &       &       &         &                     \\
-                &       &       &       & Lisp* & Lisp* & $\to$ & \mslang & \mslang             \\
-                &       &       &       &       &       & Scala &         &                     \\
-                &       &       &       &       &       &       &         & Scala               \\
-                &       &       &       &       &       &       &         & |[font=\tiny]|JVM  \\
-            };
-            % Outline
-            \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east) |- (m-4-6.north west) |- (m-2-1.north east) |- (m-1-1.north west);
-
-            % Dashes
-            \draw (m-2-1.north east) -- (m-2-1.south east);
-            \draw (m-2-4.north east) -- (m-2-4.south east);
-            \draw (m-4-6.north west) |- (m-4-6.south west);
-            \draw (m-4-8.north east) -- (m-4-8.south east);
-
-            % Triangle
-            \draw (m-6-9.south east) -- (m-7-9.south) -- (m-6-9.south west);
-        \end{tikzpicture}
-    \caption{Our heterogeneous tower of interpreters after staging at the \mevl{} level. Residualization of program (i.e., collapse of tower) is hidden.}
-    \label{fig:tombstone_het_collapse_mevl}
-\end{figure}
 
 \begin{figure}
     \centering
@@ -978,9 +956,55 @@ Additionally, the TDPE residualization algorithm uses evaluation of expressions 
 
             % Triangle
             \draw (m-5-10.south east) -- (m-6-10.south) -- (m-5-10.south west);
+            
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-5.north west) |- (m-2-5.south east) |- (m-3-6.south east) |- (m-3-7.north east) |- (m-2-5.north west);
+            \end{scope}
+
+            % Arrow
+            \draw [big arrow] (m-2-7) -- (m-3-10);
         \end{tikzpicture}
-    \caption{Our heterogeneous tower of interpreters after staging at the SECD level. Residualization of program visible through the process of staging the SECD interpreter (since it now outputs \mslang{} terms).}
+    \caption{Our heterogeneous tower of interpreters after staging at the SECD level (shaded tombstone). Residualization of program visible through the process of staging the SECD interpreter (since it now outputs \mslang{} terms).}
     \label{fig:tombstone_het_collapse_secd}
+\end{figure}
+
+\begin{figure}
+    \centering
+        \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.2em}
+                        ]
+            {
+P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                                   &       &         &         &                     \\
+\mevl   & \mevl & $\to$ & SECD                          & SECD                              &       &         &         &                     \\
+        &       & Scala &                               &                                   &       &         &         &                     \\
+        &       &       &                               & Lisp*                             & Lisp* & $\to$   & \mslang & \mslang             \\
+        &       &       &                               & |[font=\tiny]|\textbf{lift(...)}  &       & Scala   &         &                     \\
+        &       &       &                               &                                   &       &         &         & Scala               \\
+        &       &       &                               &                                   &       &         &         & |[font=\tiny]|$JVM$ \\
+            };
+            % Outline
+            \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east) |- (m-4-6.north west) |- (m-2-1.north east) |- (m-1-1.north west);
+
+            % Dashes
+            \draw (m-2-1.north east) -- (m-2-1.south east);
+            \draw (m-2-4.north east) -- (m-2-4.south east);
+            \draw (m-4-6.north west) |- (m-4-6.south west);
+            \draw (m-4-8.north east) -- (m-4-8.south east);
+
+            % Triangle
+            \draw (m-6-9.south east) -- (m-7-9.south) -- (m-6-9.south west);
+
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-2.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-2-2.north west);
+            \end{scope}
+
+            % Arrow
+            \draw [big arrow] (m-2-4) --++(0:6cm);
+        \end{tikzpicture}
+    \caption{Our heterogeneous tower of interpreters after staging at the \mevl{} level (shaded tombstone). Residualization of program (i.e., collapse of tower) is hidden. All computation to the left of the staged interpreter is carried into the residual program.}
+    \label{fig:tombstone_het_collapse_mevl}
 \end{figure}
 
 %tricks involve eta-expansion again

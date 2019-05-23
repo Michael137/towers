@@ -607,6 +607,9 @@ Danvy devised a method of implementing a partial evaluator solely based on the i
 
 TDPE makes use of the type system of a two-level language to direct the residualization of expressions. The output of this lightweight BTA is an expression whose terms are annotated with dynamic or static binding times which when statically reduced yield a purely dynamic expression. Static reduction is performed through regular evaluation of the two-level language's interpreter. TDPE includes a set of operators to convert between dynamic and static terms to aid the optimality of generated code. The two classes of coercion operators are reification (also called \textit{lift}) and reflection both of which are defined on product, function and literal types. \textit{Residualization} is finally defined as performing annotations and binding-time coercions followed by static reduction.
 
+The traditional TDPE \textit{residualize} operation takes as input an expression and a separate object representing the expressions type. Based on the latter argument the residualization algorithm will perform reification according to the rules in figure \ref{fig:tdpe_rules}. As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects. The full set of reduction rules are shown in figure \ref{fig:tdpe_rules}.
+
+\subsubsection{Example}
 Consider the example \eqref{eq:tdpe_ex1} from Danvy's description of TDPE \cite{danvy1999type}. The aim is to annotate the function applications (denoted by $@$) and definitions with a static (overline) or dynamic (underline) binding-time.
 \begin{align}
     \lambda g.\lambda d.(\lambda f.g \:@ \: (f \: @ \: d)\: @ \:f) \: @ \: \lambda a.a \label{eq:tdpe_ex1}
@@ -621,7 +624,7 @@ A correct binding-time could be that shown in \eqref{eq:tdpe_ex2a} because after
     \end{align}
 \end{figure}
 
-We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications; TDPE uses this operation during specialization time to increase the number of static expressions it can reduce. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, only a single unfolding of $f$ and no $\beta$-redexes. Danvy then generalizes the $\eta$-expansion into a class of coercions that permit residualization of static values in dynamic contexts, an expression with a dynamic hole \cite{danvy1995essence}. We represent such coercions with a $\downarrow^T$ (or \textit{lift} as we use in later sections and as defined in figure \ref{fig:tdpe_rules}) which represents the conversion from a static value of type $T$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
+We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications; TDPE uses this operation during specialization time to increase the number of static expressions it can reduce. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, only a single unfolding of $f$ and no $\beta$-redexes. Danvy then generalizes the $\eta$-expansion into a class of coercions that permit residualization of static values in dynamic contexts, an expression with a dynamic hole \cite{danvy1995essence}. We represent such coercions with a $\downarrow^T$ (or \textit{lift} as we use in later sections) which represents the conversion from a static value of type $T$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
 
 \begin{figure}[h]
     \begin{align}
@@ -638,9 +641,6 @@ We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value i
     \end{align}
 \end{figure}
 
-The traditional TDPE \textit{residualize} operation takes as input an expression and a separate object representing the expressions type. Based on the latter argument the residualization algorithm will perform reification according to the rules in figure \ref{fig:tdpe_rules}.
-
-As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects.
 %TODO: revisit reification for recursive functions in TDPE paper
 %TODO: lift of recursive functions in Pink
 %TODO: Pink also introduces a ``run'' operator
@@ -712,7 +712,7 @@ In \mslang{} the TDPE \textit{reify} operation is called \textit{lift} and conve
 
 %TODO: difference of \mslang to TDPE: dynamic decisions, no type-system required, reflect, Eijiro Sumii, can run dynamic code
 %TODO: another difference is that TDPE is automatic on types whereas in Pink the user controls residualization through \textit{manual} annotation of lift
-Despite being based on TDPE, the partial evaluation scheme used in Pink is a modified variant which we refer to as \textit{dynamic TDPE}. The binding time analysis is done during run-time of the evaluator and does not necessarily require a type-system. The PE operates purely on static or dynamic values of \mslang{}. The ability to dynamically decide on binding-time decisions and not needing a type-system also allows more flexibility in which expressions we want to residualize. Additionally, the \textit{reflect} operator serves a different purpose to TDPE's specification. Instead of coercing static into dynamic expressions, \textit{reflect} adds an expression to the global accumulator of residual terms, \texttt{stBlock}, that generates the specialized code through let-insertion (see line \ref{mline:let_insert} in listing \ref{lst:evalms}). Danvy introduced \textit{let-insertion} into an implementation of TDPE \cite{hatcliff2007partial} to ensure non-idempotent side-effects in expressions duplicated by TDPE are themselves not performed more often than they occur in a source program.
+Despite being based on TDPE, the partial evaluation scheme used in Pink is a modified variant which we refer to as \textit{dynamic TDPE}. Firstly, binding time annotations are not performed automatically by the PE but rely on a user annotating the source with \textit{lift}. Secondly, the PE does not require the type of the input expression to be known statically. The ability to dynamically decide on binding-time decisions and not needing a separate type object as input also allows more flexibility in which expressions we want to residualize. The \textit{reflect} operator serves a different purpose to TDPE's specification. Instead of coercing dynamic into static expressions, \textit{reflect} adds an expression to the global accumulator of residual terms, \texttt{stBlock}, that is used to generate the specialized code through let-insertion (see line \ref{mline:let_insert} in listing \ref{lst:evalms}). Danvy introduced \textit{let-insertion} into an implementation of TDPE \cite{hatcliff2007partial} to ensure non-idempotent side-effects in expressions duplicated by TDPE are themselves not performed more often than they occur in a source program.
 
 %TODO: 2 levels actually come from statics and dynamic. In literature overlines/underlines indicate stage but in \mslang Val vs Exp determines stage (pg. 379)
 \newpage
@@ -820,6 +820,35 @@ where the function \textit{quote} is the LISP function that prevents evaluation 
 
 %TODO: recipe is actually mentioned in pg. 377 (https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf)
 An advantage of TDPE and why the Pink framework serves as an appropriate candidate PE in our experiments is that it requires no additional dedicated static analysis tools to perform its residualization, keeping complexity at a minimum. Given an interpreter we can stage it by following Amin et al.'s \cite{amin2017collapsing} recipe: lift all terminal values an interpreter returns. Marking returned values as dynamic will dynamize and residualize any operation that includes them.
+
+\subsubsection{Example Staged Interpreter}
+Pink's implementation includes a staged version of its interpreter. The excerpt in figure \ref{fig:pink_source} demonstrates how \textit{lift} annotations are used for staging. Any product types (\textit{cons}), function types (\textit{lambda}) and literal types (\textit{num}/\textit{quote}) that are interpreted will be residualized (since they are wrapped in \textit{lift}). In turn any operation on them will also residualize. Effectively we now generate another program that only includes the operations and values of the original expressions (\texttt{exp}) without any interpretative logic. Our interpreter can be said to perform compilation since it generates residual terms in \mslang.
+%TODO: mention staging (?)
+
+\begin{figure}[ht!]
+\begin{minted}[linenos,escapeinside=||,fontsize=\small]{lisp}
+(lambda _ maybe-lift (lambda tie eval (lambda _ exp (lambda _ env
+  (if (num?                exp)    |\colorbox{green}{(maybe-lift exp)}|
+  (if (sym?                exp)    (env exp)
+  (if (sym?           (car exp))
+    ...
+    (if (eq?  'lambda (car exp))
+        |\colorbox{green}{(maybe-lift (lambda}| f x ...
+    ...
+    |\textcolor{red}{;Meta-circular \textit{lift}}|
+    (if (eq?  'lift   (car exp)) (lift ((eval (cadr exp)) env))
+    ...
+    (if (eq?  'cons   (car exp))
+        |\colorbox{green}{(maybe-lift (cons}| ((eval (cadr exp)) env)
+                                              ((eval (caddr exp)) env)))
+    (if (eq?  'quote  (car exp))   |\colorbox{green}{(maybe-lift (cadr exp))}|
+    ...
+    ((env (car exp)) ((eval (cadr exp)) env))))))))))))))))))))))))))
+  (((eval (car exp)) env) ((eval (cadr exp)) env)))))))))
+\end{minted}
+\caption{Snippet from Pink's staged interpreter source. Highlighted in green are the polymorphic \textit{lift} expressions we use for binding-time annotations.}
+\label{fig:pink_source}
+\end{figure}
 
 \section{Heterogeneity}\label{sec:heterogeneity}
 %TODO: discuss how side-effects fit into heterogeneity
@@ -1020,9 +1049,7 @@ P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                       
 
 We chose the SECD machine to create semantic gaps in our tower through the low-level instruction set that comes with it. We chose to implement the \mevl{} level as a translator from \mevl{} to SECD instructions instead of writing the interpreter in the instructions directly for convenience. Conincidentally, the addition of translation layers into the tower revealed insights into the process of collapsing heterogeneous towers that are not immediately apparent from the composition of tombstones. We describe our observations and further effects of heterogeneity on collapsing towers in the remainder of this section.
 
-While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine, as we show in \ref{subsec:secd_staged}, requires careful design of its division rules and consideration of which locations to lift. Representation of closures can cause issues with non-termination if there is no inherent distinction between ordinary and recursive function definitions (an example of which is shown in section \ref{subsec:secd_staged}). To avoid these issues one can transform closures to fit the underlying lift operation's interface and use tags on them that signal the PE when to terminate in the unfolding of recursive function calls.
-
-Instead of describing the collapse of hypothetical meta-circular towers as we did in the previous section, figure \ref{fig:tombstone_het_collapse_secd} depicts the process of collapsing our experimental tower from figure \ref{fig:tombstone}. In this case we staged the SECD interpreter (highlighted in gray) such that it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
+While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine, as we show in \ref{subsec:secd_staged}, requires careful design of its division rules and consideration of which locations to lift to avoid TDPE non-termination. The effect of staging an interpreter in our tower, SECD in our case, is depcited in figure \ref{fig:tombstone_het_collapse_secd}. We stage the SECD machine (highlighted in gray) such that it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
 
 In mixed-language towers a \textit{lift} operation is not necessarily available to all interpreters unless explicitly provided at a level. Hence, one approach to propagating binding-time information is to implement a built-in \textit{lift} at all levels below the interpreter that should be staged. As we explain in more detail in section \ref{subsec:secd_staged}, the implementation of \textit{lift} may require us to reverse engineer and transform the representation of closures, pairs or other constructs which the \textit{lift} at the base expects.
 
@@ -1230,7 +1257,9 @@ Another issue we dealt with in the process of writing the staged SECD interprete
 
 %TODO: explain what tying a knot means tying knot in data instead of in code
 \subsubsection{Tying the Knot}\label{ssubsec:knot}
-We now provide a substantial redesign to the internal \texttt{RAP} calling convention while keeping the semantics of the instruction in tact in order to allow SECD style recursive function calls without the need for mutable variables and more crucially enable their partial evaluation. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level, perform residualization on the closure and distinguish between returning from a regular as opposed to recursive function to ensure termination of our specializer. We demonstrate the issue of partially evaluating a recursive call in the standard SECD semantics on the example in figure \ref{lst:secd_recursion_ex1} which shows a recursive function that decrements a user provided number down to zero.
+We now provide a substantial redesign to the internal \texttt{RAP} calling convention. Without the ability to tie a knot in the environment we need a different way of achieving recursion in SECD. Additionally we need to design the internals of the machine such that we can stage it using Pink's TDPE.
+
+We demonstrate the issue of partially evaluating a recursive call in the standard SECD semantics on the example in figure \ref{lst:secd_recursion_ex1} which shows a recursive function that decrements a user provided number down to zero.
 
 %TODO: counter not set in code
 \begin{figure}[ht]
@@ -1265,28 +1294,15 @@ Were we to specialize this program by simply evaluating the machine our PE would
 \label{lst:secd_recursion_machine_ex1}
 \end{figure}
 
-Instead of evaluating the recursive call, we want to instead generate the function definition and call in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are to-be-called recursively. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a \texttt{set-car!} in the underlying language.
+Instead of evaluating the recursive call, we want to instead generate the function definition and call in our residual program. What we now need to solve is how one can produce residual code for these SECD instructions that are ``to be-called-recursively''. The key to our approach is to reuse \mslang's ability to lift closures. Figure \ref{fig:secd_semantics_noset} shows the modifications to the operational semantics of Landin's SECD machine \cite{landin1964mechanical} which allow it to be partially evaluatable with a TDPE and do not require a \texttt{set-car!} in the underlying language. The idea is to wrap the recursive SECD instructions in a closure at the LISP-level and use Pink lambda's ability to self-reference to achieve recursion. Closures also allow us to produce residual code for SECD functions, which previously was not possible since they were simply represented as lists of instructions.
 
 Before explaining our modifications to the SECD instruction set in detail we briefly outline four significant changes to note:
 \begin{enumerate}
-    \item SECD functions are now lambdas that wrap a call to the implicit state transition
-    \item \textbf{RAP} semantics are adapted to an alternative way to achieve recursion since \textit{tying the knot} in the environment is not possible due to a lack of a \textit{set-car!} operation
-    \item The \textbf{RTN} instruction aids termination of the specializer by preventing state transitions upon detection of appropriate tags on \textit{D}
+    \item SECD functions are now lambdas that wrap a call to the implicit state transition which is our way of achieving recursion without tying a knot. This also helps our aim of staging the machine since Pink's \textit{lift} operates on lambdas and allows us to residualize entire function bodies.
+    \item The \textbf{RTN} instruction aids termination of TDPE by preventing it to evaluate the machine (i.e., perform state transitions) further upon detection of appropriate tags in \textit{D}. This ensures that we can terminate the unfolding of recursive calls.
     \item Instructions \textbf{AP}/\textbf{RTN}/\textbf{LIFT} all feature calls to a \textit{lift} operator that follows the division established earlier in table \ref{tbl:secd_division}
 \end{enumerate}
 
-%TODO revisit AP/RTN semantics
-%TODO revisit recEnv in RAP rec assignment. should be (recOps recEnv) probably
-%TODO comment on mem in RAP; its used as state bookkeeping for later reconstruction of closure in LIFT
-% Actual RTN semantics:
-%\text{v.s e (} \mathbf{RTN}\text{.c) state.d f} & \longrightarrow \:
-%		 && \text{(lift v)} 									\quad	\text{if d-register is %tagged with {\ts}ret}	\\
-%		 & && \text{($\lambda$x.((car s{\ts}) (cons (car x) (cddr s{\ts}))) (cddr s1)	} \nonumber %\\
-%		 & && \qquad\text{if d-register is tagged with {\ts}fromldr} \nonumber \\
-%		 & && \qquad\text{where s1} := \text{v@\_} \nonumber \\
-% 		 & && \text{(v.s{\ts})  e{\ts}  c{\ts}  d{\ts}  f{\ts}} \nonumber \\
-% 		 & && \qquad\text{otherwise} \nonumber \\
-% 		 & && \qquad\text{where state} := \text{s{\ts} e{\ts} c{\ts} d{\ts} f{\ts}}
 \begingroup
 \allowdisplaybreaks
 \begin{figure}[htp!]
@@ -1295,20 +1311,20 @@ Before explaining our modifications to the SECD instruction set in detail we bri
 		\text{s e (} \mathbf{LDF} \text{ ops.c) d f} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(run@({\ts}() e{\ts} ops {\ts}ret f))) ops.e).s e c d f} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
 		%
-		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d f} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c f.d) (rec (mem.recEnv)).f} \label{eq:secd_sem_rap} \\
+		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d f} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c f.d) (lift@rec (mem.recEnv)).f} \label{eq:secd_sem_rap} \\
 		\text{where (entryFn (entryOps entryEnv))} & := && \text{entryClo} \nonumber \\
 		\text{(recFn (recOps recEnv))} & := && \text{recClo} \nonumber \\
 		\text{rec} & := && \text{$\lambda$env.(run@({\ts}() env recOps {\ts}ret (rec (mem.recEnv)).f))} \nonumber \\
 		\text{mem} & := && \text{((s e c f.d) (recOps.recEnv).f)} \nonumber \\
 		\nonumber \\%
 		%
-		\text{s e (} \mathbf{LDR} \text{ (i j).c) d f} & \longrightarrow \: && \text{(locate@(i j f)).s e c {\ts}fromldr.d f} \\
+		\text{s e (} \mathbf{LDR} \text{ (i j).c) d f} & \longrightarrow \: && \text{(locate@(i j f)).s e c {\ts}ldr.d f} \\
 		\nonumber \\%
 		%
 		\text{v.s e (} \mathbf{RTN}\text{.c) (s{\ts} e{\ts} c{\ts}  d{\ts}  f{\ts}.d) f} & \longrightarrow \:
 		 && \text{lift@v} 									\quad	\text{\textit{if d-register is tagged with {\ts}ret}}	\\
 		 & && \text{$\lambda$x.(fn@(lift@(x.env)))} \nonumber \\
-		 & && \qquad\text{\textit{if d-register is tagged with {\ts}fromldr}} \nonumber \\
+		 & && \qquad\text{\textit{if d-register is tagged with {\ts}ldr}} \nonumber \\
 		 & && \qquad\text{where (fn (ops env))} := \text{v} \nonumber \\
  		 & && \text{(v.s{\ts})  e{\ts}  c{\ts}  d{\ts}  f{\ts}}	\qquad\;\;\text{\textit{otherwise}} \nonumber \\
  		\nonumber \\%
@@ -1335,7 +1351,7 @@ Firstly, equation \ref{eq:secd_sem_ldf} augments the representation of functions
 Note also that we add a new functions register, which we refer to as the \textbf{F-register}\footnote{In his description of the SECD machine Kogge \cite{kogge1990architecture} uses \textit{F} to label the register that holds a list of free memory locations in the machine. We do not require such register in our implementation and thus repurpose it to store recursive function definitions} which is responsible for holding the recursive instructions of a \textbf{RAP} call. In the traditional SECD machine both the recursive and the calling function are kept in the environment and then loaded on the stack using \textbf{LD}, subsequently called using \textbf{AP}. However, for simplicity we keep recursive functions in \textit{F} to distinguish them from free variables in \textit{E} and aid debuggability. Thus we introduce a new \textbf{LDR} instruction that returns the contents of the F-register by index, just as \textbf{LD} does for the E-register.
 %TODO: debuggability enough justification for separate register?
 
-Modification to the \textbf{RAP} instruction are described by \eqref{eq:secd_sem_rap}. As in the original semantics it still expects two closures on top of the stack: one that performs the initial recursive call which we refer to as \textit{entryClo} and another that represents the actual set of instructions that get called recursively, \textit{recClo}. Each closure consists of a function (\textit{entryFn} or \textit{recFn}), the SECD instructions these functions execute (\textit{entryOps} or \textit{recOps}) and an environment (\textit{entryEnv} or \textit{recEnv}). \textbf{RAP} then saves the current contents of all registers on \textit{D} and appends a closure to \textit{F}. This closure when applied to an environment, runs the machine with the control-register containing instructions of the recursive function body and a self-reference to the closure. Additionally, applying the closure places a \textit{{\ts}ret} tag onto the dump-register which is later used as an indicator to stop evaluating the current call; this is crucial to aid termination during specialization time.
+Modification to the \textbf{RAP} instruction are described by \eqref{eq:secd_sem_rap}. As in the original semantics it still expects two closures on top of the stack: one that performs the initial recursive call which we refer to as \textit{entryClo} and another that represents the actual set of instructions that get called recursively, \textit{recClo}. Each closure consists of a function (\textit{entryFn} or \textit{recFn}), the SECD instructions these functions execute (\textit{entryOps} or \textit{recOps}) and an environment (\textit{entryEnv} or \textit{recEnv}). \textbf{RAP} then lifts and appends a newly constructed recursive closure to \textit{F}. The \textit{lift} is necessary because we want the definition of the recursive function to appear in the residual program. The new closure when applied to an environment, runs the machine with the control-register containing instructions of the recursive function body. Additionally, applying the closure places a \textit{{\ts}ret} tag onto the dump-register which is later used as an indicator to stop evaluating the current call; this is crucial to aid termination during specialization time.
 
 In the original semantics of SECD, \textbf{RTN} would restore the state of all registers from the dump and add the top most value of the current S-register back onto the restored S-register. This modelled the return from a function application. As we showed earlier in this section, taking another step in the machine when specializing a recursive function will lead to non-termination of our specializer. Thus, we simply stop evaluation when returning from a function by tagging the register with a \textit{{\ts}ret} symbol and returning the top-most value on the stack to the call site of a lambda. This works because function definitions reside in lambdas in the interpreter now and SECD function application is lambda invocation. The last case we are concerned with is the currying of SECD functions. This occurs when we invoke a \textbf{RTN} immediately after an \textbf{LDR}. To properly return a lambda we construct a \textbf{LDF}-style closure, lift and then return it.
 

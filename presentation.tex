@@ -1,0 +1,96 @@
+\documentclass{beamer}
+
+\mode<presentation> {
+\usetheme{Montpellier}
+
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.4\paperwidth,ht=2.25ex,dp=1ex,center]{mb2244}%
+    \usebeamerfont{mb2244}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.8\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \insertframenumber{} / \inserttotalframenumber\hspace*{1ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+% Remove the navigation symbols from the bottom slides
+\setbeamertemplate{navigation symbols}{}
+}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title{Collapsing Heterogeneous Towers of Interpreters}
+
+\author[mb2244]{Michael Buch -- mb2244}
+\institute
+{
+University of Cambridge\\ % Your institution for the title page
+\medskip
+}
+\date{\today} % Date, can be changed to a custom date
+
+\begin{document}
+
+\begin{frame}
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+% Show table of contents on section change
+\AtBeginSection[]
+{
+\begin{frame}{Table of Contents}
+\tableofcontents[currentsection]
+\end{frame}
+}
+
+\newcommand{\mslang}{$\lambda_{\uparrow\downarrow}$}
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+%------------------------------------------------
+
+\section{Towers of Interpreters}
+\begin{frame}{Motivating Example}
+\end{frame}
+\section{Project Aims}
+\section{Background}
+\begin{frame}{Type-Directed Partial Evaluation}
+\end{frame}
+\begin{frame}{\texorpdfstring{\mslang}{}}
+\end{frame}
+\section{Collapsing a Tower}
+\begin{frame}{Ingredients}
+    \begin{itemize}
+        \item Multi-level Language
+        \item Stage Polymorphism
+        \item TDPE-style Lift
+    \end{itemize}
+\end{frame}
+\section{Heterogeneity}
+\section{Experimental Tower}
+% lift: Problems in its construction and staging at different levels
+%   Non-termination of TDPE
+% Show example collapse
+
+\section{Summary}
+\begin{frame}{Conclusions}
+\end{frame}
+\begin{frame}{Future Work}
+\end{frame}
+
+\begin{frame}
+\Huge{\centerline{mb2244}}
+\end{frame}
+
+\end{document}

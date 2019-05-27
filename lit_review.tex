@@ -1317,11 +1317,10 @@ Before explaining our modifications to the SECD instruction set in detail we bri
 		\text{s e (} \mathbf{LDF} \text{ ops.c) d f} & \longrightarrow \: && \text{(($\lambda$e{\ts}.(run@({\ts}() e{\ts} ops {\ts}ret f))) ops.e).s e c d f} \label{eq:secd_sem_ldf} \\
 		\nonumber \\%
 		%
-		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d f} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c f.d) (lift@rec (mem.recEnv)).f} \label{eq:secd_sem_rap} \\
+		\text{(entryClo recClo.s) e (} \mathbf{RAP}\text{.c) d f} & \longrightarrow \: && \text{{\ts}() e entryOps (s e c f.d) (lift@rec recEnv).f} \label{eq:secd_sem_rap} \\
 		\text{where (entryFn (entryOps entryEnv))} & := && \text{entryClo} \nonumber \\
 		\text{(recFn (recOps recEnv))} & := && \text{recClo} \nonumber \\
-		\text{rec} & := && \text{$\lambda$env.(run@({\ts}() env recOps {\ts}ret (rec (mem.recEnv)).f))} \nonumber \\
-		\text{mem} & := && \text{((s e c f.d) (recOps.recEnv).f)} \nonumber \\
+		\text{rec} & := && \text{$\lambda$env.(run@({\ts}() env recOps {\ts}ret (rec recEnv).f))} \nonumber \\
 		\nonumber \\%
 		%
 		\text{s e (} \mathbf{LDR} \text{ (i j).c) d f} & \longrightarrow \: && \text{(locate@(i j f)).s e c {\ts}ldr.d f} \\
@@ -1341,7 +1340,7 @@ Before explaining our modifications to the SECD instruction set in detail we bri
 		%
 		\text{(v.s) e (} \mathbf{LIFT}\text{.c) d f} & \longrightarrow \: \label{eq:secd_sem_lift}
 		 && \text{res.s e c d f}   \\
-		 \text{where res} & := && \text{lift@v\quad \textit{if (num? v) or (sym? v)}} \nonumber \\
+		 \text{where res} & := && \text{lift@v\qquad\qquad\qquad\qquad\qquad\qquad\quad\textit{if (num? v) or (sym? v)}} \nonumber \\
 		 & && \text{lift@($\lambda$x.(run@({\ts}() x.env ops {\ts}ret f)))} \quad\text{\textit{if (clo? v)}} \nonumber \\
 		 & && \quad \text{where (fn (ops env))}:= \text{v} \nonumber
 \end{alignat}

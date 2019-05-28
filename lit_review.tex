@@ -274,104 +274,65 @@ We then collapse the experimental tower under different configurations and evalu
 
 In section \ref{sec:background} we explain background information that covers the fundamental topics we base our experiments and discussions on. We then define \textit{heterogeneity} in towers of interpreters in section \ref{sec:heterogeneity}. In section \ref{sec:recipe} we describe the recipe that the partial evaluation framework Pink \cite{amin2017collapsing} used to construct and collapse meta-circular towers and then show how this recipe changes as a result of heterogeneity. We present the implementation and evaluation of our experimental tower in section \ref{sec:tower}. We systematically describe the process by which we create a heterogeneous tower of interpreters and incrementally collapse it in sections \ref{sec:mslang} through \ref{sec:string_matcher}. We conclude with an evaluation of our findings followed by a discussion of potential future work in section \ref{sec:conclusion}.
 
-\begin{figure}[htp!]
+\begin{figure}[hb]
     \centering
-    \begin{subfigure}[htp!]{\textwidth}
-        \centering
+    \begin{tikzpicture}
+        \matrix (m) [matrix of nodes,nodes={minimum width=4em,minimum  height=1.7em}
+                    ]
+        {
+            Program                 \\
+            \mevl                   \\
+            \mevl                   \\
+            SECD &[6ex] $\boldsymbol{\mathlarger{\mathlarger{\mathlarger{\simeq}}}}$   \\
+            SECD                    \\
+            Lisp*                   \\
+            Lisp*                   \\
+            \mslang                 \\
+            |[font=\tiny]|JVM       \\
+          };
+          % With arc
+          %\draw (m-1-1.north west) |- (m-8-1.south east) -- (m-1-1.north east);
+          %\draw (m-1-1.north east) arc (0:180:0.875);
+          
+          %Without arc
+          \draw (m-1-1.north west) |- (m-8-1.south east) |- (m-1-1.north west);
+
+          \draw (m-2-1.south west) -- (m-2-1.south east);
+          \draw (m-4-1.south west) -- (m-4-1.south east);
+          \draw (m-6-1.south west) -- (m-6-1.south east);
+          \draw (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
+    \end{tikzpicture}%
+    \hfill
         \begin{tikzpicture}
-            \matrix (m) [matrix of nodes,nodes={minimum width=4em,minimum  height=1.7em}
-                        ]
-            {
-                Program                 \\
-                \mevl                   \\
-                \mevl                   \\
-                SECD &[6ex] $\boldsymbol{\mathlarger{\mathlarger{\mathlarger{\simeq}}}}$   \\
-                SECD                    \\
-                Lisp*                   \\
-                Lisp*                   \\
-                \mslang                 \\
-                |[font=\tiny]|JVM       \\
-              };
-              % With arc
-              %\draw (m-1-1.north west) |- (m-8-1.south east) -- (m-1-1.north east);
-              %\draw (m-1-1.north east) arc (0:180:0.875);
-              
-              %Without arc
-              \draw (m-1-1.north west) |- (m-8-1.south east) |- (m-1-1.north west);
+        \matrix (m) [matrix of nodes,%nodes={minimum width=1em,minimum height=1.7em}
+                    ]
+        {
+         Program   &        &       &        &      &                                               \\[2ex]
+           \mevl   &  \mevl &  $\to$ &  SECD & SECD &                                               \\
+                   &        &  Scala &                                                              \\[3ex]
+                   &        &    &       & Lisp* & Lisp* & $\to$ & \mslang & \mslang                \\
+                   &        &    &       &      &        & Scala &                                  \\[3ex]
+                   &        &    &       &      &        &       &         &  Scala                 \\
+                   &        &    &       &      &        &       &         &  |[font=\tiny]|JVM     \\
+          };
 
-              \draw (m-2-1.south west) -- (m-2-1.south east);
-              \draw (m-4-1.south west) -- (m-4-1.south east);
-              \draw (m-6-1.south west) -- (m-6-1.south east);
-              \draw (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
-        \end{tikzpicture}%
-        \hfill
-            \begin{tikzpicture}
-            \matrix (m) [matrix of nodes,%nodes={minimum width=1em,minimum height=1.7em}
-                        ]
-            {
-             Program   &        &       &        &      &                                               \\[2ex]
-               \mevl   &  \mevl &  $\to$ &  SECD & SECD &                                               \\
-                       &        &  Scala &                                                              \\[3ex]
-                       &        &    &       & Lisp* & Lisp* & $\to$ & \mslang & \mslang                \\
-                       &        &    &       &      &        & Scala &                                  \\[3ex]
-                       &        &    &       &      &        &       &         &  Scala                 \\
-                       &        &    &       &      &        &       &         &  |[font=\tiny]|JVM     \\
-              };
+        % With arc
+        %\draw (m-1-1.north west) |- (m-2-2.south west);
+        %\draw (m-2-2.south west) -- (m-1-1.north east);
+        %\draw (m-1-1.north east) arc (0:180:0.875);
 
-            % With arc
-            %\draw (m-1-1.north west) |- (m-2-2.south west);
-            %\draw (m-2-2.south west) -- (m-1-1.north east);
-            %\draw (m-1-1.north east) arc (0:180:0.875);
+        %Without arc
+        \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
 
-            %Without arc
-            \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
-
-            \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
-            \draw (m-2-4.north east) |- (m-4-5.south east) |- (m-2-4.north east);
-            \draw (m-4-5.south east) -- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east)
-                    |- (m-4-5.north east);
-            \draw (m-4-8.north east) -- (m-4-8.south east);
-            \draw (m-6-9.south west) -- (m-7-9.south) -- (m-6-9.south east);
-            \end{tikzpicture}
-            \caption{Tombstone diagrams that represent two versions of our experimental tower of interpreters. \mevl{} is our toy language described in section \ref{subsec:mevl}, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} in our diagram also encompasses any underlying machinery necessary to run it. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the power of the \textit{lift} operator described in section \ref{subsec:tdpe} and its vital role to collapsing heterogeneous towers.}
-            \label{fig:tombstone}
-    \end{subfigure}\\[4ex]
-    \begin{subfigure}[htp!]{\linewidth}
-        \centering
-            \begin{tikzpicture}
-            \matrix (m) [matrix of nodes,nodes={minimum width=2em}
-                        ]
-            {
-             Program    &        &        &           &           &     &       &           &               \\[2ex]
-             Python     & Python &  $\to$ &  Bytecode &  Bytecode &   |[font=\small]|$\Leftarrow$  &  |[font=\small]|(bytecode  &           &               \\
-                        &        &    C    &           &       &  & |[font=\small]|\quad interpreter) &           &   |[font=\small]|(x86 VM)         \\
-                        &        &        &           &           &     &       &           &  |[font=\small]|$\Downarrow$         \\
-                        &        &        &           &     C     &   C & $\to$ & x86 ASM   &  x86 ASM      \\
-                        &        &        &           &           &     &   C   &           &               \\[3ex]
-                        &        &        &           &           &     &       &           &  JavaScript   \\
-                        &        &        &           &           &     &       &           &  |[font=\tiny]|Browser      \\
-              };
-
-            % With arc
-            %\draw (m-1-1.north west) |- (m-2-2.south west);
-            %\draw (m-2-2.south west) -- (m-1-1.north east);
-            %\draw (m-1-1.north east) arc (0:180:0.73);
-
-            % Without arc
-            \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
-
-            \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
-            \draw (m-2-4.north east) |- (m-5-7.south west) |- (m-6-7.south east) |- (m-5-8.south east) |- (m-7-9.south east) |- (m-5-6.north west) |- (m-2-4.north east);
-            \draw (m-5-6.north west) -- (m-5-6.south west);
-            \draw (m-5-8.north east) -- (m-5-8.south east);
-            \draw (m-7-9.south west) -- (m-8-9.south) -- (m-7-9.south east);
-            \end{tikzpicture}
-            \caption{A hypothetical tower of interpreters that serves as the model for the tower we built (figure \ref{fig:tombstone}). The diagram depicts a JavaScript x86 virtual machine (VM) running a Python \cite{van2011python} interpreter that in turn executes a Python script. In our model, Python is first translated to bytecode which is then interpreted by some bytecode interpreter (written in the C language \cite{kernighan1988c}). \textit{Browser} encompasses the JavaScript interpreter within a browser and any underlying technologies required to host the browser.}
-            \label{fig:tombstone_practical}
-    \end{subfigure}
-    \caption{Comparison between our experimental tower (\ref{fig:tombstone}) and the one we modelled it on  (\ref{fig:tombstone_practical}).}
-    \label{fig:tombstone_all}
-    %\vspace{-4pt} % Prevent "Float too large" warning
+        \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
+        \draw (m-2-4.north east) |- (m-4-5.south east) |- (m-2-4.north east);
+        \draw (m-4-5.south east) -- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east)
+                |- (m-4-5.north east);
+        \draw (m-4-8.north east) -- (m-4-8.south east);
+        \draw (m-6-9.south west) -- (m-7-9.south) -- (m-6-9.south east);
+        \end{tikzpicture}
+        \caption{Tombstone diagrams that represent two versions of our experimental tower of interpreters. \mevl{} is our toy language described in section \ref{subsec:mevl}, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} in our diagram also encompasses any underlying machinery necessary to run it. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the power of the \textit{lift} operator described in section \ref{subsec:tdpe} and its vital role in collapsing heterogeneous towers.}
+        \label{fig:tombstone}
 \end{figure}
 \newpage
 
@@ -415,7 +376,7 @@ As long as $f$ does not occur in $e$ we can rewrite the above in let-expression 
 \end{minted}
 %\textit{Let-insertion} is a technique to avoid performing duplicate evaluation of expressions by assigning the result of an expression in a let-statement first
 
-Recursion in programming languages is the ability to reference an expression from within its definition. Permitting the occurrence of $f$ in $e$ in the let-expression above would leave us with a recursive let-expression (also \textit{letrec}). Implementing letrecs is not as straightforward as directly translating from the $\lambda$-calculus and varies between language implementations. Three possible approaches are outlined below.
+Recursion in programming languages is the ability to reference an expression from within its definition. Permitting the occurrence of $f$ in $e$ in the let-expression above would leave us with a recursive let-expression (also \textit{letrec}). Implementing letrecs is not as straightforward as the derivation of \textit{let}-expressions from the $\lambda$-calculus and varies between language implementations. Three possible approaches are outlined below.
 
 \subsubsection{Fixed-Point Combinators}
 The \textit{fixed point} of function $f$ is some value $x$ such that $f(x)=x$. The function that determines the fixed point of a function is typically labelled \textit{fix} and defined as:
@@ -426,7 +387,7 @@ By definition of a fixed point we get an equation that resembles recursive funct
 \begin{equation*}
     \mathit{fix}(f) = f (\mathit{fix}(f))
 \end{equation*}
-The \textit{Y-combinator}, a fixed-point combinator in the lambda calculus, is defined as:
+An implementation of \textit{fix} in the $\lambda$-calculus is called the \textit{Y-combinator} and is defined as:
 \begin{equation*}
     Y=\lambda f.(\lambda x.f(x x)) (\lambda x.f(x x))
 \end{equation*}
@@ -448,7 +409,7 @@ In languages that permit lazy evaluation or mutation one can create circular dat
 \end{minted}
 Here, we set (i.e., tie together) the \texttt{end} of the cyclic list to point back to its \texttt{start} and lazy evaluation ensures we do not expand the definition indefinitely.
 
-One can utilize this technique to efficiently implement recursion in a language where recursive definitions are retrieved from some environment upon application. The SECD machine creates a knot in its environment data structure for recursive function application using the \textbf{RAP} instruction (more details in \ref{subsec:secd}) \cite{paulson1995foundations}. For some function (\texttt{f}) SECD creates a closure taking an argument (\texttt{arg}), an expression (\texttt{exp}) and an environment (a list of free-variable values, \texttt{env}) where the first value in the environment is set to the definition of \texttt{f}, \texttt{\&f}:
+One can utilize this technique to efficiently implement recursion in a language where recursive definitions are retrieved from some environment upon application. The SECD machine creates a knot in its environment data structure for recursive function application using the \textbf{RAP} instruction (more details in \ref{subsec:secd}) \cite{paulson1995foundations}. For some function (\texttt{f}) SECD creates a closure taking an argument (\texttt{arg}), an expression (\texttt{exp}) and an environment (a list of free-variable values, \texttt{env}) where the first value in the environment is set to the definition of \texttt{f} (denoted \texttt{\&f}):
 \begin{minted}[escapeinside=||]{lisp}
     Clo(arg, exp, |\&|f.env)
 \end{minted}
@@ -575,10 +536,8 @@ In literature a \textit{staging transformation} \cite{jorring1986compilers,brady
 
 A practical realization of the Futamura projections has since been an active area of research. The difficulty in their implementation is the question of how one can best specialize an interpreter and meanwhile also generate the most efficient and correct code; this question is still being explored in the design of partial evaluators to this day \cite{jones1988challenging,jones1993partial}.
 
-\subsection{Type-Directed Partial Evaluation}\label{subsec:tdpe}
-%https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf
-%TODO: need to explain dynamic/static twice? it was explained in the previous section already!
-Partial evaluation (PE) is a program-optimization technique based on the insight that there is room in programs for statically reducing and producing a specialized (and thus hopefully more efficient) version of itself. The output of a partial evaluator is a \textit{residual program} which, in the ideal case, is a version of the original program where as much computation as possible has been performed with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called static and otherwise dynamic. For variables in the program to-be-specialized we refer to its \textit{binding-time} as static if the data it holds during the lifetime of the program is static. Otherwise a variable's binding-time is dynamic.
+\subsection{Partial Evaluation}\label{subsec:pe}
+Partial evaluation (PE) is a program-optimization technique based on the insight that there is room in programs for statically reducing and producing a specialized (and thus hopefully more efficient) version of itself. The output of a partial evaluator is a \textit{residual program} which, in the ideal case, is the original program where as much computation as possible has been performed with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called static and otherwise dynamic. For variables in the program to-be-specialized we refer to its \textit{binding-time} as static if the data it holds during the lifetime of the program is static. Otherwise a variable's binding-time is dynamic.
 
 Partial evaluators generally contain a \textit{binding-time analysis (BTA)} stage which determines whether expressions can be reduced at specialization time or should be preserved in the residual program. A BTA produces a \textit{division} \cite{jones1993partial}; this assigns to each function and variable in a program a binding-time. A division is said to be \textit{congruent} if it assures that every expression that involves dynamic data is marked as dynamic and otherwise as static. A partial evaluator being just an ordinary program, a problem one can run into is non-termination. A congruent division does not always guarantee termination of a PE but when it does we call the division \textit{safe}.
 %In our case our division does not ensure termination but rather our implementation and special treatment of function specialization
@@ -597,7 +556,9 @@ Partial evaluators generally contain a \textit{binding-time analysis (BTA)} stag
 In the literature we distinguish between \textit{online} and \textit{offline} partial evaluation \cite{jones1993partial} (or more recently a hybrid between the two due to Shali et al.~\cite{shali2011hybrid}). Offline PE performs a BTA before it begins specialization whereas the online approach makes decisions about whether to residualize expressions once partial evaluation has begun.
 
 %TODO: "A type-directed partial evaluator is thus unconventional in that it does not process the text of a source program, but its compiled (higher-order) value. The normalization effect is not obtained by symbolic interpretation -- it happens en passant in the residualization algorithm" - Pragmatics of type-directed partial evaluation \cite{danvy1996pragmatics}
-Danvy devised a method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation} \cite{danvy1999type}. The result is a remarkably simple methodology of implementing residualizers with a binding-time analysis that is completely driven by the \textit{types} of the expressions being specialized. TDPE is built on three core concepts \cite{danvy1997online,grobauer2001second}:
+%https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf
+\subsection{Type-Directed Partial Evaluation}\label{subsec:tdpe}
+Danvy devised a remarkably simple method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation} \cite{danvy1999type}. Here the binding-time analysis is completely driven by the \textit{types} of the expressions being specialized. TDPE is built on three core concepts \cite{danvy1997online,grobauer2001second}:
 %TODO: well-annotatedness
 \begin{tight_enumerate}
     \item BTA produces an expression annotated with static or dynamic binding-times such that reducing static terms yields a \textit{completely dynamic} residual expression (i.e., an expression containing only dynamic variables)
@@ -607,9 +568,9 @@ Danvy devised a method of implementing a partial evaluator solely based on the i
 
 TDPE makes use of the type system of a two-level language to direct the residualization of expressions. The output of this lightweight BTA is an expression whose terms are annotated with dynamic or static binding times which when statically reduced yield a purely dynamic expression. Static reduction is performed through regular evaluation of the two-level language's interpreter. TDPE includes a set of operators to convert between dynamic and static terms to aid the optimality of generated code. The two classes of coercion operators are reification (also called \textit{lift}) and reflection both of which are defined on product, function and literal types. \textit{Residualization} is finally defined as performing annotations and binding-time coercions followed by static reduction.
 
-The traditional TDPE \textit{residualize} operation takes as input an expression and a separate object representing the expressions type. Based on the latter argument the residualization algorithm will perform reification according to the rules in figure \ref{fig:tdpe_rules}. As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects. The full set of reduction rules are shown in figure \ref{fig:tdpe_rules}.
+The traditional TDPE \textit{residualize} operation takes as input an expression and a separate object representing the expression's type. Based on the latter argument the residualization algorithm will perform reification according to the rules in figure \ref{fig:tdpe_rules}. As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects.
 
-\subsubsection{Example}
+\subsubsection{Example}\label{subsec:tdpe_ex}
 Consider the example \eqref{eq:tdpe_ex1} from Danvy's description of TDPE \cite{danvy1999type}. The aim is to annotate the function applications (denoted by $@$) and definitions with a static (overline) or dynamic (underline) binding-time.
 \begin{align}
     \lambda g.\lambda d.(\lambda f.g \:@ \: (f \: @ \: d)\: @ \:f) \: @ \: \lambda a.a \label{eq:tdpe_ex1}
@@ -624,18 +585,14 @@ A correct binding-time could be that shown in \eqref{eq:tdpe_ex2a} because after
     \end{align}
 \end{figure}
 
-We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications; TDPE uses this operation during specialization time to increase the number of static expressions it can reduce. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, only a single unfolding of $f$ and no $\beta$-redexes. Danvy then generalizes the $\eta$-expansion into a class of coercions that permit residualization of static values in dynamic contexts, an expression with a dynamic hole \cite{danvy1995essence}. We represent such coercions with a $\downarrow^T$ (or \textit{lift} as we use in later sections) which represents the conversion from a static value of type $T$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
+We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications. TDPE uses this operation during specialization time to increase the number of static expressions it can reduce. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, only a single unfolding of $f$ and no $\beta$-redexes. Danvy then generalizes the $\eta$-expansion into a class of coercions that permit residualization of static values in dynamic contexts, an expression with a dynamic hole \cite{danvy1995essence}. We represent such coercions with a $\downarrow^T$ (or \textit{lift} as we use in later sections) which represents the conversion from a static value of type $T$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
 
 \begin{figure}[h]
     \begin{align}
         & \underline{\lambda}g.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{$\underline{\lambda} x.f \: \overline{@} x$}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex3a} \\
         & \triangleright \:\: \emph{\small{\text{(via static reduction)}}} \nonumber \\
-        & \underline{\lambda}g.\underline{\lambda} d.g \: \underline{@} \: d \: \underline{@} \: \underline{\lambda} a.a \label{eq:tdpe_ex3b}
-    \end{align}
-\end{figure}
-
-\begin{figure}[h]
-    \begin{align}
+        & \underline{\lambda}g.\underline{\lambda} d.g \: \underline{@} \: d \: \underline{@} \: \underline{\lambda} a.a \label{eq:tdpe_ex3b} \\
+        \nonumber \\%
         & \underline{\lambda g}.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{(\textit{lift} $f$)}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex4} \\
         & \quad \text{where we omit the type parameter on \textit{lift} for simplicity} \nonumber
     \end{align}
@@ -708,11 +665,11 @@ We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value i
 We now provide an overview of the partial evaluation framework developed for Pink \cite{amin2017collapsing} which forms the first two levels of our experimental tower (Lisp* and \mslang{} in figure \ref{fig:tombstone}). At Pink's core is the multi-level language, \mslang{}. The language distinguishes between static values and dynamic values using type constructors \texttt{Val} and \texttt{Exp} respectively. The core evaluator will either residualize, or statically reduce an expression based on the binding-times on its individual terms. The core evaluator (\textit{evalms} in listing~\ref{lst:evalms}) serves as our PE that produces residual programs (i.e., generates code) that are represented by dynamic expressions wrapped in a \texttt{Code} constructor and are in A-normal form \cite{flanagan1993essence}. For example a residualized addition of two literals is,
 \mint{scala}|    Code(Plus(Lit(5),Lit(5))))|
 %TODO: Eijiro Sumii implementation of TDPE
-In \mslang{} the TDPE \textit{reify} operation is called \textit{lift} and converts static \texttt{Val}s into dynamic \texttt{Exp}s. The fact that code generation of expressions can be guided using this single operator, whose semantics closely resemble expression annotation, is attractive for converting interpreters into translators. A user of \mslang{} can stage an interpreter by annotating its source (i.e., wrapping expressions in calls to \mslang{}'s \textit{lift} operator) provided the possibility of changing the interpreter's internals and enough knowledge of its semantics.
+In \mslang{} the TDPE \textit{reify} operation is called \textit{lift} and converts static \texttt{Val}s into dynamic \texttt{Exp}s. The fact that residualization of expressions can be guided using this single operator, whose semantics closely resemble expression annotation, is attractive for converting interpreters into translators. A user of \mslang{} can stage an interpreter (see example \ref{ssubsec:stage_ex}) by annotating its source (i.e., wrapping expressions in calls to \mslang{}'s \textit{lift} operator) provided the possibility of changing the interpreter's internals and enough knowledge of its semantics.
 
 %TODO: difference of \mslang to TDPE: dynamic decisions, no type-system required, reflect, Eijiro Sumii, can run dynamic code
 %TODO: another difference is that TDPE is automatic on types whereas in Pink the user controls residualization through \textit{manual} annotation of lift
-Despite being based on TDPE, the partial evaluation scheme used in Pink is a modified variant which we refer to as \textit{dynamic TDPE}. Firstly, binding time annotations are not performed automatically by the PE but rely on a user annotating the source with \textit{lift}. Secondly, the PE does not require the type of the input expression to be known statically. The ability to dynamically decide on binding-time decisions and not needing a separate type object as input also allows more flexibility in which expressions we want to residualize. The \textit{reflect} operator serves a different purpose to TDPE's specification. Instead of coercing dynamic into static expressions, it adds an expression to the global accumulator of residual terms, \texttt{stBlock}, that is used to generate the specialized code through let-insertion (see line \ref{mline:let_insert} in listing \ref{lst:evalms}). Danvy introduced \textit{let-insertion} into an implementation of TDPE \cite{hatcliff2007partial} to ensure non-idempotent side-effects in expressions duplicated by TDPE are themselves not performed more often than they occur in a source program.
+Despite being based on TDPE, the partial evaluation scheme used in Pink is a modified variant which we refer to as \textit{dynamic TDPE}. Firstly, binding time annotations are not performed automatically by the PE but rely on a user annotating the source with \textit{lift}. Secondly, the PE does not require the type of the input expression to be known statically. The ability to manually guide binding-time decisions without the need for a separate type object as input allows greater flexibility in which expressions we want to residualize. The \textit{reflect} operator serves a different purpose to TDPE's specification. Instead of coercing dynamic into static expressions, it adds an expression to the global accumulator of residual terms, \texttt{stBlock}, that is used to generate the specialized code through let-insertion (see line \ref{mline:let_insert} in listing \ref{lst:evalms}). Danvy introduced \textit{let-insertion} into an implementation of TDPE \cite{hatcliff2007partial} to ensure side-effects in expressions, possibly duplicated by TDPE, are perfromed with the same frequencey and in the same order as they occur in a source program.
 
 %TODO: 2 levels actually come from statics and dynamic. In literature overlines/underlines indicate stage but in \mslang Val vs Exp determines stage (pg. 379)
 \newpage
@@ -757,7 +714,10 @@ def evalms(env: Env, e: Exp): Val = e match {
     ...
 }
 ...
+// Auxiliary state
 var stBlock: List[(Int, Exp)] = Nil
+var stFresh = 0
+var stFun: List[(Int,Env,Exp)] = Nil
 def reify(f: => Exp) = run {
     stBlock = Nil
     val last = f
@@ -778,7 +738,7 @@ def lift(v: Val): Exp = v match {
         case Some(n) =>
           Var(n)
         case None =>
-          stFun :+= (stFresh,env2,e2)
+          stFun :+= (stFresh,env2,e2)               // memoize for performance
           reflect(Lam(reify{ val Code(r) = evalms(env2:+Code(fresh()):+Code(fresh()),e2); r }))
       }
 }
@@ -796,7 +756,7 @@ Pink uses the notion of \textit{stage-polymorphism} introduced by Offenbeck et a
 	\item ordinary evaluation
 	\item generation and subsequent execution of \mslang{} terms
 \end{enumerate*}.
-Stage-polymorphism allows abstraction over how many stages an evaluation is performed over. This is achieved by operators that are polymorphic over what stage they operate on and is simply implemented as shown in figure \ref{lst:stage_poly_impl}. Whenever the \textit{lift} operator is now used in the \textit{interpreter} or \textit{compiler} it will cause \textit{evalms} to either evaluate or generate code respectively:
+Stage-polymorphism allows abstraction over how many stages an evaluation is performed over and is implemented as shown in figure \ref{lst:stage_poly_impl}. Whenever the \textit{lift} operator is now used in the \textit{interpreter} or \textit{compiler} it will cause \textit{evalms} to either evaluate or generate code respectively:
 
 \begin{figure}[ht]
 \centering
@@ -817,10 +777,10 @@ Now we can combine meta-circular interpreters or compilers in a single invocatio
 The function \textit{quote} is the LISP function that prevents evaluation of its argument. The above example builds a meta-circular tower of three interpreters and a compiler (essentially a staged a interpreter) that run some program (similar to the tower represented in figure \ref{fig:tombstone_collapse_ex_comp}).
 
 %TODO: recipe is actually mentioned in pg. 377 (https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf)
-An advantage of TDPE and why the Pink framework serves as an appropriate candidate PE in our experiments is that it requires no additional dedicated static analysis tools to perform its residualization, keeping complexity at a minimum. Given an interpreter we can stage it by following Amin et al.'s \cite{amin2017collapsing} recipe: lift all terminal values an interpreter returns. Marking returned values as dynamic will dynamize and residualize any operation that includes them.
+An advantage of TDPE and why the Pink framework serves as an appropriate candidate PE in our experiments is that it requires no additional dedicated static analysis tools to perform its residualization, keeping complexity at a minimum. Given an interpreter we can stage it by following Amin et al.'s \cite{amin2017collapsing} recipe: lift all terminal values an interpreter returns. This will dynamize and hence residualize any operation that includes them, a process more thoroughly described in the example below.
 
-\subsubsection{Example Staged Interpreter}
-The excerpt in figure \ref{fig:pink_source} demonstrates how \textit{lift} annotations are used in staging Pink's interpreter. Any product types (\textit{cons}), function types (\textit{lambda}) and literal types (\textit{num}/\textit{quote}) that are interpreted will be residualized (since they are wrapped in \textit{lift}). In turn any operation on them will also residualize. Effectively we now generate another program that only includes the operations and values of the original expressions (\texttt{exp}) without any interpretative logic. Our interpreter can be said to perform compilation since it generates residual terms in \mslang.
+\subsubsection{Example Staged Interpreter}\label{ssubsec:stage_ex}
+The excerpt in figure \ref{fig:pink_source} demonstrates how \textit{lift} annotations are used in staging Pink's interpreter. Any product types (\textit{cons}), function types (\textit{lambda}) and literal types (\textit{num}/\textit{quote}) that are interpreted will be residualized (since they are wrapped in \textit{lift}). In turn any operation on them will also residualize. Effectively we now generate another program that includes only the operations and values of the original expressions (\texttt{exp}) without the interpreter's if-statement tree matching redundant instructions (i.e. without any interpretative overhead). Our interpreter can be said to perform compilation since it generates residual terms in \mslang.
 %TODO: mention staging (?)
 
 \begin{figure}[ht!]
@@ -863,7 +823,7 @@ A central part of our study revolves around the notion of heterogeneous towers. 
 	Heterogeneous towers of interpreters are towers which exhibit following properties:
 	\begin{enumerate}
 		\item For any two adjacent interpreters $I_k$ and $I_{k-1}$ where $k \in \mathbb N_{\ge 1}: L_k \not\equiv L_{k-1}$ can hold
-		\item For any two adjacent interpreters used in the tower, $I_{k}$ and $I_{k-1}$, the operational semantics and the representation of data can be different between the two
+		\item For any two adjacent interpreters used in the tower, $I_{k}$ and $I_{k-1}$, the operational semantics and the representation of data can be different between the two; this gives us a way of addressing the difference in intensional structure of towers such as the Python-x86-JavaScript tower from figure \ref{fig:tombstone_practical}
 	\end{enumerate}
 \end{definition}
 
@@ -878,13 +838,48 @@ Danvy et al.~mentioned the possibility of non-reflective non-meta-circular tower
 
 Another motivation of ours stems from the realization that systems consisting of several layers of interpretation can feasibly be constructed. A hypothetical tower of interpreters that served as a model for the one we built throughout our work was described in Amin et al.'s paper on collapsing towers \cite{amin2017collapsing} and is depicted as a tombstone diagram in figure \ref{fig:tombstone_practical}. As a comparison our tower is shown in \ref{fig:tombstone}. We replace the x86 emulator with a SECD abstract machine interpreter and Python with our own functional toy language, \mevl. The label \mslang{} represents the multi-level core language from Pink \cite{amin2017collapsing} and Lisp* is the LISP-like front-end to \mslang. Although here the tower grows upwards and to the left, this need not be. The compilers, or \textit{translators}, from \mevl{} to SECD and from Lisp* to \mslang{} have been implemented in Scala purely for simplicity. To realize a completely vertical tower (i.e., consisting of interpreters only), the Lisp*-\mslang{} translator could be omitted such that the \mslang{} interpreter evaluates s-expressions directly. Similarly, the \mevl-SECD compiler could be implemented in SECD instructions itself. However, we argue that the presence of compilation layers in our experimental tower resembles a setting in practice more closely and adds some insightful challenges to our experiments.
 
+\begin{figure}[hb]
+    \begin{tikzpicture}
+        \matrix (m) [matrix of nodes,nodes={minimum width=2em}
+                    ]
+        {
+         Program    &        &        &           &           &     &       &           &               \\[2ex]
+         Python     & Python &  $\to$ &  Bytecode &  Bytecode &   |[font=\small]|$\Leftarrow$  &  |[font=\small]|(bytecode  &           &               \\
+                    &        &    C    &           &       &  & |[font=\small]|\quad interpreter) &           &   |[font=\small]|(x86 VM)         \\
+                    &        &        &           &           &     &       &           &  |[font=\small]|$\Downarrow$         \\
+                    &        &        &           &     C     &   C & $\to$ & x86 ASM   &  x86 ASM      \\
+                    &        &        &           &           &     &   C   &           &               \\[3ex]
+                    &        &        &           &           &     &       &           &  JavaScript   \\
+                    &        &        &           &           &     &       &           &  |[font=\tiny]|Browser      \\
+          };
+        
+        % With arc
+        %\draw (m-1-1.north west) |- (m-2-2.south west);
+        %\draw (m-2-2.south west) -- (m-1-1.north east);
+        %\draw (m-1-1.north east) arc (0:180:0.73);
+        
+        % Without arc
+        \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
+        
+        \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
+        \draw (m-2-4.north east) |- (m-5-7.south west) |- (m-6-7.south east) |- (m-5-8.south east) |- (m-7-9.south east) |- (m-5-6.north west) |- (m-2-4.north east);
+        \draw (m-5-6.north west) -- (m-5-6.south west);
+        \draw (m-5-8.north east) -- (m-5-8.south east);
+        \draw (m-7-9.south west) -- (m-8-9.south) -- (m-7-9.south east);
+    \end{tikzpicture}
+    \caption{A hypothetical tower of interpreters that serves as the model for the tower we built (figure \ref{fig:tombstone}). The diagram depicts a JavaScript x86 virtual machine (VM) running a Python \cite{van2011python} interpreter that in turn executes a Python script. In our model, Python is first translated to bytecode which is then interpreted by some bytecode interpreter (written in the C language \cite{kernighan1988c}). \textit{Browser} encompasses the JavaScript interpreter within a browser and any underlying technologies required to host the browser.}
+    \label{fig:tombstone_practical}
+\end{figure}
+
 \section{General Recipe for Collapsing Towers}\label{sec:recipe}
-In this section we describe the methodology that Pink uses to construct and collapse towers and then discuss changes that have to be considered when applying it to a heterogeneous setting.
+In this section we describe the methodology that Pink uses to construct and collapse towers and then discuss changes that have to be considered when applying it to a heterogeneous setting. The three key ingredients to collapsing a tower using Pink's technique are:
+\begin{enumerate}
+    \item A multi-level language
+    \item A stage-polymorphic base evaluator for the multi-level language
+    \item TDPE-style \textit{reify} operator
+\end{enumerate}
 
-\subsection{TDPE and Staging a Definitional Interpreter}\label{subsec:stage_def_interp}
-Pink defines a multi-level language that differentiates between static and dynamic values. This is essential to express binding-time information. The TDPE-style \textit{lift} (i.e., reify) operator is implemented such that the PE can coerce static to dynamic values.
-
-In his original description of TDPE  Danvy \cite{danvy1999type} showed that we can use above tools to residualize a definitional interpreter with respect to a source program. Pink demonstrates how to stage such an interpreter by wrapping all literal, function and product types in calls to its \textit{lift} operator. Additionally, Pink introduces the concept of \textit{binding-time agnostic staging}. Here, a single interpreter can be used to residualize or simply evaluate a program. In reference to Pink, \textit{staging an interpreter} means lifting types as described above but also activating \textit{code generation mode}, a detail we use in the next section. Code generation mode means an interpreter's polymorphic lift is instantiated such that it invokes \mslang's built-in \textit{lift} (i.e., \textit{compiler} in figure \ref{lst:stage_poly_impl}).
+Amin et al.'s multi-level language, \mslang, differentiates between static and dynamic values to express binding-time information. It also defines a \textit{lift} (i.e., TDPE's reify) operator such that the PE can coerce static to dynamic values. A single evaluator for \mslang{} operates on both dynamic and static expressions which enables so called \textit{binding-time agnostic} staging \cite{amin2017collapsing}. This means to \textit{stage an interpreter} we can annotate it with the polymorphic lift instantiated such that it invokes \mslang's \textit{lift} (such as \textit{compiler} in figure \ref{lst:stage_poly_impl}).
 
 \subsection{Construction and Collapse of a Tower}
 \begin{figure}[ht!]
@@ -982,7 +977,7 @@ In his original description of TDPE  Danvy \cite{danvy1999type} showed that we c
 
 A tower can then be constructed using a set of meta-circular interpreters each interpreting the next level in the tower. The key benefit of meta-circularity and the basis of collapsing the tower is that the \textit{lift} operator defined in the base evaluator is accessible to each interpreter. We can then stage the user-most interpreter (i.e., the interpreter, $I_n$, running the program provided by the user), as described in section \ref{subsec:mslang}. Although previous work did not provide an insight into the exact effect of staging at different levels in the tower, an intuitive reason we stage at the top-most level is that we want to eliminate as much interpretative overhead as possible which is achieved by collapsing the maximal set of interpreters in the tower. In sections \ref{sec:mslang} to \ref{sec:string_matcher} we provide evidence to support this claim on our experimental tower.
 
-When we now execute the tower (i.e., invoke the partial evaluator at the base) only the top-most evaluator residualizes while all others evaluate. Because of meta-circularity, instead of evaluating a user-value it is now being lifted at all stages essentially propagating binding-time information from top-most interpreter to the base PE. At the last interpreter above the base evaluator, the \textit{lift} now calls the base's actual TDPE-style reify. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time since it was not evaluated in code-generation mode. Figures \ref{fig:tombstone_collapse_ex_int}-\ref{fig:tombstone_collapsed} depict the above process through tombstone diagrams. We start with a meta-circular tower of interpreters all written in the same language, $L$, and Pink's \mslang{} at the base. After we stage the top-most interpreter (figure \ref{fig:tombstone_collapse_ex_comp}) we can residualize a user program by generating \mslang{} terms; this is essentially the same as removing the intermediate interpreters as they do not get residualized; this yields the collapsed tower in figure \ref{fig:tombstone_collapsed} (assuming the absence of side-effects at individual levels).
+When we now execute the tower (i.e., invoke the partial evaluator at the base) only the top-most evaluator residualizes while all others evaluate (effectively \textit{propagating} binding-time information from the top to the base of the tower). At the last interpreter above the base evaluator, the \textit{lift} now calls the base's actual TDPE-style reify. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time since its polymorphic lift was the identity function (i.e., \textit{interpreter} in figure \ref{lst:stage_poly_impl}). Figures \ref{fig:tombstone_collapse_ex_int}-\ref{fig:tombstone_collapsed} depict the above process through tombstone diagrams. We start with a meta-circular tower of interpreters all written in the same language, $L$, and Pink's \mslang{} at the base. After we stage the top-most interpreter (figure \ref{fig:tombstone_collapse_ex_comp}) we can residualize a user program by generating \mslang{} terms; this is essentially the same as removing the intermediate interpreters as they do not get residualized; this yields the collapsed tower in figure \ref{fig:tombstone_collapsed} (assuming the absence of side-effects at individual levels).
 
 \subsection{Effect of Heterogeneity}
 \begin{figure}[ht!]
@@ -1128,7 +1123,7 @@ An additional benefit of using SECD is that the Pink framework also features a L
 
 %https://www.researchgate.net/publication/220989730_Staging_Transformations_for_Abstract_Machines
 %Diffs to above: use actual SECD machine, show implementation on the compiler and semantics described in Kogge, approach it from a practical (?) point of view because we need a level with a semantic gap, use partial evaluation instead of pass separation to be able to generate for a different language other than the PE generates, present issues in the process of using TDPE on a stack-based machine, show a general recipe for dealing with non-termination and recursion in SECD-like machine
-We design our SECD machine such that it can be staged using Pink's PE; this will enable us to experiment with the effect of staging at different levels of a tower. By definition, a staged evaluator should have a means of generating an intermediate representation, for example residual code, followed by a way to execute it (directly or through further stages). Partial evaluation allows us to split the SECD interpreter's execution into two stages:
+We design our SECD machine such that it can be staged using \mslang's \textit{lift}; this will enable us to experiment with the effect of staging at different levels of a tower. By definition, a staged evaluator should have a means of generating an intermediate representation, for example residual code, followed by a way to execute it (directly or through further stages). Partial evaluation allows us to split the SECD interpreter's execution into two stages:
 \begin{enumerate*}[label=(\arabic*)]
     \item reduce static values and residualize dynamic values
     \item execute the residual expressions
@@ -1145,32 +1140,33 @@ This translates to following SECD instructions:
 
 We load only a single value of 10 into the environment and omit the second argument that \textbf{LDF} expects and uses inside its body. Instead \textbf{LDF} simply loads at a location not yet available (i.e., \mbox{\texttt{LD (2 1)}}) and trusts the user to provide the missing value at run-time.
 
-Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. We define our division by where static values can be transferred from. If a dynamic value can be transferred from a register, $A$, to another register, $B$, we classify register $B$ as dynamic. We define the binding-time of a SECD register to be the combination of all possible binding-times of elements of a register. When a register can hold both dynamic and static values, the register's binding time is referred to as \textit{mixed}. The full division for each SECD register is provided in table \ref{tbl:secd_division}.
+Prior to deciding on the methodology for code generation we need to outline what stages one can add to the evaluation of the SECD machine and how the binding-time division is chosen. We define the binding-time of a SECD register to be the combination of all possible binding-times of elements of a register. A register that only holds dynamic or static data is classified as dynamic or static respectively. When a register can hold both dynamic and static values, the register's binding time is referred to as \textit{mixed}. The full division for each SECD register is provided in table \ref{tbl:secd_division} below:
 
 \begin{table}[!htbp]
   \centering
   \begin{tabular}{|p{3cm}|p{3cm}|p{6cm}|}
  	\hline
  	\thead{SECD Register}	&	\thead{Classification}	&	\thead{Reason}	\\ \hline
-	$S$ (Stack)				&	\vtop{\hbox{\strut Mixed}\hbox{\strut (mostly dynamic)}}				&	Function arguments and return values operate on the stack \textit{and} dynamic environment and thus are mostly dynamic. Elements of the stack can, however, be static in the case of thunks described in section \ref{ssubsec:knot} \\ \hline
+	$S$ (Stack)				&	\vtop{\hbox{\strut Mixed}\hbox{\strut (mostly dynamic)}}				&	Function arguments and return values move between \textit{S} and the mostly dynamic \textit{E} and thus is also classified as \textit{mostly dynamic}. Elements of the stack can, however, be static in the case of closures described in section \ref{ssubsec:knot} \\ \hline
 
-	$E$ (Environment)		&	\vtop{\hbox{\strut Mixed}\hbox{\strut (mostly dynamic)}}	&	 Most elements in this register are dynamic because they are passed from the user or represent values transferred from the stack. Since the stack can transfer static values on occasion the environment can contain static values as well. \\ \hline
+	$E$ (Environment)		&	\vtop{\hbox{\strut Mixed}\hbox{\strut (mostly dynamic)}}	&	 Most elements in this register are dynamic because they are passed from the user. It can also temporarily hold static values transferred from \textit{S} and thus is only classified as \textit{mostly dynamic} \\ \hline
 
-	$C$ (Control)				&	Static				& We make sure the register only receives static values and is thus static (we ensure this through eta-expansion in section \ref{subsec:secd_staged})  \\ \hline
+	$C$ (Control)				&	Static				& We make sure the register only receives static values and is thus static (we ensure this through $\eta$-expansion in section \ref{subsec:secd_staged})  \\ \hline
 
-	$D$ (Dump)				&	Mixed				&	Used for saving state of any other register and thus elements can be both dynamic, static or a combination of both \\ \hline
+	$D$ (Dump)				&	Mixed				&	Used for saving state of any other register and thus elements can be both dynamic or static \\ \hline
 
-	$F$ (Functions)		&	Static				&	Since it resembles a \textit{control} register just for recursively called instructions we also classify it as static \\
+	$F$ (Functions)		&	Dynamic				&	Holds recursive closures that should be residualized \\
 
 	\hline
   \end{tabular}
   \caption{Division rules for our approach to staging a SECD machine}
   \label{tbl:secd_division}
 \end{table}
+\newpage
 
-We refer to our division as coarse grained since dynamic values pollute whole registers that could serve as either completely static or mixed valued. An example would be a machine that simply performs arithmetic on two integers and returns the result. The state machine transitions would occur as shown in table \ref{tbl:secd_example1}. As the programmer we know there is no unknown input and the expression can simply be reduced to the value ``30'' following the SECD small-step semantics. However, by default our division assumes the S-register to be dynamic and thus generates code for adding two constants. In such cases the smart constructors discussed in section \ref{sec:mslang} allow as to reduce constant expressions that a conservative division would otherwise not. We keep this division as the basis for our staged SECD machine since it is less intrusive to its interpreter and still allows us to residualize efficiently.
+We refer to our division as coarse grained since dynamic values pollute whole registers that could serve as either completely or mostly static. An example would be a machine that simply performs arithmetic on two integers and returns the result. The state machine transitions would occur as shown in table \ref{tbl:secd_example1}. As the programmer we know there is no unknown input and the expression can simply be reduced to the value ``30'' following the SECD small-step semantics. However, by default our division assumes most elements in \textit{S} are dynamic and thus generates code for adding two constants. In such cases the smart constructors discussed in section \ref{sec:mslang} allow as to reduce constant expressions that a conservative division would otherwise not. We keep this division as the basis for our staged SECD machine since it is less intrusive to its interpreter and still allows us to residualize efficiently.
 
-Through its LISP front-end the \mslang{} evaluator can operate as a partial evaluator by exposing its \textit{lift} operator. We stage our SECD machine interpreter by annotating its source with said \textit{lift} according to the division in table \ref{tbl:secd_division}.
+We stage our SECD interpreter by annotating its source with \mslang's \textit{lift} according to the division in table \ref{tbl:secd_division}.
 
 \begin{table}[htp!]
 \centering
@@ -1187,7 +1183,7 @@ Through its LISP front-end the \mslang{} evaluator can operate as a partial eval
 \multicolumn{2}{|l|}{\begin{tabular}[c]{@{}l@{}}Generated Code (with smart constructor):\\ \quad(lambda f0 x1 30)\end{tabular}}
 \\ \hline
 \end{tabular}
-\caption{Example of SECD evaluation and \mslang code generated using our PE framework. The division follows that of table \ref{tbl:secd_division}.}
+\caption{Example of SECD evaluation and \mslang code generated using our PE framework. The division follows that of table \ref{tbl:secd_division}. The lambda abstraction, $f0$, is a consequence of our SECD interpreter architecture (see section \ref{subsec:secd_interp}) and is used to accept user input.}
 \label{tbl:secd_example1}
 \end{table}
 
@@ -1344,7 +1340,7 @@ Before explaining our modifications to the SECD instruction set in detail we bri
 		 & && \text{lift@($\lambda$x.(run@({\ts}() x.env ops {\ts}ret f)))} \quad\text{\textit{if (clo? v)}} \nonumber \\
 		 & && \quad \text{where (fn (ops env))}:= \text{v} \nonumber
 \end{alignat}
-\caption{Modifications to the SECD operational semantics by Kogge \cite{kogge1990architecture}. The original transitions are shown in figure \ref{fig:secd_kogge}. The function \textit{run} takes state-transition steps according to \textit{C} until the machine halts. The function \textit{locate} returns an element at index (i,j) from a multi-dimensional list. An ``@'' denotes function application and registers \textit{S, E, C, D, F} are represented by \textit{s, e, c, d, f} respectively. The syntax \textit{num?/sym?/clo?} are conditions satisfied when their argument is a number, string or a closure respectively.}
+\caption{Modifications to the SECD operational semantics by Kogge \cite{kogge1990architecture}. The original transitions are shown in figure \ref{fig:secd_kogge}. The function \textit{run} takes state-transition steps according to \textit{C} until the machine halts. The function \textit{locate} returns an element at index (i,j) from a multi-dimensional list. An ``@'' denotes function application and registers \textit{S, E, C, D, F} are represented by \textit{s, e, c, d, f} respectively. The syntax \textit{num?/sym?/clo?} are conditions satisfied when their argument is a number, string or a closure respectively. The function \textit{lift} is \mslang's TDPE-style \textit{reify} which is used to mark a term as dynamic.}
 \label{fig:secd_semantics_noset}
 \end{figure}
 \endgroup
@@ -1361,7 +1357,7 @@ Modification to the \textbf{RAP} instruction are described by \eqref{eq:secd_sem
 In the original semantics of SECD, \textbf{RTN} would restore the state of all registers from the dump and add the top most value of the current S-register back onto the restored S-register. This modelled the return from a function application. As we showed earlier in this section, taking another step in the machine when specializing a recursive function will lead to non-termination of our specializer. Thus, we simply stop evaluation when returning from a function by chgecking \textit{D} for a \textit{{\ts}ret} symbol and returning the top-most value on the stack to the call site of a lambda. This works because function definitions now reside in lambdas in the interpreter and SECD function invocation is lambda application. The last case we are concerned with is the currying of SECD functions. This occurs when we invoke a \textbf{RTN} immediately after an \textbf{LDR}. To properly return a lambda we construct a \textbf{LDF}-style closure, lift and then return it.
 
 %TODO more thorough explanation (?)
-Finally, we modify \textbf{AP} to adhere to the new calling convention of SECD functions required by the thunks that \textbf{RAP}/\textbf{LDF}/\textbf{LDR} add onto the stack. Where previously \textbf{AP} would call a function by simply reinstating \textbf{LDF}'s instructions from \textit{S} into \textit{C}, now \textbf{AP} initiates a call to the lambda that we wrapped the instructions in. We pass a lifted environment and top of the stack to the function in case it is dynamic.
+Finally, we modify \textbf{AP} to adhere to the new calling convention of SECD functions required by the thunks that \textbf{RAP}/\textbf{LDF}/\textbf{LDR} add onto the stack. Where previously \textbf{AP} would call a function by simply reinstating \textbf{LDF}'s instructions from \textit{S} into \textit{C}, now \textbf{AP} initiates a call to the lambda that we wrapped the instructions in. We lift the extended environment, \texttt{x.env}, in case the function we pass it to is dynamic.
 
 To rewrite the example from figure \ref{lst:secd_recursion_ex1} with the new semantics we load the recursive function using the new \textbf{LDR} instead of the \textbf{LD} instruction:
 \begin{minted}[escapeinside=||,linenos]{lisp}
@@ -1415,7 +1411,7 @@ Line \ref{mline:secd_comp_call} feeds the compiled SECD instructions to the SECD
 \newpage
 \subsubsection{Example}
 %SECD front-end on: regular machine, staged machine, smart constructors (?)
-Figure \ref{lst:secd_fac_lisp} shows a program to compute factorial numbers recursively written in \secdlisp. The program is translated into SECD instructions by our compiler and then input to our staged machine. Figure \ref{lst:secd_fac_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to the modifications to \textbf{RAP}, \textbf{AP} and \textbf{LDF}. The residual program contains two lambdas, one that executes factorial and another that takes input from the user through the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of SECD's stack-based semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
+Figure \ref{lst:secd_fac_lisp} shows a program to compute factorial numbers recursively written in \secdlisp. The program is translated into SECD instructions by our compiler and then input to our staged machine. Figure \ref{lst:secd_fac_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to our augmented closure representation. The residual program contains two lambdas, one that executes factorial and another that takes input from the user through the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of SECD's stack-based semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
 
 \begin{figure}[htp!]
 \centering
@@ -1588,10 +1584,10 @@ Figure \ref{lst:mevl_secd_all} shows the \mevl{} interpreter running a program c
         ...
         LDR (1 1) AP RTN ) RAP STOP
          \end{minted}
-    \caption{SECD Instructions}
+    \caption{Generated instructions after compiling (a)}
     \label{lst:mevl_secd_ops}
     \end{subfigure}
-\caption{Example factorial on \mevl}
+\caption{Example factorial written in \mevl. Here our tower is collapsed while staging the SECD machine.}
 \label{lst:mevl_secd_all}
 \end{figure}
 
@@ -1624,7 +1620,7 @@ Figure \ref{lst:mevl_secd_all} shows the \mevl{} interpreter running a program c
                 (let x18 (car x3)
                 ...
     \end{minted}
-\caption{Generated code running the example in figure \ref{lst:mevl_secd_all} on a staged SECD machine. Traces of \mevl's dispatch logic are highlighted in green.}
+\caption{Residual code running after collapsing the example in figure \ref{lst:mevl_secd_all} with a staged SECD machine. Traces of \mevl's dispatch logic are highlighted in green.}
 \label{lst:mevl_secd_ped}
 \end{figure}
 \newpage
@@ -1638,9 +1634,9 @@ The state transitions for the \textbf{LIFT} operation in the staged SECD machine
 
 \mint{scala}|    Code(Lit(10))|
 
-The other case that our \textbf{LIFT} operates on are closures constructed via \textbf{LDF} or \textbf{RAP}. Behind the apparent complexity lies the same recipe for staging an interpreter as we identified before but in this case operating on the top most value of the stack: we make sure to lift the operand if it is a number or a string. In the case that the operand is a closure we construct, lift and return a new lambda using the state we stored in registers \textit{F} and \textit{D}. We simply construct a lambda that takes an environment and runs the instructions that were wrapped to completion.
+The other case that our \textbf{LIFT} operates on are closures constructed via \textbf{LDF} or \textbf{RAP}. Behind the apparent complexity lies the same recipe for staging an interpreter as we identified before but in this case operating on the top most value of the stack: we make sure to lift the operand if it is a number or a string. In the case that the operand is a closure we construct, lift and return a new lambda using the state we stored in registers \textit{F} and \textit{D}; the lambda takes an environment and runs the instructions that it wrapped to completion.
 
-Through the addition of a \textit{lift} built-in into \secdlisp{} we can now stage the \mevl{} interpreter and run it on our SECD interpreter (figure \ref{lst:mevl}). The residual program for the factorial example (figure \ref{lst:mevl_secd_all}) is shown in figure \ref{lst:mevl_staged_secd_ped} and the corresponding SECD instructions that \mevl{} compiled down to in figure \ref{lst:mevl_staged_secd_ops}. The generated SECD instructions are the same as in the unstaged \mevl{} interpreter with the exception of the newly inserted \textbf{LIFT} instructions as we have specified in the interpreter definition. This has the effect that the residual program resembles exactly the \mevl{} definition of our program but now in terms of \mslang{} and all traces of the SECD machine have vanished. This demonstrates that we successfully removed all layers of interpretation between the base evaluator (\mslang{}) and the user-most interpreter (\mevl{}). Comparing this configuration to running our example on the staged machine (and unstaged \mevl{}) we can see that the structure of the generated code resembles the structure of the interpreter that we staged. When staging at the SECD level we could see traces of stack-like operations that to the programmer seemed optimizable. When we stage at the \mevl{} layer these operations are gone and we are left with LISP-like semantics of \mevl{}.
+Through the addition of a \textit{lift} built-in into \secdlisp{} we can now stage the \mevl{} interpreter and run it on our SECD interpreter (figure \ref{lst:mevl}). The residual program for the factorial example (figure \ref{lst:mevl_secd_all}) is shown in figure \ref{lst:mevl_staged_secd_ped} and the corresponding SECD instructions that \mevl{} compiled down to in figure \ref{lst:mevl_staged_secd_ops}. The generated SECD instructions are the same as in the unstaged \mevl{} interpreter with the exception of the newly inserted \textbf{LIFT} instructions following our \textit{maybe-lift} annotations. This has the effect that the residual program resembles exactly the \mevl{} definition of our program but now in terms of \mslang{} and all traces of the SECD machine have vanished. This demonstrates that we successfully removed all layers of interpretation between the base evaluator (\mslang{}) and the user-most interpreter (\mevl{}). Comparing this configuration to running our example on the staged machine (and unstaged \mevl{}) we can see that the structure of the generated code resembles the structure of the interpreter that we staged. When staging at the SECD level we could see traces of stack-like operations that to the programmer seemed optimizable. When we stage at the \mevl{} layer these operations are gone and we are left with LISP-like semantics of \mevl{}.
 
 \begin{figure}[htp!]
 \centering

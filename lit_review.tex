@@ -456,7 +456,7 @@ We now describe the instruction set and implementation details described by Kogg
 
     |\textcolor{red}{Result: (200)}|
 \end{minted}
-
+\newpage
     \item A recursive call consists of two SECD functions: a recursive function and a function that initiates the first recursive call. \textbf{RAP} ties a knot in its environment such that a definition of the closure is accessible during its application; this enables recursion (see section \ref{ssubsec:background_knot}). Additionally, it will initiate the first recursive call. In the below example the recursive function will call itself and increment its argument by 1 and return the argument once it reaches 5. The function finds its definition through \texttt{LD (2 1)} in the environment and subsequently calls itself. For a better understanding of recursive SECD function application see the \textbf{RAP}/\textbf{letrec} analogy in figure \ref{fig:secd_kogge_rap} and the transition table in figure \ref{fig:secd_kogge}.
 \begin{minted}[escapeinside=||]{lisp}
 DUM NIL LDF
@@ -534,10 +534,10 @@ We could now go a step further and instead of specializing an interpreter specia
 %       \cite{brady2006verified}
 In literature a \textit{staging transformation} \cite{jorring1986compilers,brady2006verified}  converts an interpreter into a compiler by splitting the interpreter's direct execution into several stages. The Futamura projections above imply that partial evaluation can be used to introduce two stages to interpretation: one that generates a residual program and another that executes it \cite{jones1993partial}.
 
-A practical realization of the Futamura projections has since been an active area of research. The difficulty in their implementation is the question of how one can best specialize an interpreter and meanwhile also generate the most efficient and correct code; this question is still being explored in the design of partial evaluators to this day \cite{jones1988challenging,jones1993partial}.
+A practical realization of the Futamura projections has since been an active area of research. The difficulty in their implementation is the question of how one can best specialize an interpreter and meanwhile also generate the most efficient and correct code; this question is still being explored in the design of partial evaluators to this day \cite{jones1988challenging}.
 
 \subsection{Partial Evaluation}\label{subsec:pe}
-Partial evaluation (PE) is a program-optimization technique based on the insight that there is room in programs for statically reducing and producing a specialized (and thus hopefully more efficient) version of itself. The output of a partial evaluator is a \textit{residual program} which, in the ideal case, is the original program where as much computation as possible has been performed with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called static and otherwise dynamic. For variables in the program to-be-specialized we refer to its \textit{binding-time} as static if the data it holds during the lifetime of the program is static. Otherwise a variable's binding-time is dynamic.
+Partial evaluation (PE) is a program-optimization technique based on the insight that there is room in a program for statically reducing and producing a specialized (and thus hopefully more efficient) version of itself. The output of a partial evaluator is a \textit{residual program} which, in the ideal case, is the original program where as much computation as possible has been performed with the data that was available at specialization time (i.e., during run-time of the partial evaluator). The portion of data that is known at specialization time is called static and otherwise dynamic. In the program to-be-specialized we refer to the \textit{binding-time} of a variable as static if the data it holds during the lifetime of the program is static and otherwise dynamic.
 
 Partial evaluators generally contain a \textit{binding-time analysis (BTA)} stage which determines whether expressions can be reduced at specialization time or should be preserved in the residual program. A BTA produces a \textit{division} \cite{jones1993partial}; this assigns to each function and variable in a program a binding-time. A division is said to be \textit{congruent} if it assures that every expression that involves dynamic data is marked as dynamic and otherwise as static. A partial evaluator being just an ordinary program, a problem one can run into is non-termination. A congruent division does not always guarantee termination of a PE but when it does we call the division \textit{safe}.
 %In our case our division does not ensure termination but rather our implementation and special treatment of function specialization
@@ -558,26 +558,20 @@ In the literature we distinguish between \textit{online} and \textit{offline} pa
 %TODO: "A type-directed partial evaluator is thus unconventional in that it does not process the text of a source program, but its compiled (higher-order) value. The normalization effect is not obtained by symbolic interpretation -- it happens en passant in the residualization algorithm" - Pragmatics of type-directed partial evaluation \cite{danvy1996pragmatics}
 %https://link.springer.com/content/pdf/10.1007%2F3-540-47018-2.pdf
 \subsection{Type-Directed Partial Evaluation}\label{subsec:tdpe}
-Danvy devised a remarkably simple method of implementing a partial evaluator solely based on the ideas of normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation} \cite{danvy1999type}. Here the binding-time analysis is completely driven by the \textit{types} of the expressions being specialized. TDPE is built on three core concepts \cite{danvy1997online,grobauer2001second}:
-%TODO: well-annotatedness
-\begin{tight_enumerate}
-    \item BTA produces an expression annotated with static or dynamic binding-times such that reducing static terms yields a \textit{completely dynamic} residual expression (i.e., an expression containing only dynamic variables)
-    \item BTA should be able to generate code that includes \textit{binding-time coercions} which are type corrections that help to convert between dynamic and static values for cases where doing so benefits the residualization process
-    \item Static reduction (i.e., reduction of expressions annotated as static) is performed by evaluation of an expression and well-formedness of the generated code is guaranteed by the implementing language's type system
-\end{tight_enumerate}
+Danvy devised a remarkably simple method of implementing a partial evaluator solely based on normalization in the simply-typed $\lambda$-calculus called \textit{Type-Directed Partial Evaluation} (TDPE) \cite{danvy1999type}. This PE technique is completely driven by the \textit{type} of expressions being specialized (hence it is \textit{type-directed}). TDPE produces an expression annotated with static or dynamic binding-times such that reducing static terms yields a \textit{completely dynamic} residual expression (i.e., an expression containing only dynamic variables). Thus such partial evaluators are typically implemented in a two-level language capable of distinguishing dynamic and static data. Static reduction (i.e., reduction of expressions annotated as static) is performed through regular evaluation of the two-level language's interpreter and well-formedness of the generated code is guaranteed by the language's type system. During residualization TDPE generates code that includes \textit{binding-time coercions} which are type corrections that help to convert between dynamic and static values for cases where doing so benefits the residualization process. The two classes of coercion operators are \textit{reification} (also called \textit{lift}) and \textit{reflection}, both of which are defined on product, function and literal types \cite{grobauer2001second} (see figure \ref{fig:tdpe_rules}). Given an expression and a separate object representing its type, \textit{residualization} in TDPE is finally defined as annotation (and automatic insertion of binding-time coercions if necessary) followed by static reduction of said expression. The example below (section \ref{subsec:tdpe_ex}) provides a detailed demonstration of this process.
 
-TDPE makes use of the type system of a two-level language to direct the residualization of expressions. The output of this lightweight BTA is an expression whose terms are annotated with dynamic or static binding times which when statically reduced yield a purely dynamic expression. Static reduction is performed through regular evaluation of the two-level language's interpreter. TDPE includes a set of operators to convert between dynamic and static terms to aid the optimality of generated code. The two classes of coercion operators are reification (also called \textit{lift}) and reflection both of which are defined on product, function and literal types. \textit{Residualization} is finally defined as performing annotations and binding-time coercions followed by static reduction.
+As dicussed in section \ref{sec:mslang}, the partial evaluator embedded in \mslang{} \cite{amin2017collapsing} implements most of the binding-time coercion rules according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which uses an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects. In constrast to Danvy's TDPE, \mslang{} does not automatically insert \textit{lift} annotations but instead relies on them being manually provided by the user.
 
-The traditional TDPE \textit{residualize} operation takes as input an expression and a separate object representing the expression's type. Based on the latter argument the residualization algorithm will perform reification according to the rules in figure \ref{fig:tdpe_rules}. As dicussed in section \ref{sec:mslang}, the Pink \cite{amin2017collapsing} partial evaluator implements most of the binding time coercions according to figure \ref{fig:tdpe_rules}'s definitions with the exception of \textit{reflect}, which is implemented using an algorithm attributed to Eijiro Sumii \cite{hatcliff2007partial} to ensure correct order of evaluation of side-effects.
+%Online TDPE: \cite{danvy1997online}
 
 \subsubsection{Example}\label{subsec:tdpe_ex}
-Consider the example \eqref{eq:tdpe_ex1} from Danvy's description of TDPE \cite{danvy1999type}. The aim is to annotate the function applications (denoted by $@$) and definitions with a static (overline) or dynamic (underline) binding-time.
+Consider example \eqref{eq:tdpe_ex1} from Danvy's description of TDPE \cite{danvy1999type}. The aim is to annotate the function applications (denoted by $@$) and definitions with a static (overline) or dynamic (underline) binding-time.\footnote{We omit the type annotations of terms for simplicity but the actual TDPE algorithm relies on them to guide its residualization}
 \begin{align}
     \lambda g.\lambda d.(\lambda f.g \:@ \: (f \: @ \: d)\: @ \:f) \: @ \: \lambda a.a \label{eq:tdpe_ex1}
 \end{align}
 
 A correct binding-time could be that shown in \eqref{eq:tdpe_ex2a} because after static reduction we obtain \eqref{eq:tdpe_ex2b} which is a completely dynamic expression. However, the duplication of $f$ after reduction and a dynamic redex, $(\underline{\lambda}a.a) \: \underline{@} \: d$, could be optimized away further with a modification to the source expression (i.e., a binding-time coercion). The challenge we are faced with is that $f$ is applied statically but cannot be completely reduced because we also pass it as an argument to a dynamic expression, prohibiting us from residualizing the expression to its fullest.
-\begin{figure}[h]
+\begin{figure}[htp!]
     \begin{align}
         & \underline{\lambda}g.\underline{\lambda} d.(\overline{\lambda} f.g \: \underline{@} \: (f \: \underline{@} \: d) \: \underline{@} \: f) \: \overline{@} \: \underline{\lambda} a.a) \label{eq:tdpe_ex2a} \\
         & \triangleright \:\: \emph{\small{\text{(via static reduction)}}} \nonumber \\
@@ -587,7 +581,7 @@ A correct binding-time could be that shown in \eqref{eq:tdpe_ex2a} because after
 
 We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value into static function applications. TDPE uses this operation during specialization time to increase the number of static expressions it can reduce. The resulting annotations are shown in \eqref{eq:tdpe_ex3a} and the $\eta$-expansion is highlighted in green. After static reduction we obtain the optimal expression in \eqref{eq:tdpe_ex3b} that only contains dynamic values, only a single unfolding of $f$ and no $\beta$-redexes. Danvy then generalizes the $\eta$-expansion into a class of coercions that permit residualization of static values in dynamic contexts, an expression with a dynamic hole \cite{danvy1995essence}. We represent such coercions with a $\downarrow^T$ (or \textit{lift} as we use in later sections) which represents the conversion from a static value of type $T$ to a dynamic value. Using the coercion operator, TDPE would yield the annotation in \eqref{eq:tdpe_ex4}.
 
-\begin{figure}[h]
+\begin{figure}[htp!]
     \begin{align}
         & \underline{\lambda}g.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{$\underline{\lambda} x.f \: \overline{@} x$}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex3a} \\
 \equiv\:\: & \underline{\lambda} g.\underline{\lambda} d.(\overline{\lambda}f.g \: \underline{@} \: (f \: \overline{@} \: d) \: \underline{@} \: \text{\colorbox{green}{(\textit{lift} $f$)}}) \: \overline{@} \: \overline{\lambda} a.a \label{eq:tdpe_ex4} \\
@@ -625,7 +619,7 @@ We can apply $\eta$-expansion to turn instances of $f$ as a higher-order value i
         \nonumber \\%
         \mathit{reflect} & = \: && \lambda t. \lambda e. \uparrow_{t} e
     \end{alignat}
-    \caption{Reduction rules for reification (static to dynamic) and reflection (dynamic to static) in TDPE as defined by Danvy \cite{danvy1999type} where $t$ denotes types, $v$ denotes static values, $e$ denotes dynamic expressions. The syntax $cons/car/cdr$ corresponds to the LISP functions of the same name that create a pair, extract the first element of a pair and extract the second element of a pair respectively.}
+    \caption{Reduction rules for reification (static to dynamic) and reflection (dynamic to static) in TDPE as defined by Danvy \cite{danvy1999type} where $t$ denotes types, $v$ denotes static values, $e$ denotes dynamic expressions. Overlines represent static terms and underlines dynamic ones. The syntax $cons/car/cdr$ corresponds to the LISP functions of the same name that create a pair, extract the first element of a pair and extract the second element of a pair respectively.}
     \label{fig:tdpe_rules}
 \end{figure}
 \newpage
@@ -768,10 +762,10 @@ Stage-polymorphism allows abstraction over how many stages an evaluation is perf
 \end{figure}
 
 Now we can combine meta-circular interpreters or compilers in a single invocation of an input program as follows:
-\begin{minted}{lisp}
+\begin{minted}[escapeinside=||]{lisp}
 (let int_src       (quote interpreter)
 (let comp_src      (quote compiler)
-    ((((interpreter int_src) int_src) comp_src) <input quoted program>))))
+    ((((interpreter int_src) int_src) comp_src) |\textit{<input quoted program>}|))))
 \end{minted}
 The function \textit{quote} is the LISP function that prevents evaluation of its argument. The above example builds a meta-circular tower of three interpreters and a compiler (essentially a staged a interpreter) that run some program (similar to the tower represented in figure \ref{fig:tombstone_collapse_ex_comp}).
 
@@ -1408,7 +1402,6 @@ Given a source program in \secdlisp{} we invoke the compiler asfollows:
 
 Line \ref{mline:secd_comp_call} feeds the compiled SECD instructions to the SECD machine interpreter source described in section \ref{subsec:secd_interp} and begins partial evaluation through a call to \texttt{ev} which is the entry point to \mslang. Thus we still effectively maintain our tower and simply use the \secdlisp{} compilation step as a tool to generate the actual level in the tower in terms of SECD instructions more conveniently.
 
-\newpage
 \subsubsection{Example}
 %SECD front-end on: regular machine, staged machine, smart constructors (?)
 Figure \ref{lst:secd_fac_lisp} shows a program to compute factorial numbers recursively written in \secdlisp. The program is translated into SECD instructions by our compiler and then input to our staged machine. Figure \ref{lst:secd_fac_ped} is the corresponding residualized program generated by \mslang (and prettified to LISP syntax). An immediate observation we can make is that the dispatch logic of the SECD interpreter has been reduced away successfully. Additionally, we see the body of the recursive function being generated in the output code thanks to our augmented closure representation. The residual program contains two lambdas, one that executes factorial and another that takes input from the user through the environment (line \ref{mline:factorial_input}). In the function body itself (lines \ref{mline:factorial_body_start} to \ref{mline:factorial_body_end}), however, the numerous \textit{cons} calls and repeated list access operations (\textit{car}, \textit{cdr}) indicate that traces of SECD's stack-based semantics are left in the generated code and cannot be reduced further without changing the architecture of the underlying machine.
@@ -1482,6 +1475,7 @@ DUM NIL LDF
 \label{lst:secd_fac_all}
 \end{figure}
 
+\newpage
 \subsection{Level 4: \texorpdfstring{\mevl}{Lg}}\label{subsec:mevl}
 \begin{figure}[ht!]
 \begin{align*}
@@ -1841,7 +1835,7 @@ The aim of our study was to connect the extensive collection of work on reflecti
 A tower of meta-circular interpreters can be collapsed into a residual program in a single pass by only staging a single interpreter in the tower and relying on the meta-circular definitions of \textit{lift} to propagate binding-time information to the multi-level base evaluator which handles the actual code generation (in Pink through an embedded partial evaluator). We started by generalizing the concept of reflective towers to ones that consisted of non-meta-circular interpreters. To model a tower that could potentially contain layers of translation between languages, such as the one in figure \ref{fig:tombstone_practical}, we also introduced the notion of \textit{semantic gaps}, which dictate the extent to which two adjacent interpreters differ in operational semantics or representation of data. A combination of these two properties (non-meta-circularity and semantic gaps) form the new class of towers of interpreters that we call \textit{heterogeneous} (as opposed to the \textit{homogeneous} reflective towers). The theoretical implications from heterogeneity on a tower's structure and procedure to collapse them was a focal point for our experiments. We envisioned two problems with collapsing heterogeneous towers:
 \begin{enumerate*}[label=(\arabic*)]
     \item we needed to devise a strategy to signal to the PE at the base of the tower which expressions to residualize without a meta-circular \textit{lift} (even through levels of compilation)
-    \item semantic gaps required us to perform complex transformations on program constructs in one interpreter to adhere to the representation of adjacent interpreters
+    \item semantic gaps required us to perform complex transformations on program constructs in one interpreter to adhere to their representation in adjacent interpreters
 \end{enumerate*}. We constructed and then collapsed a 4-level heterogeneous tower with a SECD machine as one of its levels to provide evidence for these hypotheses and gain more insights into heterogeneity.
 
 Staging an interpreter amounts to reifying literals, lambdas and product types it returns. An abstract machine is not guaranteed to distinguish these types by data structures or a type-system but can instead rely on dedicated instructions to differentiate data of these types. Hence, the points to reify at are dictated by the architecture of the underlying machine. In our experiments we created a conservative division tailored to the SECD stack-registers and reduced static expressions in Pink's reflect operator to achieve optimal residualization. In order to propagate the decision of whether to generate or evaluate an expression through levels in the tower, we implemented a \textbf{lift} operator (or abstract machine instruction in the case of our SECD compiler) at the level which previously did not support such an operation.

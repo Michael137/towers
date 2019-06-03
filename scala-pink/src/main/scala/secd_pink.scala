@@ -86,9 +86,9 @@ object SECD {
       (mla
         (let closure (car s)
         (let fn (car closure)
-        (cons 
+        (cons ;This cons is not necessary but currently just there for calling convention
           (lambda _ arg (fn (mla (cons (car arg) (cddr closure)))))
-          (cdr closure)))))
+          '(() ())))))
       (car s))
   (if (and (pair? d)
            (eq? 'ret (car d)))

@@ -41,16 +41,15 @@ object VMMatcher {
         val r2 = runOnVM(matcher(pattern, str), env, pretty = pretty, max_depth = 80)
         check(r1.toString)(r2.toString)
 
-        // TODO: lift matcher from user level
         // println(Lisp.prettycode(Lam(reifyc(genOnVM(matcher(pattern, str, "lift"), env)))))
 
-        r1
+        Tup(r1,r2)
     }
     def test() = {
         println("// ------- VMMatcher.test --------")
 
-        // TODO: record noisy generated code in report before optimizing it out
-        println(evalAndRunOnVM("'(_ * a _ * done)", "'(b a done)", "'()"))
+        println(evalAndRunOnVM("'(a * b done)", "'(b done)", "'()"))
+        println(evalAndRunOnVM("'(a * done)", "'(c done)", "'()"))
 
         testDone()
     }

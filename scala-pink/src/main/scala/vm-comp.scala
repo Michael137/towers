@@ -262,6 +262,8 @@ object EVMComp {
         val instrs = compile(parseExp(src), Nil, Tup(Str("WRITEC"), N))
         val instrSrc = instrsToString(instrs)
 
+        println("TESTING:\n" + instrSrc)
+
         val ret = Base.deref(SECD.runVM(SECD.evg, s"'($instrSrc)", env, false))
         teardown()
         ret
@@ -276,7 +278,6 @@ object EVMComp {
         EVMCompTests.nestedLambdaTest
         EVMCompTests.ackermannTest
         EVMCompTests.passFromEnvTest
-        //TODO: EVMCompTests.tryFailTest
 
         testDone()
     }

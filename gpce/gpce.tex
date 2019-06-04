@@ -1,0 +1,583 @@
+%%
+%% This is file `sample-sigplan.tex',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% samples.dtx  (with options: `sigplan')
+%% 
+%% IMPORTANT NOTICE:
+%% 
+%% For the copyright see the source file.
+%% 
+%% Any modified versions of this file must be renamed
+%% with new filenames distinct from sample-sigplan.tex.
+%% 
+%% For distribution of the original source see the terms
+%% for copying and modification in the file samples.dtx.
+%% 
+%% This generated file may be distributed as long as the
+%% original source files, as listed above, are part of the
+%% same distribution. (The sources need not necessarily be
+%% in the same archive or directory.)
+%%
+%% The first command in your LaTeX source must be the \documentclass command.
+\documentclass[sigplan,anonymous,review]{acmart}
+
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+\setcopyright{acmcopyright}
+\copyrightyear{2019}
+\acmYear{2019}
+%\acmDOI{10.1145/1122445.1122456}
+
+%% These commands are for a PROCEEDINGS abstract or paper.
+\acmConference[Woodstock '18]{Woodstock '18: ACM Symposium on Neural
+  Gaze Detection}{June 03--05, 2018}{Woodstock, NY}
+\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+  June 03--05, 2018, Woodstock, NY}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-9999-9/18/06}
+
+
+%%
+%% Submission ID.
+%% Use this when submitting an article to a sponsored event. You'll
+%% receive a unique submission ID from the organizers
+%% of the event, and this ID should be used as the parameter to this command.
+%%\acmSubmissionID{123-A56-BU3}
+
+%%
+%% The majority of ACM publications use numbered citations and
+%% references.  The command \citestyle{authoryear} switches to the
+%% "author year" style.
+%%
+%% If you are preparing content for an event
+%% sponsored by ACM SIGGRAPH, you must use the "author year" style of
+%% citations and references.
+%% Uncommenting
+%% the next command will enable that style.
+%%\citestyle{acmauthoryear}
+
+% Packages
+\usepackage[inline]{enumitem}
+\usepackage[tdiagram]{semantic}
+\usepackage{tikz}
+\usetikzlibrary{matrix,backgrounds,arrows,decorations.markings}
+\tikzset{
+  big arrow/.style={
+    decoration={markings,mark=at position 1 with {\arrow[scale=2,#1]{>}}},
+    postaction={decorate},
+    shorten >=0.4pt,
+    dashed=true},
+  big arrow/.default=red,
+}
+\usepackage{subcaption} % subfigure
+\usepackage{relsize} % large maths symbols
+
+% Commands
+\newcommand{\mslang}{$\lambda_{\uparrow\downarrow}$}
+\newcommand{\mslangStar}{$\lambda_{\uparrow\downarrow}^*$}
+\newcommand{\mevl}{$M_{e}$}
+\newcommand{\secdlisp}{SecdLisp}
+\newcommand{\ts}{\textquotesingle}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{observation}{Observation}[section]
+
+%%
+%% end of the preamble, start of the body of the document source.
+\begin{document}
+
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title{Collapsing Heterogeneous Towers of Interpreters}
+%Or Collapsing Heterogeneous Towers of Evaluators?
+
+%%
+%% The "author" command and its associated commands are used to define
+%% the authors and their affiliations.
+%% Of note is the shared affiliation of the first two authors, and the
+%% "authornote" and "authornotemark" commands
+%% used to denote shared contribution to the research.
+\author{Michael Buch}
+\authornote{Both authors contributed equally to this research.}
+\affiliation{\institution{University of Cambridge}}
+\email{mb2244@cam.ac.uk}
+
+\author{Nada Amin}
+\authornotemark[1]
+\affiliation{\institution{University of Cambridge}}
+\email{na482@cl.cam.ac.uk}
+
+%%
+%% By default, the full list of authors will be used in the page
+%% headers. Often, this list is too long, and will overlap
+%% other information printed in the page headers. This command allows
+%% the author to define a more concise list
+%% of authors' names for this purpose.
+\renewcommand{\shortauthors}{Buch and Amin, et al.}
+
+%%
+%% The abstract is a short summary of the work to be presented in the
+%% article.
+\begin{abstract}
+A tower of interpreters is a program architecture that consists of a sequence of interpreters each interpreting the one adjacent to it. The overhead induced by multiple layers of evaluation can be optimized away using a program specialization technique called \textit{partial evaluation}, a process referred to as \textit{collapsing of towers of interpreters}. %TDPE
+Towers of interpreters in literature are synonymous with reflective towers and provide a tractable method with which to reason about reflection and design reflective languages. Reflective towers studied thus far are \textit{homogeneous}, meaning individual interpreters are meta-circular and have a common data representation between each other.
+Research into homogeneous towers rarely considered the applicability of associated optimization techniques in practical settings where multiple interpretation layers are commonplace but the towers are \textit{heterogeneous} (i.e., interpreters lack meta-circularity, reflection and data homogeneity).
+The aim of our study was to investigate the extent to which previous methodologies for collapsing reflective towers apply to heterogeneous configurations.
+
+To collapse a tower means to \textit{stage} an interpreter in the tower (i.e., convert the interpreter into a compiler by splitting its execution into several stages) and statically reduce all the evaluation performed by preceding interpreters. Where the procedure to collapse homogeneous towers is trivial because computation performed in one interpreter can be represented in terms of its interpreter and information of which operations to partially evaluate can be propagated using the same built-in operators, this is not the case in a heterogeneous setting. There, one would need to convert representations of program constructs at each interpreter boundary and find a way to pass information needed by the partial evaluator through the tower. Our contributions include:
+\begin{enumerate*}[label=(\arabic*)]
+    \item we construct and collapse an experimental heterogeneous tower using Pink, a language that was previously used to collapse reflective towers through a modified variant of partial evaluation called \textit{type-directed partial evaluation (TDPE)}
+    \item we stage a SECD abstract machine using TDPE which required modification of its operational semantics to ensure termination in the presence of recursive calls
+    \item we investigate the hypothesis that staging at different levels in the tower affects its optimality after collapse
+\end{enumerate*}.
+\end{abstract}
+
+%%
+%% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+%% Please copy and paste the code instead of the example below.
+%%
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011006.10011041.10010943</concept_id>
+<concept_desc>Software and its engineering~Interpreters</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011041.10011047</concept_id>
+<concept_desc>Software and its engineering~Source code generation</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011039.10011311</concept_id>
+<concept_desc>Software and its engineering~Semantics</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011041.10011046</concept_id>
+<concept_desc>Software and its engineering~Translator writing systems and compiler generators</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Software and its engineering~Interpreters}
+\ccsdesc[500]{Software and its engineering~Source code generation}
+\ccsdesc[100]{Software and its engineering~Semantics}
+\ccsdesc[100]{Software and its engineering~Translator writing systems and compiler generators}
+
+%%
+%% Keywords. The author(s) should pick words that accurately describe
+%% the work being presented. Separate the keywords with commas.
+\keywords{interpreters,partial evaluation, meta-programming}
+
+%% A "teaser" image appears between the author and affiliation
+%% information and the body of the document, and typically spans the
+%% page.
+%\begin{teaserfigure}
+%  \includegraphics[width=\textwidth]{sampleteaser}
+%\end{teaserfigure}
+
+%%
+%% This command processes the author and affiliation and title
+%% information and builds the first part of the formatted document.
+\maketitle
+
+\section{Introduction}
+Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an adjacent interpreter (depicted as a tombstone diagram in figure \ref{fig:tombstone_tower_ex1}). Each additional \textit{level} (i.e., interpreter) in the tower adds a constant factor of interpretative overhead to the run-time of the system. One of the earliest mentions of such architectures in literature is a language extension to Lisp called 3-LISP \cite{smith1984reflection} introduced by Smith. Smith describes the notion of a reflective system, a system that is able to reason about itself, as a tower of meta-circular interpreters, also referred to as a \textit{reflective tower} \footnote{Reflective towers in theory  are considered to be potentially infinite. Given enough computing resources one can create towers consisting of an unbounded number of interpreters. In Wand et al.'s reflective tower model \cite{wand1988mystery}, for instance, new interpreters in a tower are spawned through a built-in \textit{reflect} operator}. Using this architecture 3-LISP enables an interpreter within the tower to access and modify internal state of its neighbouring interpreters. An interpreter is \textit{meta-circular} when the language the interpreter is written in and the language it is interpreting are the same. Meta-circularity and the common data representation between interpreters are core properties of reflective towers studied in previous work. We refer to towers with such properties as \textit{homogeneous}. Subsequent studies due to Wand et al.~\cite{wand1988mystery} and Danvy et al.~\cite{danvy1988intensions} show systematic approaches for constructing reflective towers. The authors provide denotational semantic accounts of reflection and develop languages based on the reflective tower model called \textit{Brown} and \textit{Blond} respectively.
+
+\begin{figure}[t]
+    \centering
+        \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.7em}
+                        ]
+            {
+                         & \dots                   \\
+                $I_n:$   & $L_n$                   \\
+                         & $L_{n-1}$               \\
+                         & \dots                   \\
+                $I_2:$   & $L_2$                   \\
+                         & $L_1$                   \\
+                $I_1:$   & $L_1$                   \\
+                         & $L_0$                   \\
+                         & |[font=\small]|$M$      \\
+              };
+              \draw (m-1-2.south west) |- (m-4-2.north east) |- (m-1-2.south west);
+              \draw (m-4-2.south west) |- (m-6-2.south east) |- (m-4-2.south west);
+              \draw (m-4-2.south west) |- (m-8-2.south east) |- (m-6-2.north east);
+              \draw (m-8-2.south west) -- (m-9-2.south) -- (m-8-2.south east);
+        \end{tikzpicture}
+    \caption{A tower of interpreters where each interpreter $I_n$ is written in language $L_{n-1}$ and interprets a language $L_n$, for some $n \geq 0$. In literature the tower often grows downwards, however, in our study we refer to $I_0$ as the base interpreter and grow the tower upwards for convenience. $M$ is the underlying machine (e.g. CPU) on which the base interpreter is executed.}
+    \label{fig:tombstone_tower_ex1}
+\end{figure}
+
+In the original reflective tower models only minimal attention was given to the imposed cost of performing new interpretation at each level of a tower. Then works by Sturdy \cite{sturdy1993lisp} and Danvy et al.'s language Blond \cite{danvy1988intensions} hinted at the possibility of removing some of this overhead by partially evaluating (i.e., specializing) interpreters with respect to the interpreters below in the tower. Asai et al.'s language \textit{Black} \cite{asai1996duplication} is a reflective language implemented through a reflective tower. The authors use a hand-crafted partial evaluator, and in a later study use MetaOCaml \cite{asai2015compiling}, to efficiently implement the language. Asai and then, using the language Pink \cite{amin2017collapsing}, Amin et al.~demonstrate the ability to compile a reflective language while the semantics of individual interpreters in the underlying tower can be modified. Essentially this is achieved by specializing and executing functions of an interpreter at run-time to remove the cost of multiple interpretation; this effectively \textbf{\textit{collapses}} a tower.
+
+Parallel to all the above theoretical research into reflective towers, practical programmers have been working with towers of interpreters to some extent dating back to the idea of language parsers. Writing a parser in an interpreted language already implies two levels of interpretation:
+one running the parser and another the parser itself. Other examples include interpreters for embedded domain-specific languages (DSLs) or string matchers embedded in a language both of which form towers of two levels. Advances in virtualization technology has driven increasing interest in software emulation. Viewing emulation as a form of interpretation we can consider interpreters running on virtual hardware, such as the bytecode interpreter in the Java Virtual Machine (JVM) \cite{lindholm2014java}, as towers of interpreters as well.
+
+However, these two branches of research do not overlap and work on towers of interpreters rarely studied their counterparts in production systems. It is natural to ask the question of what it would take to apply previous techniques in partial evaluation to a practical setting. This is the question Amin et al. pose in their conclusion after describing Pink \cite{amin2017collapsing} and is the starting point for this thesis.
+
+We aim to bring previous work of removing interpretative overhead in towers using partial evaluation into practice. Our study achieves this by constructing a proof-of-concept tower of interpreters that more-closely resembles those in real-world systems. Figure \ref{fig:tombstone} depicts two versions of our experimental tower. Traditionally reflective towers are thought of as completely vertical like the one on the left. However, details such as how a tower grows, shrinks and collapses while executing user programs worked rather mysteriously. We decided to implement our tower using occasional layers of compilation (as shown on the right). The two versions of our tower are extensionally equal since they yield the same output for a given program to evaluate. Part of our study is devoted to evaluating the effect of the intensional structure of towers on the act of collapsing them.
+
+We then collapse the experimental tower under different configurations and evaluate the resulting optimized programs. We demonstrate that given a language capable of expressing types of variables that are available at run-time versus compile-time (i.e., a \textit{multi-level language}) and a type-directed PE (TDPE), a lightweight partial evaluator due to Danvy \cite{danvy1999type} described in section \ref{subsec:tdpe}, we can partially evaluate individual interpreters in a heterogeneous tower and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process). Our work's contributions are:
+\begin{enumerate}
+	\item Develop an experimental heterogeneous tower of interpreters and a strategy for collapsing it
+	\item Evaluate the effect that staging at different levels within our tower has on residual programs
+	\item Discuss the effects that heterogeneity in towers imposes on TDPE
+	\item Demonstrate issues with and potential approaches to staging abstract machines, specifically a SECD machine, using TDPE
+	%TODO: highlight intensional structure of towers and affect on collapsing (move code between layers)
+\end{enumerate}
+
+In section \ref{sec:background} we explain background information that covers the fundamental topics we base our experiments and discussions on. We then define \textit{heterogeneity} in towers of interpreters in section \ref{sec:heterogeneity}. In section \ref{sec:recipe} we describe the recipe that the language Pink \cite{amin2017collapsing} used to construct and collapse meta-circular towers and then show how this recipe changes as a result of heterogeneity. We present the implementation and evaluation of our experimental tower in section \ref{sec:tower}. We systematically describe the process by which we create a heterogeneous tower of interpreters and incrementally collapse it in sections \ref{sec:mslang} through \ref{sec:string_matcher}. We conclude with an evaluation of our findings followed by a discussion of potential future work in section \ref{sec:conclusion}.
+
+\begin{figure*}
+    \centering
+    \hspace*{1.5cm}
+    \begin{subfigure}{0.3\linewidth}
+    \begin{tikzpicture}
+        \matrix (m) [matrix of nodes,nodes={minimum width=4em,minimum  height=1.7em}]
+        {
+            Program                 \\
+            \mevl                   \\
+            \mevl                   \\
+            SECD &[6ex] $\boldsymbol{\mathlarger{\mathlarger{\mathlarger{\simeq}}}}$   \\
+            SECD                    \\
+            Lisp*                   \\
+            Lisp*                   \\
+            \mslang                 \\
+            |[font=\tiny]|JVM       \\
+          };
+          
+          %Without arc
+          \draw (m-1-1.north west) |- (m-8-1.south east) |- (m-1-1.north west);
+
+          \draw (m-2-1.south west) -- (m-2-1.south east);
+          \draw (m-4-1.south west) -- (m-4-1.south east);
+          \draw (m-6-1.south west) -- (m-6-1.south east);
+          \draw (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
+    \end{tikzpicture}
+    \end{subfigure}
+    \begin{subfigure}{0.6\linewidth}
+    \begin{tikzpicture}
+    \matrix (m) [matrix of nodes]
+    {
+     Program   &        &       &        &      &                                               \\[2ex]
+       \mevl   &  \mevl &  $\to$ &  SECD & SECD &                                               \\
+               &        &  Scala &                                                              \\[3ex]
+               &        &    &       & Lisp* & Lisp* & $\to$ & \mslang & \mslang                \\
+               &        &    &       &      &        & Scala &                                  \\[3ex]
+               &        &    &       &      &        &       &         &  Scala                 \\
+               &        &    &       &      &        &       &         &  |[font=\tiny]|JVM     \\
+      };
+
+    %Without arc
+    \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
+
+    \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
+    \draw (m-2-4.north east) |- (m-4-5.south east) |- (m-2-4.north east);
+    \draw (m-4-5.south east) -- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east)
+            |- (m-4-5.north east);
+    \draw (m-4-8.north east) -- (m-4-8.south east);
+    \draw (m-6-9.south west) -- (m-7-9.south) -- (m-6-9.south east);
+    \end{tikzpicture}
+    \end{subfigure}
+    \caption{Tombstone diagrams that represent two versions of our experimental tower of interpreters. \mevl{} is our toy language described in section \ref{subsec:mevl}, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} in our diagram also encompasses any underlying machinery necessary to run it. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the power of the \textit{lift} operator described in section \ref{subsec:tdpe} and its vital role in collapsing heterogeneous towers.}
+    \label{fig:tombstone}
+\end{figure*}
+\newpage
+
+\section{Background}\label{sec:background}
+\subsection{SECD}\label{subsec:secd}
+\subsection{Partial Evaluation}\label{subsec:pe}
+\subsection{Collapsing Reflective Towers}\label{subsec:collapse}
+In this section we describe what it means to construct and \textit{collapse} a tower of interpreters and the methodology Pink uses to do so \cite{amin2017collapsing}. Then we discuss changes that have to be considered when applying these techniques to a heterogeneous setting.
+
+\textit{Collapsing} a tower means removing overhead from multiple interpretation. To do so we specialize our tower with respect to a user program and produce a residual program with as little interpretation left as possible. The three key ingredients to collapsing a tower using Pink's technique are:
+\begin{enumerate}
+    \item A multi-level language
+    \item A stage-polymorphic evaluator for the multi-level language
+    \item TDPE-style reification operator
+\end{enumerate}
+Amin et al.'s multi-level language, \mslang, differentiates between static and dynamic expressions using types; this allows \mslang{} to express binding-time information. It also defines a \textit{lift} (i.e., TDPE's reify) operator such that the PE can coerce static to dynamic values. A single evaluator for \mslang{} operates on both dynamic and static expressions which enables so called \textit{binding-time agnostic} staging \cite{amin2017collapsing}. This means to \textit{stage an interpreter} we can annotate it with the polymorphic lift instantiated such that it invokes \mslang's \textit{lift} (such as \textit{compiler} in figure \ref{lst:stage_poly_impl}).
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.4\linewidth}
+    \centering
+        \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.2em}
+                        ]
+            {
+                            &   P                           \\
+                            &   L                           \\
+             $I_3:$         &   L                           \\
+                            &   L                           \\
+             $I_2:$         &   L                           \\
+                            &   L                           \\
+             $I_1:$         &   L                           \\
+                            &   \mslang                     \\
+                            &   |[font=\small]|$M$          \\
+              };
+            \draw (m-1-2.north west) |- (m-8-2.south east) |- (m-1-2.north west);
+            \draw (m-2-2.south west) -- (m-2-2.south east);
+            \draw (m-4-2.south west) -- (m-4-2.south east);
+            \draw (m-6-2.south west) -- (m-6-2.south east);
+            \draw (m-8-2.south west) -- (m-9-2.south) -- (m-8-2.south east);
+
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-2.south west) |- (m-4-2.south east) |- (m-2-2.south west);
+            \end{scope}
+        \end{tikzpicture}
+    \caption{Tower of meta-circular interpreters, $I_k$, in language, $L$, running a program, $P$.}
+    \label{fig:tombstone_collapse_ex_int}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}{.4\linewidth}
+    \centering
+    \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.7em}
+                        ]
+            {
+              P     &            &                      &           &           \\
+              L     &   L        & $\to$                & \mslang{} &  $:C_3$   \\
+                    &            & L                    &           &           \\
+                    &   $I_2:$   & L                    &           &           \\
+                    &            & L                    &           &           \\
+                    &   $I_1:$   & L                    &           &           \\
+                    &            & \mslang{}            &           &           \\
+                    &            & |[font=\small]|$M$   &           &           \\
+             };
+            \draw (m-1-1.north west) |- (m-2-1.south east);
+            \draw (m-1-1.north west) -- (m-1-1.north east) -- (m-2-2.south west);
+            \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-2-3.south east) |- (m-4-3.north west) |- (m-2-2.south west);
+            \draw (m-4-3.north west) |- (m-7-3.south east) |- (m-4-3.north west);
+            \draw (m-3-3.south west) |- (m-3-3.south east);
+            \draw (m-5-3.south west) |- (m-5-3.south east);
+            \draw (m-7-3.south west) -- (m-8-3.south) -- (m-7-3.south east);
+
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-2.south west) |- (m-2-4.north east) |- (m-2-3.south east) |- (m-4-3.north west) |- (m-2-2.south west);
+            \end{scope}
+    \end{tikzpicture}
+    \caption{Tower whose top interpreter is staged (i.e., converted into a compiler, $C$)}
+    \label{fig:tombstone_collapse_ex_comp}
+    \end{subfigure}
+    \begin{subfigure}{\linewidth}
+    \centering
+    \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.7em}
+                        ]
+            {
+        &     &                       &           &   P       \\
+ $C_3:$ & L   & $\to$                 & \mslang   & \mslang   \\
+        &     & L                     &           &           \\
+        &     & \mslang{}             &           &           \\
+        &     & |[font=\small]|$M$    &           &           \\
+             };
+
+            \draw (m-1-5.south west) |- (m-1-5.north east) |- (m-2-5.south east) -- (m-2-5.south west) -- (m-1-5.south west);
+            \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-2-3.south east) |- (m-4-3.north west) |- (m-2-2.south west);
+            \draw (m-4-3.north west) |- (m-4-3.south east) |- (m-4-3.north west);
+            \draw (m-4-3.south west) -- (m-5-3.south) -- (m-4-3.south east);
+
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-2.south west) |- (m-2-4.north east) |- (m-2-3.south east) |- (m-4-3.north west) |- (m-2-2.south west);
+            \end{scope}
+    \end{tikzpicture}
+    \caption{Final representation of the tower in \ref{fig:tombstone_collapse_ex_int} after collapsing it. All intermediate interpretation (levels $I_1$ to $I_3$) has been eliminated (by evaluating it during PE time) and $P$ has been specialized with respect to the top-most staged interpreter, $C_3$. The residual program $P$ consists of \mslang{} terms in ANF-normal form.}
+    \label{fig:tombstone_collapsed}
+    \end{subfigure}
+    \caption{Tombstone diagrams representing the process of collapsing a tower using \mslang{}}
+\end{figure}
+
+Figures \ref{fig:tombstone_collapse_ex_int} to \ref{fig:tombstone_collapsed} depict the process of collapsing a tower through tombstone diagrams. We start with a meta-circular tower of interpreters all written in the same language, $L$, and Pink's \mslang{} at the base. The key benefit of meta-circularity is that the \textit{lift} operator defined in \mslang{} is accessible to each interpreter. We can now stage some interpreter in the tower, in this example the user-most one $I_3$, by annotating it with \textit{maybe-lift} expressions as described in section \ref{subsec:mslang}; this interpreter is now equivalent to a compiler from $L$ to \mslang{} ($C_3$ in figure \ref{fig:tombstone_collapse_ex_comp}). When we execute the tower (i.e., invoke \mslang's partial evaluator) $C_3$ residualizes while all other levels in the tower evaluate (essentially \textit{propagating} binding-time information of program $P$ from the top to the base of the tower). At $I_1$ a call to \textit{lift} now invokes \mslang's TDPE-style reify. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time since the polymorphic lifts were instantiated to be the identity function (i.e., \textit{interpreter} in figure \ref{lst:stage_poly_impl}). The result is a collapsed tower in figure \ref{fig:tombstone_collapsed} where all intermediate interpreters, $I_1$ through $I_3$, have been removed from the tower (assuming the absence of side-effects at individual levels).
+
+Although previous work did not provide an insight into the exact effect of staging at different levels in the tower, an intuitive reason we stage at the top-most level is that we want to eliminate as much interpretative overhead as possible which is achieved by collapsing the maximal set of interpreters in the tower. Sections \ref{sec:mslang} to \ref{sec:string_matcher} provide evidence to support this claim on our experimental tower.
+
+\section{Heterogeneous Towers}\label{sec:heterogeneity}
+A central part of our study revolves around the notion of heterogeneous towers. Prior work on towers of interpreters that inspired some these concepts includes Sturdy's work on the Platypus language framework that provided a mixed-language interpreter built from a reflective tower \cite{sturdy1993lisp}, Jones et al.'s Mix partial evaluator \cite{jones1989mix} in which systems consisting of multiple levels of interpreters could be partially evaluated and Amin et al.'s study of collapsing towers of interpreters in which the authors present a technique for turning towers of meta-circular interpreters into one-pass compilers. We continue from where the latter left off, namely the question of how one might achieve the effect of compiling multiple interpreters in heterogeneous settings. We view heterogeneous towers as a generalization of reflective towers and define \textit{heterogeneous} as follows:
+\newline
+\theoremstyle{definition}
+\begin{definition}
+	Heterogeneous towers of interpreters are systems of interpreters, $I^L_1, I^L_2, ..., I^L_n$ where $n,k \in \mathbb N_{\ge 1}$ and $I^L_k$ determines an interpreter at level $k$ written in language $L_{k-1}$ and interprets programs in $L_k$.
+\end{definition}
+
+%A level here is analogous to an instance of an interpreter within the tower and as such level $n$ implies $I_n$ if not mentioned explicitly otherwise.
+\begin{observation}
+    \label{def:het}
+	Heterogeneous towers of interpreters are towers which generalize homogeneous towers by:
+	\begin{enumerate}
+		\item For any two adjacent interpreters $I_k$ and $I_{k-1}$ where $k \in \mathbb N_{\ge 1}: L_k \not\equiv L_{k-1}$ can hold
+		\item For any two adjacent interpreters used in the tower, $I_{k}$ and $I_{k-1}$, the operational semantics and the representation of data can be different between the two even if the languages coincide; this gives us a way of addressing the difference in intensional structure between towers
+	\end{enumerate}
+\end{observation}
+
+\subsection{Absence of: Meta-circularity}
+The first generalization described by observation \ref{def:het} is that of mixed languages between levels of a tower. A practical challenge this poses for partial evaluators is the inability to reuse language facilities across interpreters. This also implies that one cannot in general define reflection and reification procedures as in 3-LISP \cite{smith1984reflection}, Brown \cite{wand1988mystery}, Blond \cite{danvy1988intensions}, Black \cite{asai1996duplication} or Pink \cite{amin2017collapsing}.
+
+\subsection{Absence of: Reflection}
+Reflection in an interpreter enables the introspection and modification of its state during execution. It is a tool reflective languages can use to embed, for example, debuggers or run-time instrumentation into programs. Reflection in reflective towers implies the ability to modify an interpreter's interpreter which can be beneficial in the implementation of said tools. However, it also allows potentially destructive operations on a running interpreter's semantics which can become difficult to reason about or debug. Towers that we are interested in rarely provide reflective capabilities in their interpreters. Thus, we do not support or experiment with reflection in our study.
+
+\subsection{Semantic Gap and Mixed Language Systems}
+Danvy et al.~mentioned the possibility of non-reflective non-meta-circular towers early on in his denontational description of the reflective tower model \cite{danvy1988intensions}. The authors explored the idea of having different denotations for data at every level of the tower. However, since it was not the focus of their study, the potential consequences were not further investigated but serve as an inspiration for the second point of observation~\ref{def:het}. We call the difference in operational semantics or data representation between two interpreters a \textit{semantic gap}.
+
+Another motivation of ours stems from the realization that systems consisting of several layers of interpretation can feasibly be constructed. A hypothetical tower of interpreters that served as a model for the one we built throughout our work was described in Amin et al.'s paper on collapsing towers~\cite{amin2017collapsing} and is depicted as a tombstone diagram in figure~\ref{fig:tombstone_practical}\footnote{We only present a high-level view of the Python-x86-JavaScript tower. The actual realization is of course more complex and requires treatment of side-effects, which we leave out of our study.}. As a comparison our tower is shown in figure~\ref{fig:tombstone}. We replace the x86 emulator with a SECD abstract machine interpreter and Python with our own functional toy language, \mevl. The label \mslang{} represents the multi-level core language from Pink~\cite{amin2017collapsing} and Lisp* is the Lisp-like front-end to \mslang. Although here the tower grows upwards and to the left, this need not be. The compilers, or \textit{translators}, from \mevl{} to SECD and from Lisp* to \mslang{} have been implemented in Scala purely for simplicity. To realize a completely vertical tower (i.e., consisting of interpreters only), the Lisp*-\mslang{} translator could be omitted so that the \mslang{} interpreter evaluates s-expressions directly. Similarly, the \mevl-SECD compiler could be implemented in SECD instructions itself. However, we argue that the presence of compilation layers in our experimental tower more closely resembles practice and adds some insightful challenges to our experiments.
+
+\begin{figure*}
+    \begin{tikzpicture}
+        \matrix (m) [matrix of nodes,nodes={minimum width=2em}
+                    ]
+        {
+         Program    &        &        &           &           &     &       &           &               \\[2ex]
+         Python     & Python &  $\to$ &  Bytecode &  Bytecode &   |[font=\small]|$\Leftarrow$  &  |[font=\small]|(bytecode  &           &               \\
+                    &        &    C    &           &       &  & |[font=\small]|\quad interpreter) &           &   |[font=\small]|(x86 VM)         \\
+                    &        &        &           &           &     &       &           &  |[font=\small]|$\Downarrow$         \\
+                    &        &        &           &     C     &   C & $\to$ & x86 ASM   &  x86 ASM      \\
+                    &        &        &           &           &     &   C   &           &               \\[3ex]
+                    &        &        &           &           &     &       &           &  JavaScript   \\
+                    &        &        &           &           &     &       &           &  |[font=\tiny]|Browser      \\
+          };
+
+        % Without arc
+        \draw (m-1-1.north west) |- (m-2-2.south west) |- (m-1-1.north west);
+        
+        \draw (m-2-2.south west) |- (m-2-4.north east) |- (m-3-3.north east) |- (m-3-3.south west) |- (m-2-2.south west);
+        \draw (m-2-4.north east) |- (m-5-7.south west) |- (m-6-7.south east) |- (m-5-8.south east) |- (m-7-9.south east) |- (m-5-6.north west) |- (m-2-4.north east);
+        \draw (m-5-6.north west) -- (m-5-6.south west);
+        \draw (m-5-8.north east) -- (m-5-8.south east);
+        \draw (m-7-9.south west) -- (m-8-9.south) -- (m-7-9.south east);
+    \end{tikzpicture}
+    \caption{A hypothetical tower of interpreters that serves as the model for the tower we built (figure~\ref{fig:tombstone}). The diagram depicts a x86 virtual machine (VM) written in JavaScript running a Python~\cite{van2011python} interpreter that in turn executes some Python program. In this model, Python is first translated to bytecode which is then interpreted by some bytecode interpreter (written in the C language~\cite{kernighan1988c}). \textit{Browser} encompasses the JavaScript interpreter within a browser and any underlying technologies required to host the browser.}
+    \label{fig:tombstone_practical}
+\end{figure*}
+
+\subsection{Effect of Heterogeneity}
+\begin{figure*}
+    \centering
+        \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.2em}
+                        ]
+            {
+        P       &       &       &       &       &       &         &         &         &                     \\
+        \mevl   & \mevl & $\to$ & SECD  & SECD  & $\to$ & \mslang &         &         &                     \\
+                &       & Scala &       &       & Lisp* &  Lisp*  & $\to$   & \mslang & \mslang             \\
+                &       &       &       &       &       &         & Scala   &         &                     \\
+                &       &       &       &       &       &         &         &         & Scala               \\
+                &       &       &       &       &       &         &         &         & |[font=\tiny]|$JVM$ \\
+            };
+            % Outline
+            \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-5.south east) |- (m-3-7.south east) |- (m-4-8.south east) |- (m-3-9.south east) |- (m-5-10.south east) |- (m-3-7.north east) |- (m-1-1.south east) |- (m-1-1.north west);
+
+            % Dashes
+            \draw (m-2-1.north east) -- (m-2-1.south east);
+            \draw (m-2-4.north east) -- (m-2-4.south east);
+            \draw (m-3-6.south east) |- (m-3-7.north east);
+            \draw (m-3-9.north east) -- (m-3-9.south east);
+
+            % Triangle
+            \draw (m-5-10.south east) -- (m-6-10.south) -- (m-5-10.south west);
+            
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-5.north west) |- (m-2-5.south east) |- (m-3-6.south east) |- (m-3-7.north east) |- (m-2-5.north west);
+            \end{scope}
+
+            % Arrow
+            \draw [big arrow] (m-2-7) -- (m-3-10);
+        \end{tikzpicture}
+    \caption{Our heterogeneous tower of interpreters (\ref{fig:tombstone}) after staging at the SECD level (shaded tombstone). All computation to the left of the staged interpreter is carried into the residual program. The collapse essentially moved the code from above the SECD machine to the base.}
+    \label{fig:tombstone_het_collapse_secd}
+\end{figure*}
+
+\begin{figure*}
+    \centering
+        \begin{tikzpicture}
+            \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.2em}
+                        ]
+            {
+P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                                   &       &         &         &                                   \\
+\mevl   & \mevl & $\to$ & SECD                          & SECD                              &       &         &         &                                   \\
+        &       & Scala &                               &                                   &       &         &         & |[font=\tiny]|\textbf{Lift(...)}  \\
+        &       &       &                               & Lisp*                             & Lisp* & $\to$   & \mslang & \mslang                           \\
+        &       &       &                               & |[font=\tiny]|\textbf{(lift ...)}  &       & Scala   &         &                                   \\
+        &       &       &                               &                                   &       &         &         & Scala                             \\
+        &       &       &                               &                                   &       &         &         & |[font=\tiny]|$JVM$               \\
+            };
+            % Outline
+            \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east) |- (m-4-6.north west) |- (m-2-1.north east) |- (m-1-1.north west);
+
+            % Dashes
+            \draw (m-2-1.north east) -- (m-2-1.south east);
+            \draw (m-2-4.north east) -- (m-2-4.south east);
+            \draw (m-4-6.north west) |- (m-4-6.south west);
+            \draw (m-4-8.north east) -- (m-4-8.south east);
+
+            % Triangle
+            \draw (m-6-9.south east) -- (m-7-9.south) -- (m-6-9.south west);
+
+            % Background
+            \begin{scope}[on background layer]
+                \draw[shade] (m-2-2.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-2-2.north west);
+            \end{scope}
+
+            % Arrow
+            \draw [big arrow] (m-2-4) --++(0:6cm);
+        \end{tikzpicture}
+    \caption{Our heterogeneous tower of interpreters after staging at the \mevl{} level (shaded tombstone). At each level, starting from \mevl, the \textit{lift} operator is implemented differently but together they achive the effect of moving code from the \mevl{} interpreter to the base.}
+    \label{fig:tombstone_het_collapse_mevl}
+\end{figure*}
+
+We chose the SECD machine to create semantic gaps within our tower through the low-level instruction set that it comes with. For convenience we chose to implement the \mevl{} level as a translator from \mevl{} to SECD instructions instead of writing the interpreter in the instructions directly. It is noteworthy that the addition of translation layers to the tower revealed insights into the process of collapsing heterogeneous towers that are not immediately apparent from the composition of tombstones. We describe our observations and further effects of heterogeneity on collapsing towers in the remainder of this section.
+
+While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine, as we show in section~\ref{subsec:secd_staged}, requires careful design of its division rules and consideration of which locations to lift to avoid non-termination at PE-time. Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
+
+In mixed-language towers a \textit{lift} operation is not necessarily available to all interpreters unless explicitly provided at a level. Hence, one approach to propagating binding-time information is to implement a built-in \textit{lift} at all levels below the interpreter that is to be staged. As we explain in more detail in section \ref{subsec:secd_staged}, the implementation of \textit{lift} may require us to reverse engineer and transform the representation of closures, pairs or other constructs which the \textit{lift} at the base expects.
+
+A more subtle collapse of our tower occurs when we stage the \mevl{} level (see figure \ref{fig:tombstone_het_collapse_mevl}). In this case staging has a slightly different effect which is not obvious from the tombstones. Since the \mevl{} level is actually a translator already, staging the translator will simply yield another translator. Instead, staging \mevl{} means we generate SECD instructions that \textit{lift} (i.e., signal the PE to residualize) expressions of \mevl{} using a new \textbf{LIFT} instruction (added in section \ref{ssubsec:mevl_staged}). As we can see from the annotated tombstone diagram, we use the \textit{lift} operator as a mechanism to move code through each level to the base where it is residualized.
+
+\section{Construction and Collapse of a Heterogeneous Tower}
+\section{Conclusions}
+\subsection{Conclusion}
+\subsection{Future Work}
+
+%%
+%% The acknowledgments section is defined using the "acks" environment
+%% (and NOT an unnumbered section). This ensures the proper
+%% identification of the section in the article metadata, and the
+%% consistent spelling of the heading.
+\begin{acks}
+\textit{placeholder}
+\end{acks}
+
+%%
+%% The next two lines define the bibliography style to be used, and
+%% the bibliography file.
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{gpce}
+
+%%
+%% If your work has an appendix, this is the place to put it.
+%\appendix
+
+\end{document}
+\endinput
+%%
+%% End of file `sample-sigplan.tex'.

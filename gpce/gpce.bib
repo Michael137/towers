@@ -1,0 +1,808 @@
+
+% Journals
+
+% First the Full Name is given, then the abbreviation used in the AMS Math
+% Reviews, with an indication if it could not be found there.
+% Note the 2nd overwrites the 1st, so swap them if you want the full name.
+
+ %{AMS}
+ @String{AMSTrans = "American Mathematical Society Translations" }
+ @String{AMSTrans = "Amer. Math. Soc. Transl." }
+ @String{BullAMS = "Bulletin of the American Mathematical Society" }
+ @String{BullAMS = "Bull. Amer. Math. Soc." }
+ @String{ProcAMS = "Proceedings of the American Mathematical Society" }
+ @String{ProcAMS = "Proc. Amer. Math. Soc." }
+ @String{TransAMS = "Transactions of the American Mathematical Society" }
+ @String{TransAMS = "Trans. Amer. Math. Soc." }
+
+ %ACM
+ @String{CACM = "Communications of the {ACM}" }
+ @String{CACM = "Commun. {ACM}" }
+ @String{CompServ = "Comput. Surveys" }
+ @String{JACM = "J. ACM" }
+ @String{ACMMathSoft = "{ACM} Transactions on Mathematical Software" }
+ @String{ACMMathSoft = "{ACM} Trans. Math. Software" }
+ @String{SIGNUM = "{ACM} {SIGNUM} Newsletter" }
+ @String{SIGNUM = "{ACM} {SIGNUM} Newslett." }
+
+ @String{AmerSocio = "American Journal of Sociology" }
+ @String{AmerStatAssoc = "Journal of the American Statistical Association" }
+ @String{AmerStatAssoc = "J. Amer. Statist. Assoc." }
+ @String{ApplMathComp = "Applied Mathematics and Computation" }
+ @String{ApplMathComp = "Appl. Math. Comput." }
+ @String{AmerMathMonthly = "American Mathematical Monthly" }
+ @String{AmerMathMonthly = "Amer. Math. Monthly" }
+ @String{BIT = "{BIT}" }
+ @String{BritStatPsych = "British Journal of Mathematical and Statistical
+          Psychology" }
+ @String{BritStatPsych = "Brit. J. Math. Statist. Psych." }
+ @String{CanMathBull = "Canadian Mathematical Bulletin" }
+ @String{CanMathBull = "Canad. Math. Bull." }
+ @String{CompApplMath = "Journal of Computational and Applied Mathematics" }
+ @String{CompApplMath = "J. Comput. Appl. Math." }
+ @String{CompPhys = "Journal of Computational Physics" }
+ @String{CompPhys = "J. Comput. Phys." }
+ @String{CompStruct = "Computers and Structures" }
+ @String{CompStruct = "Comput. \& Structures" }
+ @String{CompJour = "The Computer Journal" }
+ @String{CompJour = "Comput. J." }
+ @String{CompSysSci = "Journal of Computer and System Sciences" }
+ @String{CompSysSci = "J. Comput. System Sci." }
+ @String{Computing = "Computing" }
+ @String{ContempMath = "Contemporary Mathematics" }
+ @String{ContempMath = "Contemp. Math." }
+ @String{Crelle = "Crelle's Journal" }
+ @String{GiornaleMath = "Giornale di Mathematiche" }
+ @String{GiornaleMath = "Giorn. Mat." } % didn't find in AMS MR., ibid.
+
+ %IEEE
+ @String{Computer = "{IEEE} Computer" }
+ @String{IEEETransComp = "{IEEE} Transactions on Computers" }
+ @String{IEEETransComp = "{IEEE} Trans. Comput." }
+ @String{IEEETransAC = "{IEEE} Transactions on Automatic Control" }
+ @String{IEEETransAC = "{IEEE} Trans. Automat. Control" }
+ @String{IEEESpec = "{IEEE} Spectrum" } % didn't find in AMS MR
+ @String{ProcIEEE = "Proceedings of the {IEEE}" }
+ @String{ProcIEEE = "Proc. {IEEE}" } % didn't find in AMS MR
+ @String{IEEETransAeroElec = "{IEEE} Transactions on Aerospace and Electronic
+     Systems" }
+ @String{IEEETransAeroElec = "{IEEE} Trans. Aerospace Electron. Systems" }
+
+ @String{IMANumerAna = "{IMA} Journal of Numerical Analysis" }
+ @String{IMANumerAna = "{IMA} J. Numer. Anal." }
+ @String{InfProcLet = "Information Processing Letters" }
+ @String{InfProcLet = "Inform. Process. Lett." }
+ @String{InstMathApp = "Journal of the Institute of Mathematics and
+     its Applications" }
+ @String{InstMathApp = "J. Inst. Math. Appl." }
+ @String{IntControl = "International Journal of Control" }
+ @String{IntControl = "Internat. J. Control" }
+ @String{IntNumerEng = "International Journal for Numerical Methods in
+     Engineering" }
+ @String{IntNumerEng = "Internat. J. Numer. Methods Engrg." }
+ @String{IntSuper = "International Journal of Supercomputing Applications" }
+ @String{IntSuper = "Internat. J. Supercomputing Applic." } % didn't find
+%% in AMS MR
+ @String{Kibernetika = "Kibernetika" }
+ @String{JResNatBurStand = "Journal of Research of the National Bureau
+     of Standards" }
+ @String{JResNatBurStand = "J. Res. Nat. Bur. Standards" }
+ @String{LinAlgApp = "Linear Algebra and its Applications" }
+ @String{LinAlgApp = "Linear Algebra Appl." }
+ @String{MathAnaAppl = "Journal of Mathematical Analysis and Applications" }
+ @String{MathAnaAppl = "J. Math. Anal. Appl." }
+ @String{MathAnnalen = "Mathematische Annalen" }
+ @String{MathAnnalen = "Math. Ann." }
+ @String{MathPhys = "Journal of Mathematical Physics" }
+ @String{MathPhys = "J. Math. Phys." }
+ @String{MathComp = "Mathematics of Computation" }
+ @String{MathComp = "Math. Comp." }
+ @String{MathScand = "Mathematica Scandinavica" }
+ @String{MathScand = "Math. Scand." }
+ @String{TablesAidsComp = "Mathematical Tables and Other Aids to Computation" }
+ @String{TablesAidsComp = "Math. Tables Aids Comput." }
+ @String{NumerMath = "Numerische Mathematik" }
+ @String{NumerMath = "Numer. Math." }
+ @String{PacificMath = "Pacific Journal of Mathematics" }
+ @String{PacificMath = "Pacific J. Math." }
+ @String{ParDistComp = "Journal of Parallel and Distributed Computing" }
+ @String{ParDistComp = "J. Parallel and Distrib. Comput." } % didn't find
+%% in AMS MR
+ @String{ParComputing = "Parallel Computing" }
+ @String{ParComputing = "Parallel Comput." }
+ @String{PhilMag = "Philosophical Magazine" }
+ @String{PhilMag = "Philos. Mag." }
+ @String{ProcNAS = "Proceedings of the National Academy of Sciences
+                    of the USA" }
+ @String{ProcNAS = "Proc. Nat. Acad. Sci. U. S. A." }
+ @String{Psychometrika = "Psychometrika" }
+ @String{QuartMath = "Quarterly Journal of Mathematics, Oxford, Series (2)" }
+ @String{QuartMath = "Quart. J. Math. Oxford Ser. (2)" }
+ @String{QuartApplMath = "Quarterly of Applied Mathematics" }
+ @String{QuartApplMath = "Quart. Appl. Math." }
+ @String{RevueInstStat = "Review of the International Statisical Institute" }
+ @String{RevueInstStat = "Rev. Inst. Internat. Statist." }
+
+ %SIAM
+ @String{JSIAM = "Journal of the Society for Industrial and Applied
+     Mathematics" }
+ @String{JSIAM = "J. Soc. Indust. Appl. Math." }
+ @String{JSIAMB = "Journal of the Society for Industrial and Applied
+     Mathematics, Series B, Numerical Analysis" }
+ @String{JSIAMB = "J. Soc. Indust. Appl. Math. Ser. B Numer. Anal." }
+ @String{SIAMAlgMeth = "{SIAM} Journal on Algebraic and Discrete Methods" }
+ @String{SIAMAlgMeth = "{SIAM} J. Algebraic Discrete Methods" }
+ @String{SIAMAppMath = "{SIAM} Journal on Applied Mathematics" }
+ @String{SIAMAppMath = "{SIAM} J. Appl. Math." }
+ @String{SIAMComp = "{SIAM} Journal on Computing" }
+ @String{SIAMComp = "{SIAM} J. Comput." }
+ @String{SIAMMatrix = "{SIAM} Journal on Matrix Analysis and Applications" }
+ @String{SIAMMatrix = "{SIAM} J. Matrix Anal. Appl." }
+ @String{SIAMNumAnal = "{SIAM} Journal on Numerical Analysis" }
+ @String{SIAMNumAnal = "{SIAM} J. Numer. Anal." }
+ @String{SIAMReview = "{SIAM} Review" }
+ @String{SIAMReview = "{SIAM} Rev." }
+ @String{SIAMSciStat = "{SIAM} Journal on Scientific and Statistical
+     Computing" }
+ @String{SIAMSciStat = "{SIAM} J. Sci. Statist. Comput." }
+
+ @String{SoftPracExp = "Software Practice and Experience" }
+ @String{SoftPracExp = "Software Prac. Experience" } % didn't find in AMS MR
+ @String{StatScience = "Statistical Science" }
+ @String{StatScience = "Statist. Sci." }
+ @String{Techno = "Technometrics" }
+ @String{USSRCompMathPhys = "{USSR} Computational Mathematics and Mathematical
+     Physics" }
+ @String{USSRCompMathPhys = "{U. S. S. R.} Comput. Math. and Math. Phys." }
+ @String{VLSICompSys = "Journal of {VLSI} and Computer Systems" }
+ @String{VLSICompSys = "J. {VLSI} Comput. Syst." }
+ @String{ZAngewMathMech = "Zeitschrift fur Angewandte Mathematik und
+     Mechanik" }
+ @String{ZAngewMathMech = "Z. Angew. Math. Mech." }
+ @String{ZAngewMathPhys = "Zeitschrift fur Angewandte Mathematik und Physik" }
+ @String{ZAngewMathPhys = "Z. Angew. Math. Phys." }
+
+% Publishers % ================================================= |
+
+ @String{Academic = "Academic Press" }
+ @String{ACMPress = "{ACM} Press" }
+ @String{AdamHilger = "Adam Hilger" }
+ @String{AddisonWesley = "Addison-Wesley" }
+ @String{AllynBacon = "Allyn and Bacon" }
+ @String{AMS = "American Mathematical Society" }
+ @String{Birkhauser = "Birkha{\"u}ser" }
+ @String{CambridgePress = "Cambridge University Press" }
+ @String{Chelsea = "Chelsea" }
+ @String{ClaredonPress = "Claredon Press" }
+ @String{DoverPub = "Dover Publications" }
+ @String{Eyolles = "Eyolles" }
+ @String{HoltRinehartWinston = "Holt, Rinehart and Winston" }
+ @String{Interscience = "Interscience" }
+ @String{JohnsHopkinsPress = "The Johns Hopkins University Press" }
+ @String{JohnWileySons = "John Wiley and Sons" }
+ @String{Macmillan = "Macmillan" }
+ @String{MathWorks = "The Math Works Inc." }
+ @String{McGrawHill = "McGraw-Hill" }
+ @String{NatBurStd = "National Bureau of Standards" }
+ @String{NorthHolland = "North-Holland" }
+ @String{OxfordPress = "Oxford University Press" }  %address Oxford or London?
+ @String{PergamonPress = "Pergamon Press" }
+ @String{PlenumPress = "Plenum Press" }
+ @String{PrenticeHall = "Prentice-Hall" }
+ @String{SIAMPub = "{SIAM} Publications" }
+ @String{Springer = "Springer-Verlag" }
+ @String{TexasPress = "University of Texas Press" }
+ @String{VanNostrand = "Van Nostrand" }
+ @String{WHFreeman = "W. H. Freeman and Co." }
+
+%Entries
+% Core references
+@article{amin2017collapsing,
+  title={Collapsing towers of interpreters},
+  author={Amin, Nada and Rompf, Tiark},
+  journal={Proceedings of the ACM on Programming Languages },
+  volume={2},
+  pages={52},
+  year={2017},
+  publisher={ACM}
+}
+
+@inproceedings{ofenbeck2017staging,
+  title={Staging for generic programming in space and time},
+  author={Ofenbeck, Georg and Rompf, Tiark and P{\"u}schel, Markus},
+  booktitle={ACM SIGPLAN Notices},
+  volume={52},
+  pages={15--28},
+  year={2017},
+  organization={ACM}
+}
+
+@inproceedings{gluck2009there,
+  title={Is there a fourth Futamura projection?},
+  author={Gl{\"u}ck, Robert},
+  booktitle={Proceedings of the 2009 ACM SIGPLAN workshop on Partial evaluation and program manipulation},
+  pages={51--60},
+  year={2009},
+  organization={ACM}
+}
+
+@inproceedings{henglein1994polymorphic,
+  title={Polymorphic binding-time analysis},
+  author={Henglein, Fritz and Mossin, Christian},
+  booktitle={European Symposium on Programming},
+  pages={287--301},
+  year={1994},
+  organization={Springer}
+}
+
+@incollection{danvy1999type,
+  title={Type-directed partial evaluation},
+  author={Danvy, Olivier},
+  booktitle={Partial Evaluation: Practice and Theory},
+  pages={367--411},
+  year={1999},
+  publisher={Springer}
+}
+
+@book{hatcliff2007partial,
+  title={Partial Evaluation: Practice and Theory: DIKU 1998 International Summer School, Copenhagen, Denmark, June 29-July 10, 1998},
+  author={Hatcliff, John and Mogensen, Torben and Thiemann, Peter},
+  year={2007},
+  publisher={Springer}
+}
+
+@incollection{danvy1996pragmatics,
+  title={Pragmatics of type-directed partial evaluation},
+  author={Danvy, Olivier},
+  booktitle={Partial Evaluation},
+  pages={73--94},
+  year={1996},
+  publisher={Springer}
+}
+
+@incollection{nielson1996multi,
+  title={Multi-level lambda-calculi: an algebraic description},
+  author={Nielson, Flemming and Nielson, Hanne Riis},
+  booktitle={Partial evaluation},
+  pages={338--354},
+  year={1996},
+  publisher={Springer}
+}
+
+@inproceedings{wurthinger2013one,
+  title={One {VM} to rule them all},
+  author={W{\"u}rthinger, Thomas and Wimmer, Christian and W{\"o}{\ss}, Andreas and Stadler, Lukas and Duboscq, Gilles and Humer, Christian and Richards, Gregor and Simon, Doug and Wolczko, Mario},
+  booktitle={Proceedings of the 2013 ACM international symposium on New ideas, new paradigms, and reflections on programming \& software},
+  pages={187--204},
+  year={2013},
+  organization={ACM}
+}
+
+@book{jones1993partial,
+  title={Partial evaluation and automatic program generation},
+  author={Jones, Neil D and Gomard, Carsten K and Sestoft, Peter},
+  year={1993},
+  publisher={Peter Sestoft}
+}
+
+@article{asai1996duplication,
+  title={Duplication and partial evaluation},
+  author={Asai, Kenichi and Matsuoka, Satoshi and Yonezawa, Akinori},
+  journal={Lisp and Symbolic Computation},
+  volume={9},
+  number={2-3},
+  pages={203--241},
+  year={1996},
+  publisher={Springer}
+}
+
+@article{asai2015compiling,
+  title={Compiling a reflective language using {MetaOCaml}},
+  author={Asai, Kenichi},
+  journal={ACM SIGPLAN Notices},
+  volume={50},
+  number={3},
+  pages={113--122},
+  year={2015},
+  publisher={ACM}
+}
+
+@article{smith1982reflection,
+  title={Reflection and semantics in a procedural language (Ph. D. thesis)},
+  author={Smith, Brian Cantwell},
+  journal={Technical Report},
+  year={1982},
+  publisher={Laboratory for Computer Science, MIT}
+}
+
+@inproceedings{smith1984reflection,
+  title={Reflection and semantics in {Lisp}},
+  author={Smith, Brian Cantwell},
+  booktitle={Proceedings of the 11th ACM SIGACT-SIGPLAN symposium on Principles of programming languages},
+  pages={23--35},
+  year={1984},
+  organization={ACM}
+}
+
+@inproceedings{friedman1984reification,
+  title={Reification: Reflection without metaphysics},
+  author={Friedman, Daniel P and Wand, Mitchell},
+  booktitle={Proceedings of the 1984 ACM Symposium on LISP and functional programming},
+  pages={348--355},
+  year={1984},
+  organization={ACM}
+}
+
+@article{wand1988mystery,
+  title={The mystery of the tower revealed: A nonreflective description of the reflective tower},
+  author={Wand, Mitchell and Friedman, Daniel P},
+  journal={Lisp and Symbolic Computation},
+  volume={1},
+  pages={11--38},
+  year={1988},
+  publisher={Springer}
+}
+
+@inproceedings{danvy1988intensions,
+  title={Intensions and extensions in a reflective tower},
+  author={Danvy, Olivier and Malmkjaer, Karoline},
+  booktitle={Proceedings of the 1988 ACM conference on LISP and functional programming},
+  pages={327--341},
+  year={1988},
+  organization={ACM}
+}
+
+@phdthesis{sturdy1993lisp,
+  school={University of Bath},
+  title={A {LISP} through the looking glass.},
+  author={Sturdy, John CG},
+  website={http://www.cb1.com/~john/},
+  year={1993}
+}
+
+@inproceedings{rivieres1984implementation,
+  title={The implementation of procedurally reflective languages},
+  author={Rivi{\`e}res, Jim des and Smith, Brian Cantwell},
+  booktitle={Proceedings of the 1984 ACM Symposium on LISP and functional programming},
+  pages={331--347},
+  year={1984},
+  organization={ACM}
+}
+
+@article{jones1988challenging,
+  title={Challenging problems in partial evaluation and mixed computation},
+  author={Jones, Neil D},
+  journal={New generation computing},
+  volume={6},
+  pages={291--302},
+  year={1988},
+  publisher={Springer}
+}
+
+% Language Towers
+@article{fisher2008building,
+  title={Building language towers with Ziggurat},
+  author={Fisher, David and Shivers, Olin},
+  journal={Journal of Functional Programming},
+  volume={18},
+  pages={707--780},
+  year={2008},
+  publisher={Cambridge University Press}
+}
+
+% Staging/ Multi-stage languages
+@inproceedings{jorring1986compilers,
+  title={Compilers and staging transformations},
+  author={J{\o}rring, Ulrik and Scherlis, William L},
+  booktitle={Proceedings of the 13th ACM SIGACT-SIGPLAN symposium on Principles of programming languages},
+  pages={86--96},
+  year={1986},
+  organization={ACM}
+}
+
+@inproceedings{brady2006verified,
+  title={A verified staged interpreter is a verified compiler},
+  author={Brady, Edwin and Hammond, Kevin},
+  booktitle={Proceedings of the 5th international conference on Generative programming and component engineering},
+  pages={111--120},
+  year={2006},
+  organization={ACM}
+}
+
+@inproceedings{taha1997multi,
+  title={Multi-stage programming with explicit annotations},
+  author={Taha, Walid and Sheard, Tim},
+  booktitle={ACM SIGPLAN Notices},
+  volume={32},
+  pages={203--217},
+  year={1997},
+  organization={ACM}
+}
+
+@article{sampson2017static,
+  title={Static stages for heterogeneous programming},
+  author={Sampson, Adrian and McKinley, Kathryn S and Mytkowicz, Todd},
+  journal={Proceedings of the ACM on Programming Languages OOPSLA},
+  volume={1},
+  pages={71},
+  year={2017},
+  publisher={ACM}
+}
+
+@article{gomard1991partial,
+  title={A partial evaluator for the untyped lambda-calculus},
+  author={Gomard, Carsten K and Jones, Neil D},
+  journal={Journal of functional programming},
+  volume={1},
+  pages={21--69},
+  year={1991},
+  publisher={Cambridge University Press}
+}
+
+% Futamura Projections
+@article{futamura1999partial,
+  title={Partial evaluation of computation process--an approach to a compiler-compiler},
+  author={Futamura, Yoshihiko},
+  journal={Higher-Order and Symbolic Computation},
+  volume={12},
+  number={4},
+  pages={381--391},
+  year={1999},
+  publisher={Springer}
+}
+
+% Emulators
+@article{steil2004dynamic,
+  title={Dynamic Re-compilation of Binary RISC Code for CISC Architectures},
+  author={Steil, Michael},
+  journal={Technische Universitat Munchen},
+  year={2004}
+}
+
+% Interpretative Overhead
+@techreport{feigin2011interpretational,
+  title={Interpretational overhead in system software},
+  author={Feigin, Boris},
+  year={2011},
+  institution={University of Cambridge, Computer Laboratory}
+}
+
+% NBE/TDPE
+@incollection{berger1998normalization,
+  title={Normalization by evaluation},
+  author={Berger, Ulrich and Eberl, Matthias and Schwichtenberg, Helmut},
+  booktitle={Prospects for Hardware Foundations},
+  pages={117--137},
+  year={1998},
+  publisher={Springer}
+}
+
+@inproceedings{berger1991inverse,
+  title={An inverse of the evaluation functional for typed lambda-calculus},
+  author={Berger, Ulrich and Schwichtenberg, Helmut},
+  booktitle={[1991] Proceedings Sixth Annual IEEE Symposium on Logic in Computer Science},
+  pages={203--211},
+  year={1991},
+  organization={IEEE}
+}
+
+@techreport{danvy1997online,
+  author={Danvy, Olivier},
+  title={Online type-directed partial evaluation},
+  year={1997},
+  type={Technical Report RS-97-53},
+  institution={BRICS}
+}
+
+@article{grobauer2001second,
+  title={The second {Futamura} projection for type-directed partial evaluation},
+  author={Grobauer, Bernd and Yang, Zhe},
+  journal={Higher-Order and Symbolic Computation},
+  volume={14},
+  pages={173--219},
+  year={2001},
+  publisher={Springer}
+}
+
+@incollection{dybjer2002normalization,
+  title={Normalization and partial evaluation},
+  author={Dybjer, Peter and Filinski, Andrzej},
+  booktitle={Applied Semantics},
+  pages={137--192},
+  year={2002},
+  publisher={Springer}
+}
+
+% Partial Evaluation
+@article{cook2011tutorial,
+  title={Tutorial on online partial evaluation},
+  author={Cook, William R and L{\"a}mmel, Ralf},
+  journal={arXiv preprint arXiv:1109.0781},
+  year={2011}
+}
+
+@article{shali2011hybrid,
+  title={Hybrid partial evaluation},
+  author={Shali, Amin and Cook, William R},
+  journal={ACM SIGPLAN Notices},
+  volume={46},
+  pages={375--390},
+  year={2011},
+  publisher={ACM}
+}
+
+% Side-effects in PE
+@book{asai1997partial,
+  title={Partial evaluation of call-by-value $\lambda$-calculus with side-effects},
+  author={Asai, Kenichi and Masuhara, Hidehiko and Yonezawa, Akinori},
+  volume={32},
+  year={1997},
+  publisher={ACM}
+}
+
+@techreport{smowton2014optimisation,
+  title={I/O Optimisation and elimination via partial evaluation},
+  author={Smowton, Christopher SF},
+  year={2014},
+  institution={University of Cambridge, Computer Laboratory}
+}
+
+@inproceedings{mossin1993partial,
+  title={Partial evaluation of general parsers},
+  author={Mossin, Christian},
+  booktitle={Proceedings of the 1993 ACM SIGPLAN symposium on Partial evaluation and semantics-based program manipulation},
+  pages={13--21},
+  year={1993},
+  organization={ACM}
+}
+
+@article{thiemann1999partial,
+  title={Partial evaluation for higher-order languages with state},
+  author={Thiemann, Peter and Dussart, Dirk},
+  journal={available from first author’s web page (July 1999)},
+  year={1999}
+}
+
+@article{jones1989mix,
+  title={Mix: a self-applicable partial evaluator for experiments in compiler generation},
+  author={Jones, Neil D and Sestoft, Peter and S{\o}ndergaard, Harald},
+  journal={Lisp and Symbolic computation},
+  volume={2},
+  pages={9--50},
+  year={1989},
+  publisher={Springer}
+}
+
+@inproceedings{van1988limitations,
+  title={The limitations of partial evaluation},
+  author={van Harmelen, Frank},
+  booktitle={International Meeting of Young Computer Scientists},
+  pages={169--187},
+  year={1988},
+  organization={Springer}
+}
+
+@inproceedings{wurthinger2017practical,
+  title={Practical partial evaluation for high-performance dynamic language runtimes},
+  author={W{\"u}rthinger, Thomas and Wimmer, Christian and Humer, Christian and W{\"o}{\ss}, Andreas and Stadler, Lukas and Seaton, Chris and Duboscq, Gilles and Simon, Doug and Grimmer, Matthias},
+  booktitle={ACM SIGPLAN Notices},
+  volume={52},
+  pages={662--676},
+  year={2017},
+  organization={ACM}
+}
+
+% Abstract machines
+@article{landin1964mechanical,
+  title={The mechanical evaluation of expressions},
+  author={Landin, Peter J},
+  journal={The computer journal},
+  volume={6},
+  pages={308--320},
+  year={1964},
+  publisher={The British Computer Society}
+}
+
+@book{henderson1980functional,
+  title={Functional programming: application and implementation},
+  author={Henderson, Peter},
+  year={1980},
+  publisher={Prentice-Hall}
+}
+
+@inproceedings{danvy2004rational,
+  title={A rational deconstruction of {Landin's} {SECD} machine},
+  author={Danvy, Olivier},
+  booktitle={Symposium on Implementation and Application of Functional Languages},
+  pages={52--71},
+  year={2004},
+  organization={Springer}
+}
+
+@article{ramsdell1999tail,
+  title={The tail-recursive {SECD} machine},
+  author={Ramsdell, John D},
+  journal={Journal of Automated Reasoning},
+  volume={23},
+  pages={43--62},
+  year={1999},
+  publisher={Springer}
+}
+
+@article{diehl2000abstract,
+  title={Abstract machines for programming language implementation},
+  author={Diehl, Stephan and Hartel, Pieter and Sestoft, Peter},
+  journal={Future Generation Computer Systems},
+  volume={16},
+  pages={739--751},
+  year={2000},
+  publisher={Elsevier}
+}
+
+@inproceedings{moreau1994pcks,
+  title={The PCKS-machine: An abstract machine for sound evaluation of parallel functional programs with first-class continuations},
+  author={Moreau, Luc},
+  booktitle={European Symposium on Programming},
+  pages={424--438},
+  year={1994},
+  organization={Springer}
+}
+
+@article{warren1983abstract,
+  title={An abstract {Prolog} instruction set},
+  author={Warren, David HD},
+  journal={Technical note 309},
+  year={1983},
+  publisher={SRI International}
+}
+
+@book{kogge1990architecture,
+  title={The architecture of symbolic computers},
+  author={Kogge, Peter M},
+  year={1990},
+  publisher={McGraw-Hill, Inc.}
+}
+
+@inproceedings{rompf2010lightweight,
+  title={Lightweight modular staging: a pragmatic approach to runtime code generation and compiled DSLs},
+  author={Rompf, Tiark and Odersky, Martin},
+  booktitle={Acm Sigplan Notices},
+  volume={46},
+  pages={127--136},
+  year={2010},
+  organization={ACM}
+}
+
+@inproceedings{srinivasan2015partial,
+  title={Partial evaluation of machine code},
+  author={Srinivasan, Venkatesh and Reps, Thomas},
+  booktitle={ACM SIGPLAN Notices},
+  volume={50},
+  pages={860--879},
+  year={2015},
+  organization={ACM}
+}
+
+@article{danvy1995essence,
+  title={The essence of eta-expansion in partial evaluation},
+  author={Danvy, Olivier and Malmkj{\ae}r, Karoline and Palsberg, Jens},
+  journal={Lisp and Symbolic Computation},
+  volume={8},
+  pages={209--227},
+  year={1995},
+  publisher={Springer}
+}
+
+@inproceedings{reynolds1972definitional,
+  title={Definitional interpreters for higher-order programming languages},
+  author={Reynolds, John C},
+  booktitle={Proceedings of the ACM annual conference-Volume 2},
+  pages={717--740},
+  year={1972},
+  organization={ACM}
+}
+
+% Interpreter performance
+@article{ertl2003structure,
+  title={The structure and performance of efficient interpreters},
+  author={Ertl, M Anton and Gregg, David},
+  journal={Journal of Instruction-Level Parallelism},
+  volume={5},
+  pages={1--25},
+  year={2003}
+}
+
+% CESK
+@phdthesis{felleisen1987calculi,
+  school={Indiana University},
+  title={The calculi of lambda-v-cs conversion: A syntactic theory of control and state in imperative higher-order programming languages},
+  author={Felleisen, Matthias},
+  year={1987}
+}
+
+% Algorithms
+@article{kernighan2007regular,
+  title={A regular expression matcher},
+  author={Kernighan, Brian W},
+  journal={Oram and Wilson [OW07]},
+  pages={1--8},
+  year={2007}
+}
+
+@inproceedings{flanagan1993essence,
+  title={The essence of compiling with continuations},
+  author={Flanagan, Cormac and Sabry, Amr and Duba, Bruce F and Felleisen, Matthias},
+  booktitle={ACM Sigplan Notices},
+  volume={28},
+  pages={237--247},
+  year={1993},
+  organization={ACM}
+}
+
+% Towers in practice
+@book{johnson1975yacc,
+  title={Yacc: Yet another compiler-compiler},
+  author={Johnson, Stephen C and others},
+  volume={32},
+  year={1975},
+  publisher={Bell Laboratories Murray Hill, NJ}
+}
+
+@book{lindholm2014java,
+  title={The Java virtual machine specification},
+  author={Lindholm, Tim and Yellin, Frank and Bracha, Gilad and Buckley, Alex},
+  year={2014},
+  publisher={Pearson Education}
+}
+
+@inproceedings{masuhara1995compiling,
+  title={Compiling away the meta-level in object-oriented concurrent reflective languages using partial evaluation},
+  author={Masuhara, Hidehiko and Matsuoka, Satoshi and Asai, Kenichi and Yonezawa, Akinori},
+  booktitle={ACM Sigplan Notices},
+  volume={30},
+  number={10},
+  pages={300--315},
+  year={1995},
+  organization={ACM}
+}
+
+@techreport{odersky2004overview,
+  title={An overview of the {Scala} programming language},
+  author={Odersky, Martin and Altherr, Philippe and Cremet, Vincent and Emir, Burak and Maneth, Sebastian and Micheloud, St{\'e}phane and Mihaylov, Nikolay and Schinz, Michel and Stenman, Erik and Zenger, Matthias},
+  year={2004},
+  institution={EPFL}
+}
+
+@book{kernighan1988c,
+  title={The C programming language},
+  author={Kernighan, Brian W and Ritchie, Dennis M and Tondo, Clovis L and Gimpel, Scott E},
+  volume={2},
+  year={1988},
+  publisher={prentice-Hall Englewood Cliffs, NJ}
+}
+
+@book{van2011python,
+  title={The {Python} language reference manual},
+  author={Van Rossum, Guido and Drake, Fred L},
+  year={2011},
+  publisher={Network Theory Ltd.}
+}
+
+% Lambda calculus
+@inproceedings{de1972lambda,
+  title={Lambda calculus notation with nameless dummies, a tool for automatic formula manipulation, with application to the {Church}-{Rosser} theorem},
+  author={De Bruijn, Nicolaas Govert},
+  booktitle={Indagationes Mathematicae (Proceedings)},
+  volume={75},
+  number={5},
+  pages={381--392},
+  year={1972},
+  organization={Elsevier}
+}
+
+@misc{paulson1995foundations,
+  title={Foundations of functional programming},
+  author={Paulson, Lawrence C},
+  year={1995},
+  publisher={University of Cambridge}
+}

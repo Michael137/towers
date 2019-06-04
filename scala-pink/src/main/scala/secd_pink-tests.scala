@@ -7,6 +7,7 @@ import SECD.evg
 
 object SECDTests {
    def testBasic() = {
+		println("====> TestBasic")
         val prog1 = "'(LDC 10 LDC 15 ADD WRITEC)"
         val prog2 = "'(LDC 10 LDC 15 LD (1 1) ADD WRITEC)"
         val arg2 = "'((5 6 7 8 9))"
@@ -27,6 +28,7 @@ object SECDTests {
    }
 
     def factorialTests() = {
+		println("====> TestFactorial")
         val factorialProg = """'(NIL LDC 1 CONS LDC 10 CONS LDF
                 (DUM NIL LDF
                 (LDC 0 LD (1 1) EQ SEL
@@ -48,6 +50,7 @@ object SECDTests {
     }
 
     def testAckermann() = {
+		println("====> TestAckermann")
         val ack_prog = """'(
             DUM NIL LDF
                 (LDC 0 LD (1 1) EQ SEL
@@ -60,6 +63,7 @@ object SECDTests {
     }
 
     def testTryFail() = {
+		println("====> TestTryFail")
         val ap0 = """'(
             LDF (LD (1 1) LD (1 2) ADD RTN) AP0 STOP
         )"""
@@ -78,22 +82,10 @@ object SECDTests {
         )"""
         check(ev(s"(($evl $tryFail) '())"))("Str(done)")
         // check(ev(s"($cmp $tryFail)"))("") // TODO: @crash because staging of try/fail is not yet implemented
-
-        val ldtTest = """'(
-            NIL LDT
-                (TRY_ (LDC 0 RTN)
-                TRY_ (LDC 2 RTN)
-                TRY_ (LDC 3 RTN) FAIL_ )
-                CONS LDF (LDC 2 NIL LD (1 1) AP_ LT SEL
-                        (LDC 1 JOIN )
-                        (FAIL_ JOIN ) RTN ) AP_ WRITEC
-        )"""
-
-        check(ev(s"(($evl $ldtTest) '())"))("Cst(1)")
-        // check(ev(s"(($cmp $ldtTest) '())"))("Cst(1)")
     }
 
     def basicTests() = {
+		println("====> BasicTests")
         check(ev(s"((run 0 ($cmp '(LDC 10 LDC 15 ADD WRITEC))) '())"))("Cst(25)")
         check(reifyc(ev(s"($cmp '(LDC 10 LDC 15 ADD WRITEC))")))("Let(Lam(Lit(25)),Var(0))")
         check(ev(s"((run 0 ($cmp '(LDC 10 LDC 15 LD (1 1) ADD WRITEC))) '((5 6 7 8 9)))"))("Cst(20)")
@@ -162,6 +154,7 @@ object SECDTests {
     }
 
     def listAccessTest() = {
+		println("====> ListAccessTests")
         check(deref(ev(s"""(($evl '(
             NIL
             LDC 1 CONS

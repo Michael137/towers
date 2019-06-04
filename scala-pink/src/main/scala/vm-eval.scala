@@ -27,10 +27,17 @@ object VMEval {
                         (let (x)
                             ((eval (caddr exp) env))
                             (eval (cadddr exp) (lambda (z) (if (eq? z (cadr exp)) x (env z)))))
+                    (if (eq? (car exp) 'letrec)
+                        (let (x)
+                            (car (caddr exp))
+							(letrec (f) ((eval (caddr r) (lambda (z) (if (eq? z (car (cadr exp))) f 
+															(if (eq? z (car (cadr r))) x
+															(env z)))))))
+										(eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) ($lift f) (env z)))))
+									
                     (if (eq? (car exp) 'lambda)
                         ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
-                        
-                    ((eval (car exp) env) (eval (cadr exp) env))))))))))))))
+                    ((eval (car exp) env) (eval (cadr exp) env)))))))))))))))
                 (eval (quote $p) '()))
     """
 
@@ -45,12 +52,6 @@ object VMEval {
   }
     def test() = {
         println("// ------- VMEVal.test --------")
-        // TODO: @crash
-        // runOnVM(s"""
-        // (letrec (eval) ((lambda (exp env)
-        //             (letrec (x) ((+ 2 2)) 4)))
-        //         (eval '() '()))
-        // """, "'()")
 
         check(evalAndRunOnVM("(if (+ 2 -2) (* 1 -1) (* -1 (* -1 1)))", "'()"))("Cst(1)")
         check(evalAndRunOnVM("(let y 1 (* y 2))", "'()"))("Cst(2)")
@@ -63,26 +64,22 @@ object VMEval {
         check(evalAndRunOnVM("""((lambda (b) b) 2)""", "'()"))("Cst(2)")
         check(evalAndRunOnVM("""((lambda (b) ((lambda (a) b) 1)) 2)""", "'()"))("Cst(2)")
         check(evalAndRunOnVM("""(((lambda (a) (lambda (b) b)) 1) 2)""", "'()"))("Cst(2)")
+        check(evalAndRunOnVM("""((lambda (f) (f 2)) (lambda (x) (+ x 2)))""", "'()"))("Cst(4)")
 
-        // TODO: record noisy generated code in report before optimizing it out
+        // Factorial Y-combinator
         check(evalAndRunOnVM("""
-       (((lambda (fun)
-          ((lambda (F)
-             (F F))
-           (lambda (F)
-             (fun (lambda (x) ((F F) x))))))
-
-      (lambda (factorial)
-        (lambda (n)
-          (if (eq? n 0)
-              1
-              (* n (factorial (- n 1))))))
-
-       ) 6)""", "'()", pretty = true))("Cst(720)")
-
-        // TODO: add letrec support + CESK (https://cs.indiana.edu/~dyb/pubs/fixing-letrec.pdf)
-        // check(evalAndRunOnVM("(letrec y (lambda (x) (- x 15)) (y 15))", "'()"))("Cst(0)")
-        // // check(evalAndRunOnVM("(letrec y (lambda (x) (if (eq? x 0) x (y (- x 1)))) (y 15))", "'()"))("Cst(0)")
+         (((lambda (fun)
+            ((lambda (F)
+               (F F))
+             (lambda (F)
+               (fun (lambda (x) ((F F) x))))))
+  
+        (lambda (factorial)
+          (lambda (n)
+            (if (eq? n 0)
+                1
+                (* n (factorial (- n 1))))))
+         ) 6)""", "'()", pretty = true, max_depth = 70))("Cst(720)")
 
         testDone()
     }

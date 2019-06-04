@@ -70,8 +70,6 @@ object Base {
   def reify(f: => Exp) = run {
     stBlock = Nil
     val last = f
-    // Currently wouldn't work since stBlock signature has changed
-    //println(Optimizer.optimizeListAccess(stBlock))
     (stBlock.map(_._2) foldRight last)(Let)
   }
   def reflect(s:Exp) = {

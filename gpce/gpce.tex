@@ -191,7 +191,7 @@ Previous work has focused on homogeneous towers and their reflective and meta-ci
 \maketitle
 
 \section{Introduction}
-Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an interpreter above it (depicted as a tombstone diagram in figure \ref{fig:tombstone_tower_ex1}). Each additional \textit{level} (i.e., interpreter) in the tower adds a constant factor of interpretative overhead to the run-time of the system. One of the earliest mentions of such architectures in literature is a language extension to Lisp called 3-LISP \cite{smith1984reflection} introduced by Smith. Smith describes the notion of a reflective system, for ``a system that is able to reason
+Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an interpreter above it (depicted as a tombstone diagram in figure \ref{fig:tombstone_tower_ex1}). Each additional \textit{level} (i.e., interpreter) in the tower adds a constant factor of interpretative overhead to the run-time of the system. One of the earliest mentions of such architectures in literature is a language extension to Lisp called 3-LISP~\cite{smith1984reflection} introduced by Smith. Smith describes the notion of a reflective system, for ``a system that is able to reason
 about itself'', as a tower of meta-circular interpreters, also referred to as a \textit{reflective tower}\footnote{
 Reflective towers are often theorised as infinite, but any finite
 computation only uses a bounded number of layers.}.
@@ -223,12 +223,12 @@ Using this architecture 3-LISP enables an interpreter within the tower to access
     \label{fig:tombstone_tower_ex1}
 \end{figure}
 
-In the original reflective tower models only minimal attention was given to the cost of performing new interpretation at each level of a tower. Then works by Sturdy~\cite{sturdy1993lisp} and Danvy et al.'s language Blond \cite{danvy1988intensions} hinted at the possibility of removing some of this overhead by partially evaluating (i.e., specializing) interpreters with respect to the interpreters below in the tower. Asai et al.'s language \textit{Black} \cite{asai1996duplication} is a reflective language implemented through a reflective tower. The authors use a hand-crafted partial evaluator, and in a later study use MetaOCaml \cite{asai2015compiling}, to efficiently implement the language. Asai and then, using the language Pink \cite{amin2017collapsing}, Amin et al.~demonstrate the ability to compile a reflective language even though the semantics of individual interpreters in the underlying tower can be modified. Essentially this is achieved by specializing and executing functions of an interpreter at run-time to remove the cost of multiple interpretation; this effectively \textbf{\textit{collapses}} a tower.
+In the original reflective tower models only minimal attention was given to the cost of performing new interpretation at each level of a tower. Then works by Sturdy~\cite{sturdy1993lisp} and Danvy et al.'s language Blond~\cite{danvy1988intensions} hinted at the possibility of removing some of this overhead by partially evaluating (i.e., specializing) interpreters with respect to the interpreters below in the tower. Asai et al.'s language \textit{Black}~\cite{asai1996duplication} is a reflective language implemented through a reflective tower. The authors use a hand-crafted partial evaluator, and in a later study use MetaOCaml~\cite{asai2015compiling}, to efficiently implement the language. Asai and then, using the language Pink~\cite{amin2017collapsing}, Amin et al.~demonstrate the ability to compile a reflective language even though the semantics of individual interpreters in the underlying tower can be modified. Essentially this is achieved by specializing and executing functions of an interpreter at run-time to remove the cost of multiple interpretation; this effectively \textbf{\textit{collapses}} a tower.
 
 Parallel to all the above theoretical research into reflective towers, practical programmers have in effect been working with towers of interpreters dating back to the idea of language parsers. Writing a parser in an interpreted language already implies two levels of interpretation:
-one running the parser and another the parser itself. Emulation is a form of interpretation and implies interpreters running on virtual hardware, such as the bytecode interpreter in the Java Virtual Machine (JVM) \cite{lindholm2014java}, are towers of interpreters as well.
+one running the parser and another the parser itself. Emulation is a form of interpretation and implies interpreters running on virtual hardware, such as the bytecode interpreter in the Java Virtual Machine (JVM)~\cite{lindholm2014java}, are towers of interpreters as well.
 
-However, these two branches of research do not overlap and work on towers of interpreters rarely studied their counterparts in production systems. It is natural to ask the question of what it would take to apply previous techniques in partial evaluation to a practical setting. This is the question Amin et al. pose in their conclusion after describing Pink \cite{amin2017collapsing} and is the starting point for this work.
+However, these two branches of research do not overlap and work on towers of interpreters rarely studied their counterparts in production systems. It is natural to ask the question of what it would take to apply previous techniques in partial evaluation to a practical setting. This is the question Amin et al. pose in their conclusion after describing Pink~\cite{amin2017collapsing} and is the starting point for this work.
 
 We aim to bring previous work of removing interpretative overhead in towers using partial evaluation into practice. Our study achieves this by constructing a proof-of-concept tower of interpreters that more-closely resembles those in real-world systems. Figure \ref{fig:tombstone} depicts two versions of our experimental tower. Traditionally reflective towers are thought of as completely vertical like the one on the left. However, details such as how a tower grows, shrinks and collapses while executing user programs worked rather mysteriously. We decided to implement our tower using occasional layers of compilation (as shown on the right). The two versions of our tower are extensionally equal since they yield the same output for a given program to evaluate. Part of our study is devoted to evaluating the effect of the intensional structure of towers on the act of collapsing them.
 
@@ -243,10 +243,11 @@ Our contributions include:
 In
 section~\ref{subsec:collapse}, we describe what it means to construct
 and \textit{collapse} a tower of interpreters and the methodology Pink
-uses to do so \cite{amin2017collapsing}. In
+uses to do so~\cite{amin2017collapsing}. In
 section~\ref{sec:heterogeneity}, we discuss heterogeneous towers
 and in section~\ref{subsec:collapseh}, how to collapse them.
 In section~\ref{sec:conc}, we conclude, looking back and ahead.
+Our experiments are availbale from \textit{**omitted for double-blind review**}.
 
 \begin{figure*}
     \centering
@@ -299,7 +300,7 @@ In section~\ref{sec:conc}, we conclude, looking back and ahead.
     \draw (m-6-9.south west) -- (m-7-9.south) -- (m-6-9.south east);
     \end{tikzpicture}
     \end{subfigure}
-    \caption{Tombstone diagrams that represent two versions of our experimental tower of interpreters. \mevl{} is a toy Lisp language, \mslang{} refers to the multi-level language introduced as part of Pink \cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} in our diagram also encompasses any underlying machinery necessary to run it. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the power of the \textit{lift} operator and its vital role in collapsing heterogeneous towers.
+    \caption{Tombstone diagrams that represent two versions of our experimental tower of interpreters. \mevl{} is a toy Lisp language, \mslang{} refers to the multi-level language introduced as part of Pink~\cite{amin2017collapsing} and Lisp* is \mslang's Lisp based front-end. \textit{JVM} in our diagram also encompasses any underlying machinery necessary to run it. While the left depicts the intuitive view of a tower, we actually implement it using the architecture on the right. Not only is the tower on the right simpler to construct but it also highlights the power of the \textit{lift} operator and its vital role in collapsing heterogeneous towers.
 }
     \label{fig:tombstone}
 \end{figure*}
@@ -319,7 +320,7 @@ Amin et al.'s multi-level language, \mslang, differentiates between
 static and dynamic expressions by tagging dynamic (``code'') values;
 this allows \mslang{} to express binding-time information. The
 \textit{lift} operator coerces static to dynamic values, in the style
-of the reification operator of TDPE (Type-Directed Partial Evaluation)~\cite{danvy1999type}.
+of the reification operator of Type-Directed Partial Evaluation (TDPE)~\cite{danvy1999type}.
 To stage the evaluator, the usual recipe applies: introductory forms that
 produce values are lifted, while elimination forms that consume values
 remain unchanged (the result will be dynamic if the operands are
@@ -443,7 +444,7 @@ A central part of our study revolves around the notion of heterogeneous towers. 
 \end{observation}
 
 \subsection{Absence of: Meta-circularity}
-The first generalization described by observation \ref{def:het} is that of mixed languages between levels of a tower. A practical challenge this poses for partial evaluators is the inability to reuse language facilities across interpreters. This also implies that one cannot in general define reflection and reification procedures as in 3-LISP \cite{smith1984reflection}, Brown \cite{wand1988mystery}, Blond \cite{danvy1988intensions}, Black \cite{asai1996duplication} or Pink \cite{amin2017collapsing}.
+The first generalization described by observation \ref{def:het} is that of mixed languages between levels of a tower. A practical challenge this poses for partial evaluators is the inability to reuse language facilities across interpreters. This also implies that one cannot in general define reflection and reification procedures as in 3-LISP~\cite{smith1984reflection}, Brown~\cite{wand1988mystery}, Blond~\cite{danvy1988intensions}, Black~\cite{asai1996duplication} or Pink~\cite{amin2017collapsing}.
 
 \subsection{Absence of: Reflection}
 Reflection in an interpreter enables the introspection and modification of its state during execution. It is a tool reflective languages can use to embed, for example, debuggers or run-time instrumentation into programs. Reflection in reflective towers implies the ability to modify an interpreter's interpreter which can be beneficial in the implementation of said tools. However, it also allows potentially destructive operations on a running interpreter's semantics which can become difficult to reason about or debug. Towers that we are interested in rarely provide reflective capabilities in their interpreters. Thus, we do not support or experiment with reflection in our study.
@@ -552,7 +553,7 @@ P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                       
 \end{figure*}
 
 \subsection{Semantic Gap and Mixed Language Systems}
-Danvy et al.~mentioned the possibility of non-reflective non-meta-circular towers early on in his denontational description of the reflective tower model \cite{danvy1988intensions}. The authors explored the idea of having different denotations for data at every level of the tower. However, since it was not the focus of their study, the potential consequences were not further investigated but serve as an inspiration for the second point of observation~\ref{def:het}. We call the difference in operational semantics or data representation between two interpreters a \textit{semantic gap}.
+Danvy et al.~mentioned the possibility of non-reflective non-meta-circular towers early on in his denontational description of the reflective tower model~\cite{danvy1988intensions}. The authors explored the idea of having different denotations for data at every level of the tower. However, since it was not the focus of their study, the potential consequences were not further investigated but serve as an inspiration for the second point of observation~\ref{def:het}. We call the difference in operational semantics or data representation between two interpreters a \textit{semantic gap}.
 
 Another motivation of ours stems from the realization that systems consisting of several layers of interpretation can feasibly be constructed. A hypothetical tower of interpreters that served as a model for the one we built throughout our work was described in Amin et al.'s paper on collapsing towers~\cite{amin2017collapsing} and is depicted as a tombstone diagram in figure~\ref{fig:tombstone_practical}. As a comparison our tower is shown in figure~\ref{fig:tombstone}. We replace the x86 emulator with a SECD abstract machine interpreter and Python with our own functional toy language, \mevl. The label \mslang{} represents the multi-level core language from Pink~\cite{amin2017collapsing} and Lisp* is the Lisp-like front-end to \mslang. Although here the tower grows upwards and to the left, this need not be. The compilers, or \textit{translators}, from \mevl{} to SECD and from Lisp* to \mslang{} have been implemented in Scala purely for simplicity. To realize a completely vertical tower (i.e., consisting of interpreters only), the Lisp*--\mslang{} translator could be omitted so that the \mslang{} interpreter evaluates S-expressions directly. Similarly, the \mevl--SECD compiler could be implemented in SECD instructions itself. However, we argue that the presence of compilation layers in our experimental tower more closely resembles practice and adds some insightful challenges to our experiments.
 
@@ -583,6 +584,14 @@ The \textbf{LIFT} instruction in the SECD machine has to create
 closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
 functions, can be implicit in the wiring of the SECD machine.
+For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
+requires adapting the following other instructions:
+\begin{itemize}
+\item LDF which loads a function, now requires tagging
+\item AP which applies, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
+\item RTN which returns, now requires deciding whether to continue with the dump (default) or return a value (to satisfy calling convention of lower level)
+\end{itemize}
+These changes cross-cut the original design.
 
 This study demonstrates that it is feasible to collapse a particular
 heterogeneous tower, where a SECD machine acts as a bottleneck between
@@ -595,7 +604,7 @@ practice, this could present arbitary difficulties.
 \section{Conclusions and Future Work}\label{sec:conc}
 
 \subsection{Conclusions}
-%% The aim of our study was to connect the extensive collection of work on homogeneous reflective towers with their counterparts in more practical settings. Collapsing of towers of interpreters encompasses the techniques to remove interpretative overhead that is present in such systems. The construction of towers of interpreters has previously been either limited to reflective towers, in which each interpreter is meta-circular and exposes its internals for the purpose of reflection, or a consequence of modular systems design where layers of tools that perform some form of interpretation are glued together. To the best of our knowledge, our work is one of a handful, together with Amin et al.'s previous explorations \cite{amin2017collapsing}, that explicitly focus on the overheads and optimization of towers of interpreters that are not meta-circular. We built on the ideas from the Pink framework and re-used its TDPE-based partial evaluator to construct and collapse our own experimental tower.
+%% The aim of our study was to connect the extensive collection of work on homogeneous reflective towers with their counterparts in more practical settings. Collapsing of towers of interpreters encompasses the techniques to remove interpretative overhead that is present in such systems. The construction of towers of interpreters has previously been either limited to reflective towers, in which each interpreter is meta-circular and exposes its internals for the purpose of reflection, or a consequence of modular systems design where layers of tools that perform some form of interpretation are glued together. To the best of our knowledge, our work is one of a handful, together with Amin et al.'s previous explorations~\cite{amin2017collapsing}, that explicitly focus on the overheads and optimization of towers of interpreters that are not meta-circular. We built on the ideas from the Pink framework and re-used its TDPE-based partial evaluator to construct and collapse our own experimental tower.
 
 %% A tower of meta-circular interpreters can be collapsed into a residual program in a single pass by only staging a single interpreter in the tower and relying on the meta-circular definitions of \textit{lift} to propagate binding-time information to the multi-level base evaluator which handles the actual code generation (in Pink through an embedded partial evaluator).
 We started by generalizing the concept of reflective towers to ones that consisted of non-meta-circular interpreters. To model a tower that could potentially contain layers of translation between languages, such as the one in figure \ref{fig:tombstone_practical}, we also introduced the notion of \textit{semantic gaps}, which dictate the extent to which two adjacent interpreters differ in operational semantics or representation of data. A combination of these two properties (non-meta-circularity and semantic gaps) form the new class of towers of interpreters that we call \textit{heterogeneous}. The theoretical implications from heterogeneity on a tower's structure and procedure to collapse them was a focal point for our experiments. We envisioned two problems with collapsing heterogeneous towers:
@@ -616,13 +625,13 @@ We hope our study provided a platform and the necessary techniques to eventually
 
 One of the considerations is whether side-effects should be residualized, removed or executed during PE time. More broadly a next step would be to devise a method of dealing with situations where a level does not have a necessary feature that an interpreter in a different level requires.
 Currently any feature, including side-effects, needs to be implemented at each level from the base up to the interpreter that uses it.
-Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp) \cite{kogge1990architecture}. Implementing such extensions could aid the experimentation with features not being available at adjacent levels. For example, call/cc allows us to emulate side-effects such as such as exceptions and non-determinism.
+Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp)~\cite{kogge1990architecture}. Implementing such extensions could aid the experimentation with features not being available at adjacent levels. For example, call/cc allows us to emulate side-effects such as such as exceptions and non-determinism.
 
-Nothing restricts our heterogeneous tower to using a SECD abstract machine. Instead further work could experiment with others like the Warren Abstract Machine (WAM) \cite{warren1983abstract} as a SECD replacement. This would allow us to investigate the applicability of our method for collapsing towers to other programming paradigms such as logic programming. Even in the presence of the SECD machine we could replace the interpreters running on it, in our case \mevl, with higher-level logic-programming interpreters instead of the lower-level WAM. This could lead into a study of stratifications of towers and the extent to which certain types of towers are collapsible.
+Nothing restricts our heterogeneous tower to using a SECD abstract machine. Instead further work could experiment with others like the Warren Abstract Machine (WAM)~\cite{warren1983abstract} as a SECD replacement. This would allow us to investigate the applicability of our method for collapsing towers to other programming paradigms such as logic programming. Even in the presence of the SECD machine we could replace the interpreters running on it, in our case \mevl, with higher-level logic-programming interpreters instead of the lower-level WAM. This could lead into a study of stratifications of towers and the extent to which certain types of towers are collapsible.
 
 A major subject of focus in PE is the ability to output residual programs in a language different from the subject language or the one the PE was written in. This could prove useful when staging between a fixed set of levels that is not the whole tower. Such a feature would need to be supported by the underlying PE methodology (i.e., TDPE in our case).
 
-Ongoing work involves generalizing and making our technique to collapse towers less intrusive. Instead of reimplementing a \textit{lift} operation at the levels that need it, feasible techniques could, at least for particular domains or languages, pass the TDPE binding-time information in the form of data through each level. Wh{\"u}rthinger's GraalVM \cite{wurthinger2013one} allows the communication between languages that target the Graal Virtual Machine and could prove useful in further experimenting with heterogeneous towers where multiple interpreters pass, e.g., binding-times to each other.
+Ongoing work involves generalizing and making our technique to collapse towers less intrusive. Instead of reimplementing a \textit{lift} operation at the levels that need it, feasible techniques could, at least for particular domains or languages, pass the TDPE binding-time information in the form of data through each level. Wh{\"u}rthinger's GraalVM~\cite{wurthinger2013one} allows the communication between languages that target the Graal Virtual Machine and could prove useful in further experimenting with heterogeneous towers where multiple interpreters pass, e.g., binding-times to each other.
 
 %%
 %% The acknowledgments section is defined using the "acks" environment

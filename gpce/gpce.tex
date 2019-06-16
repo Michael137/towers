@@ -212,14 +212,14 @@ Using this architecture 3-LISP enables an interpreter within the tower to access
                          & $L_1$                   \\
                 $I_1:$   & $L_1$                   \\
                          & $L_0$                   \\
-                         & |[font=\small]|$M$      \\
+                         & |[font=\small]|$U$      \\
               };
               \draw (m-1-2.south west) |- (m-4-2.north east) |- (m-1-2.south west);
               \draw (m-4-2.south west) |- (m-6-2.south east) |- (m-4-2.south west);
               \draw (m-4-2.south west) |- (m-8-2.south east) |- (m-6-2.north east);
               \draw (m-8-2.south west) -- (m-9-2.south) -- (m-8-2.south east);
         \end{tikzpicture}
-    \caption{A tower of interpreters where each interpreter $I_n$ is written in language $L_{n-1}$ and interprets a language $L_n$, for some $n \geq 0$. In literature the tower often grows downwards, however, in our study we refer to $I_0$ as the base interpreter and grow the tower upwards for convenience. $M$ is the underlying machine (e.g. CPU) on which the base interpreter is executed.}
+    \caption{A tower of interpreters where each interpreter $I_n$ is written in language $L_{n-1}$ and interprets a language $L_n$, for some $n \geq 0$. In literature the tower often grows downwards, however, in our study we refer to $I_0$ as the base interpreter and grow the tower upwards for convenience. $U$ is the underlying machine (e.g. CPU) on which the base interpreter is executed.}
     \label{fig:tombstone_tower_ex1}
 \end{figure}
 
@@ -235,19 +235,20 @@ We aim to bring previous work of removing interpretative overhead in towers usin
 We then collapse the experimental tower under different configurations and evaluate the resulting optimized programs. We demonstrate that we can partially evaluate individual interpreters in a heterogeneous tower and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process).
 Our contributions include:
 \begin{enumerate}
-\item Develop an experimental heterogeneous tower of interpreters, where a SECD machine\cite{landin1964mechanical,kogge1990architecture} acts as a bottleneck between two Lisp-like levels
+\item Develop an experimental heterogeneous tower of interpreters, where a SECD machine~\cite{landin1964mechanical,kogge1990architecture} acts as a bottleneck between two Lisp-like levels
+\todo{Maybe different description than "bottleneck"}
 \item Collapse this heterogeneous tower, removing all interpretation overhead
 \item Identify general requirements and strategies for collapsing hereogeneous towers
 \end{enumerate}
 
 In
 section~\ref{subsec:collapse}, we describe what it means to construct
-and \textit{collapse} a tower of interpreters and the methodology Pink
+and collapse a tower of interpreters and the methodology Pink
 uses to do so~\cite{amin2017collapsing}. In
 section~\ref{sec:heterogeneity}, we discuss heterogeneous towers
 and in section~\ref{subsec:collapseh}, how to collapse them.
 In section~\ref{sec:conc}, we conclude, looking back and ahead.
-Our experiments are availbale from \textit{**omitted for double-blind review**}.
+Our experiments are available from \textit{**omitted for double-blind review**}.
 
 \begin{figure*}
     \centering
@@ -346,7 +347,7 @@ taking as argument a \textit{maybe-lift} function that acts as the
                             &   L                           \\
              $I_1:$         &   L                           \\
                             &   \mslang                     \\
-                            &   |[font=\small]|$M$          \\
+                            &   |[font=\small]|$U$          \\
               };
             \draw (m-1-2.north west) |- (m-8-2.south east) |- (m-1-2.north west);
             \draw (m-2-2.south west) -- (m-2-2.south east);
@@ -376,7 +377,7 @@ taking as argument a \textit{maybe-lift} function that acts as the
                     &            & L                    &           &           \\
                     &   $I_1:$   & L                    &           &           \\
                     &            & \mslang{}            &           &           \\
-                    &            & |[font=\small]|$M$   &           &           \\
+                    &            & |[font=\small]|$U$   &           &           \\
              };
             \draw (m-1-1.north west) |- (m-2-1.south east);
             \draw (m-1-1.north west) -- (m-1-1.north east) -- (m-2-2.south west);
@@ -404,7 +405,7 @@ taking as argument a \textit{maybe-lift} function that acts as the
  $C_3:$ & L   & $\to$                 & \mslang   & \mslang   \\
         &     & L                     &           &           \\
         &     & \mslang{}             &           &           \\
-        &     & |[font=\small]|$M$    &           &           \\
+        &     & |[font=\small]|$U$    &           &           \\
              };
 
             \draw (m-1-5.south west) |- (m-1-5.north east) |- (m-2-5.south east) -- (m-2-5.south west) -- (m-1-5.south west);
@@ -583,8 +584,7 @@ A more subtle collapse of our tower occurs when we stage the \mevl{} level (see 
 The \textbf{LIFT} instruction in the SECD machine has to create
 closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
-functions, can be implicit in the wiring of the SECD machine.
-These changes cross-cut the original design, adding complexity.
+functions, can be implicit in the wiring of the SECD machine. These changes cross-cut the original design, adding complexity.
 For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
 requires adapting these other instructions:
 \begin{description}
@@ -596,6 +596,7 @@ requires adapting these other instructions:
 This study demonstrates that it is feasible to collapse a particular
 heterogeneous tower, where a SECD machine acts as a bottleneck between
 two Lisp-like levels.
+
 The general lesson for collapsing towers is that each level must be
 able to lift values by translating them to the lower level. In
 practice, this could present arbitary difficulties.

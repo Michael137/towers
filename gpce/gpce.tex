@@ -569,7 +569,7 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
     \item A \textit{lift} operator
     \item Unstaged lower evaluators
     \item A staged user-most evaluator
-    \item \textbf{New: } The \textit{lift} operator must be exposed in each evaluator, and must translate from that level's values to the lower-level values.
+    \item \textbf{New requirement: } The \textit{lift} operator must be exposed in each evaluator, and must translate from that level's values to the lower-level values.
 \end{enumerate}
 
 While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine requires a more sophisticaed binding-time analysis with careful design of its division rules

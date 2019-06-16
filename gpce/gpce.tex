@@ -235,8 +235,7 @@ We aim to bring previous work of removing interpretative overhead in towers usin
 We then collapse the experimental tower under different configurations and evaluate the resulting optimized programs. We demonstrate that we can partially evaluate individual interpreters in a heterogeneous tower and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process).
 Our contributions include:
 \begin{enumerate}
-\item Develop an experimental heterogeneous tower of interpreters, where a SECD machine~\cite{landin1964mechanical,kogge1990architecture} acts as a bottleneck between two Lisp-like levels
-\todo{Maybe different description than "bottleneck"}
+\item Develop an experimental heterogeneous tower of interpreters, with a SECD machine~\cite{landin1964mechanical,kogge1990architecture} in between two Lisp-like levels
 \item Collapse this heterogeneous tower, removing all interpretation overhead
 \item Identify general requirements and strategies for collapsing hereogeneous towers
 \end{enumerate}

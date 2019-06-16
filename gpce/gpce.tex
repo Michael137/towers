@@ -235,7 +235,8 @@ We aim to bring previous work of removing interpretative overhead in towers usin
 We then collapse the experimental tower under different configurations and evaluate the resulting optimized programs. We demonstrate that we can partially evaluate individual interpreters in a heterogeneous tower and effectively generate code specialized for a user program (hopefully eliminating interpretative overhead in the process).
 Our contributions include:
 \begin{enumerate}
-\item Develop an experimental heterogeneous tower of interpreters, with a SECD machine~\cite{landin1964mechanical,kogge1990architecture} in between two Lisp-like levels
+\item Develop an experimental heterogeneous tower of interpreters, where a SECD machine~\cite{landin1964mechanical,kogge1990architecture} acts as a bottleneck between two Lisp-like levels
+\todo{Maybe different description than "bottleneck"}
 \item Collapse this heterogeneous tower, removing all interpretation overhead
 \item Identify general requirements and strategies for collapsing hereogeneous towers
 \end{enumerate}
@@ -423,7 +424,7 @@ taking as argument a \textit{maybe-lift} function that acts as the
     \caption{Tombstone diagrams representing the process of collapsing a tower using \mslang{}}
 \end{figure}
 
-Figures \ref{fig:tombstone_collapse_ex_int} to \ref{fig:tombstone_collapsed} depict the process of collapsing a (homogeneous) tower through tombstone diagrams. We start with a meta-circular tower of interpreters all written in the same language, $L$, and Pink's \mslang{} at the base. The key benefit of meta-circularity is that the \textit{lift} operator defined in \mslang{} is accessible to each interpreter. We can now stage some interpreter in the tower, in this example the user-most one $I_3$ by lifting; this interpreter is now equivalent to a compiler from $L$ to \mslang{} ($C_3$ in figure \ref{fig:tombstone_collapse_ex_comp}). When we execute the tower (i.e., invoke \mslang's partial evaluator) $C_3$ residualizes while all other levels in the tower evaluate (essentially \textit{propagating} binding-time information of program $P$ from the top to the base of the tower). At $I_1$ a call to \textit{lift} now invokes \mslang's \textit{lift}. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time. The result is a collapsed tower in figure \ref{fig:tombstone_collapsed} where all intermediate interpreters, $I_1$ through $I_3$, have been removed from the tower (assuming the absence of side-effects at individual levels).
+Figures \ref{fig:tombstone_collapse_ex_int} to \ref{fig:tombstone_collapsed} depict the process of collapsing a (homogeneous) tower through tombstone diagrams. We start with a meta-circular tower of interpreters all written in the same language, $L$, and Pink's \mslang{} at the base. The key benefit of meta-circularity is that the \textit{lift} operator defined in \mslang{} is accessible to each interpreter. We can now stage some interpreter in the tower, in this example the user-most one, $I_3$, by lifting; this interpreter is now equivalent to a compiler from $L$ to \mslang{} ($C_3$ in figure \ref{fig:tombstone_collapse_ex_comp}). When we execute the tower (i.e., invoke \mslang's partial evaluator) $C_3$ residualizes while all other levels in the tower evaluate (essentially \textit{propagating} binding-time information of program $P$ from the top to the base of the tower). At $I_1$ a call to \textit{lift} now invokes \mslang's \textit{lift}. Effectively after residualization the generated program will only include the values staged at the top-most interpreter while the rest of the tower was reduced at specialization time. The result is a collapsed tower in figure \ref{fig:tombstone_collapsed} where all intermediate interpreters, $I_1$ through $I_3$, have been removed from the tower (assuming the absence of side-effects at individual levels).
 
 \section{Heterogeneous Towers}\label{sec:heterogeneity}
 A central part of our study revolves around the notion of heterogeneous towers. We continue from where Amin et al.'s study of collapsing towers of interpreters~\cite{amin2017collapsing} left off, namely the question of how one might achieve the effect of compiling multiple interpreters in heterogeneous settings. We view heterogeneous towers as a generalization of reflective towers and define \textit{heterogeneous} as follows:
@@ -552,13 +553,13 @@ P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                       
     \label{fig:tombstone_het_collapse_mevl}
 \end{figure*}
 
-\subsection{Semantic Gap and Mixed Language Systems}
+\subsection{Semantic Gaps}
 Danvy et al.~mentioned the possibility of non-reflective non-meta-circular towers early on in his denontational description of the reflective tower model~\cite{danvy1988intensions}. The authors explored the idea of having different denotations for data at every level of the tower. However, since it was not the focus of their study, the potential consequences were not further investigated but serve as an inspiration for the second point of observation~\ref{def:het}. We call the difference in operational semantics or data representation between two interpreters a \textit{semantic gap}.
 
-Another motivation of ours stems from the realization that systems consisting of several layers of interpretation can feasibly be constructed. A hypothetical tower of interpreters that served as a model for the one we built throughout our work was described in Amin et al.'s paper on collapsing towers~\cite{amin2017collapsing} and is depicted as a tombstone diagram in figure~\ref{fig:tombstone_practical}. As a comparison our tower is shown in figure~\ref{fig:tombstone}. We replace the x86 emulator with a SECD abstract machine interpreter and Python with our own functional toy language, \mevl. The label \mslang{} represents the multi-level core language from Pink~\cite{amin2017collapsing} and Lisp* is the Lisp-like front-end to \mslang. Although here the tower grows upwards and to the left, this need not be. The compilers, or \textit{translators}, from \mevl{} to SECD and from Lisp* to \mslang{} have been implemented in Scala purely for simplicity. To realize a completely vertical tower (i.e., consisting of interpreters only), the Lisp*--\mslang{} translator could be omitted so that the \mslang{} interpreter evaluates S-expressions directly. Similarly, the \mevl--SECD compiler could be implemented in SECD instructions itself. However, we argue that the presence of compilation layers in our experimental tower more closely resembles practice and adds some insightful challenges to our experiments.
+Another motivation of ours stems from the realization that systems consisting of several layers of interpretation can feasibly be constructed. A hypothetical tower of interpreters that served as a model for the one we built throughout our work was described in Amin et al.'s paper on collapsing towers~\cite{amin2017collapsing} and is depicted as a tombstone diagram in figure~\ref{fig:tombstone_practical}. As a comparison our tower is shown in figure~\ref{fig:tombstone}. We replace the x86 emulator with a SECD abstract machine interpreter and Python with our own functional toy language, \mevl. The label \mslang{} represents the multi-level core language from Pink~\cite{amin2017collapsing} and Lisp* is the Lisp-like front-end to \mslang. Although here the tower grows upwards and to the left, this need not be. We implement (in Scala) the compilers, or \textit{translators}, from \mevl{} to SECD and from Lisp* to \mslang{} purely for simplicity. To realize a completely vertical tower (i.e., consisting of interpreters only), the Lisp*--\mslang{} translator could be omitted so that the \mslang{} interpreter evaluates S-expressions directly. Similarly, the \mevl--SECD compiler could be implemented in SECD instructions itself. However, we argue that the presence of compilation layers in our experimental tower more closely resembles practice and adds some insightful challenges to our experiments.
 
-We chose the SECD machine to create semantic gaps within our tower through the low-level instruction set that it comes with. For convenience we chose to implement the \mevl{} level as a translator from \mevl{} to SECD instructions instead of writing the interpreter in the instructions directly.
-It is noteworthy that the addition of translation layers to the tower revealed insights into the process of collapsing heterogeneous towers that are not immediately apparent from the composition of tombstones, as we see next.
+We chose the SECD machine to create semantic gaps within our tower through the low-level instruction set that it comes with \cite{kogge1990architecture}. For convenience we chose to implement the \mevl{} level as a translator from \mevl{} to SECD instructions instead of writing the interpreter in the instructions directly.
+It is noteworthy that the addition of translation layers to the tower revealed insights into the process of collapsing heterogeneous towers that are not immediately apparent from the composition of tombstones, as we see next. \todo{this paragraph is kind of a repition of the last sentence of the one above; perhaps merge the two paragraphs}
 
 
 \section{Collapsing Heterogeneous Towers}\label{subsec:collapseh}
@@ -580,25 +581,26 @@ Hence, one approach to propagating binding-time information is to implement a bu
 
 A more subtle collapse of our tower occurs when we stage the \mevl{} level (see figure \ref{fig:tombstone_het_collapse_mevl}). In this case staging has a slightly different effect which is not obvious from the tombstones. Since the \mevl{} level is actually a translator already, staging the translator will simply yield another translator. Instead, staging \mevl{} means we generate SECD instructions that \textit{lift} (i.e., signal the PE to residualize) expressions of \mevl{} using a new \textbf{LIFT} instruction. As we can see from the annotated tombstone diagram, we use the \textit{lift} operator as a mechanism to move code through each level to the base where it is residualized.
 
+\newpage
 The \textbf{LIFT} instruction in the SECD machine has to create
 closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
 functions, can be implicit in the wiring of the SECD machine. These changes cross-cut the original design, adding complexity.
 For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
-requires adapting these three other instructions:
+requires adapting these other instructions:
 \begin{description}
-\item [LDF] which loads instructions as a function, now requires tagging
+\item [LDF] which loads instructions as a function, now requires tagging \todo{Elaborate on tagging}
 \item [AP ] which applies a function, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
-\item [RTN] which returns from a function, now requires deciding whether to continue with the dump (default) or return a value (to satisfy calling convention of lower level)
+\item [RTN] which returns from a function, now requires deciding whether to continue with the dump (default) or return a value (to satisfy calling convention of lower level) \todo{"continue with the dump" should be "restore state of other registers from the dump (default)"; elaborate on paranthesized statement}
 \end{description}
 
 This study demonstrates that it is feasible to collapse a particular
-heterogeneous tower, where a SECD machine acts as a bottleneck between
+heterogeneous tower, where a SECD machine acts as a bottleneck \todo{used "bottleneck" again without explaining why it is one} between
 two Lisp-like levels.
 
 The general lesson for collapsing towers is that each level must be
 able to lift values by translating them to the lower level. In
-practice, this could present arbitary difficulties.
+practice, this presents arbitrary difficulties.
 
 \section{Conclusions and Future Work}\label{sec:conc}
 
@@ -626,9 +628,9 @@ One of the considerations is whether side-effects should be residualized, remove
 Currently any feature, including side-effects, needs to be implemented at each level from the base up to the interpreter that uses it.
 Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp)~\cite{kogge1990architecture}. Implementing such extensions could aid the experimentation with features not being available at adjacent levels. For example, call/cc allows us to emulate side-effects such as such as exceptions and non-determinism.
 
-Nothing restricts our heterogeneous tower to using a SECD abstract machine. Instead further work could experiment with others like the Warren Abstract Machine (WAM)~\cite{warren1983abstract} as a SECD replacement. This would allow us to investigate the applicability of our method for collapsing towers to other programming paradigms such as logic programming. Even in the presence of the SECD machine we could replace the interpreters running on it, in our case \mevl, with higher-level logic-programming interpreters instead of the lower-level WAM. This could lead into a study of stratifications of towers and the extent to which certain types of towers are collapsible.
+%Nothing restricts our heterogeneous tower to using a SECD abstract machine. Instead further work could experiment with others like the Warren Abstract Machine (WAM)~\cite{warren1983abstract} as a SECD replacement. This would allow us to investigate the applicability of our method for collapsing towers to other programming paradigms such as logic programming. Even in the presence of the SECD machine we could replace the interpreters running on it, in our case \mevl, with higher-level logic-programming interpreters instead of the lower-level WAM. This could lead into a study of stratifications of towers and the extent to which certain types of towers are collapsible.
 
-A major subject of focus in PE is the ability to output residual programs in a language different from the subject language or the one the PE was written in. This could prove useful when staging between a fixed set of levels that is not the whole tower. Such a feature would need to be supported by the underlying PE methodology (i.e., TDPE in our case).
+%A major subject of focus in PE is the ability to output residual programs in a language different from the subject language or the one the PE was written in. This could prove useful when staging between a fixed set of levels that is not the whole tower. Such a feature would need to be supported by the underlying PE methodology (i.e., TDPE in our case).
 
 Ongoing work involves generalizing and making our technique to collapse towers less intrusive. Instead of reimplementing a \textit{lift} operation at the levels that need it, feasible techniques could, at least for particular domains or languages, pass the TDPE binding-time information in the form of data through each level. Wh{\"u}rthinger's GraalVM~\cite{wurthinger2013one} allows the communication between languages that target the Graal Virtual Machine and could prove useful in further experimenting with heterogeneous towers where multiple interpreters pass, e.g., binding-times to each other.
 

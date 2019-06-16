@@ -191,9 +191,8 @@ Previous work has focused on homogeneous towers and their reflective and meta-ci
 \maketitle
 
 \section{Introduction}
-Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an interpreter above it (depicted as a tombstone diagram in figure \ref{fig:tombstone_tower_ex1}). Each additional \textit{level} (i.e., interpreter) in the tower adds a constant factor of interpretative overhead to the run-time of the system. One of the earliest mentions of such architectures in literature is a language extension to Lisp called 3-LISP \cite{smith1984reflection} introduced by Smith. Smith describes the notion of a reflective system, a system that is able to reason
-\AMcomment{is "to reason" the right verb?}
-about itself, as a tower of meta-circular interpreters, also referred to as a \textit{reflective tower}\footnote{
+Towers of interpreters are a program architecture which consists of sequences of interpreters where each interpreter is interpreted by an interpreter above it (depicted as a tombstone diagram in figure \ref{fig:tombstone_tower_ex1}). Each additional \textit{level} (i.e., interpreter) in the tower adds a constant factor of interpretative overhead to the run-time of the system. One of the earliest mentions of such architectures in literature is a language extension to Lisp called 3-LISP \cite{smith1984reflection} introduced by Smith. Smith describes the notion of a reflective system, for ``a system that is able to reason
+about itself'', as a tower of meta-circular interpreters, also referred to as a \textit{reflective tower}\footnote{
 Reflective towers are often theorised as infinite, but any finite
 computation only uses a bounded number of layers.}.
 % in theory are  are considered to be potentially infinite. Given enough computing resources one can create towers consisting of an unbounded number of interpreters.}.

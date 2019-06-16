@@ -584,19 +584,18 @@ The \textbf{LIFT} instruction in the SECD machine has to create
 closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
 functions, can be implicit in the wiring of the SECD machine.
+These changes cross-cut the original design, adding complexity.
 For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
-requires adapting the following other instructions:
-\begin{itemize}
-\item LDF which loads a function, now requires tagging
-\item AP which applies, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
-\item RTN which returns, now requires deciding whether to continue with the dump (default) or return a value (to satisfy calling convention of lower level)
-\end{itemize}
-These changes cross-cut the original design.
+requires adapting these other instructions:
+\begin{description}
+\item [LDF] which loads instructions as a function, now requires tagging
+\item [AP ] which applies a function, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
+\item [RTN] which returns from a function, now requires deciding whether to continue with the dump (default) or return a value (to satisfy calling convention of lower level)
+\end{description}
 
 This study demonstrates that it is feasible to collapse a particular
 heterogeneous tower, where a SECD machine acts as a bottleneck between
 two Lisp-like levels.
-
 The general lesson for collapsing towers is that each level must be
 able to lift values by translating them to the lower level. In
 practice, this could present arbitary difficulties.

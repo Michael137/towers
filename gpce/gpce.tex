@@ -586,7 +586,7 @@ closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
 functions, can be implicit in the wiring of the SECD machine. These changes cross-cut the original design, adding complexity.
 For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
-requires adapting these other instructions:
+requires adapting these three other instructions:
 \begin{description}
 \item [LDF] which loads instructions as a function, now requires tagging
 \item [AP ] which applies a function, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)

@@ -572,7 +572,7 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
 \begin{enumerate}
     \item A multi-level base language
     \item A \textit{lift} operator
-    \item Unstaged lower evaluators
+    \item Unstaged lower evaluators \AMcomment{swap with next?}
     \item A staged user-most evaluator
     \item \textbf{New requirement: } The \textit{lift} operator must be exposed in each evaluator, and must translate from that level's values to the lower-level values.
 \end{enumerate}
@@ -586,22 +586,27 @@ to lift to avoid non-termination at PE-time.
 Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
 
 To stage the \mevl{} evaluator, above the SECD machine, requires a \textit{lift} operator. There are two difficulties.
-
-(1) In mixed-language towers a \textit{lift} operation is not available to an interpreter unless explicitly provided at each given level.
+%%AM: moved back to enumerate given we have space!
+\begin{enumerate}
+\item
+In mixed-language towers a \textit{lift} operation is not available to an interpreter unless explicitly provided at each given level.
 Hence, one approach to propagating binding-time information is to implement a built-in \textit{lift} at all levels below the interpreter that is to be staged. The implementation of \textit{lift} may require us to reverse engineer and transform the representation of closures, pairs or other constructs which the \textit{lift} at the base expects.
 
-(2) A more subtle collapse of our tower occurs when we stage the \mevl{} level (see figure \ref{fig:tombstone_het_collapse_mevl}). In this case staging has a slightly different effect which is not obvious from the tombstones. Since the \mevl{} level is actually a translator already, staging the translator will simply yield another translator. Instead, staging \mevl{} means we generate SECD instructions that \textit{lift} (i.e., signal the PE to residualize) expressions of \mevl{} using a new \textbf{LIFT} instruction. As we can see from the annotated tombstone diagram, we use the \textit{lift} operator as a mechanism to move code through each level to the base where it is residualized.
+\item
+A more subtle collapse of our tower occurs when we stage the \mevl{} level (see figure \ref{fig:tombstone_het_collapse_mevl}). In this case staging has a slightly different effect which is not obvious from the tombstones. Since the \mevl{} level is actually a translator already, staging the translator will simply yield another translator. Instead, staging \mevl{} means we generate SECD code that \textit{lifts} (i.e., signals the PE to residualize) expressions of \mevl{} using a new \textbf{LIFT} instruction. As we can see from the annotated tombstone diagram, we use the \textit{lift} operator as a mechanism to move code through each level to the base where it is residualized.
+\end{enumerate}
 
 The \textbf{LIFT} instruction in the SECD machine has to create
 closures understood by the lower level. In order to do so, it must
 reverse engineer the representation of closures, which, for recursive
 functions, can be implicit in the wiring of the SECD machine. These changes cross-cut the original design, adding complexity.
-For example, adding support for a \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
-requires adapting these other instructions:
+For example, adding support for the \textbf{LIFT} instruction to an otherwise standard SECD machine interpreter
+requires adapting the following instructions:
 \begin{description}
 \item [LDF] which loads instructions as a function, now requires tagging, so that closure values can be distinguished from others
 \item [AP ] which applies a function, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
 \item [RTN] which returns from a function, now requires deciding whether to restore state of registers with the dump (default) or return a value to satisfy calling convention of lower level
+\AMcomment{missing text here}
 \end{description}
 
 This study demonstrates that it is feasible to collapse a particular
@@ -613,9 +618,8 @@ without suffering any obfuscation due to the SECD machine.
 
 The general lesson for collapsing towers is that each level must be
 able to lift values by translating them to the lower level. In
-practice, this presents arbitrary difficulties.
+practice, this presents various difficulties.
 
-%% \newpage  %AM: testing
 \section{Conclusions and Future Work}\label{sec:conc}
 
 %AM:\subsection{Conclusions}

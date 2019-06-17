@@ -322,7 +322,7 @@ Our experiments are available from \textit{**omitted for double-blind review**}.
     \item A \textit{stage-polymorphic} evaluator
 \end{enumerate}
 Amin et al.'s multi-level language, \mslang, differentiates between
-static and dynamic expressions by tagging dynamic (``code'') values;
+static and dynamic expressions by tagging dynamic (``code'') values using types;
 this allows \mslang{} to express binding-time information. The
 \textit{lift} operator coerces static to dynamic values, in the style
 of the reification operator of Type-Directed Partial Evaluation (TDPE)~\cite{danvy1999type}.
@@ -572,8 +572,8 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
 \begin{enumerate}
     \item A multi-level base language
     \item A \textit{lift} operator
-    \item Unstaged lower evaluators \AMcomment{swap with next?}
     \item A staged user-most evaluator
+    \item Unstaged lower evaluators
     \item \textbf{New requirement: } The \textit{lift} operator must be exposed in each evaluator, and must translate from that level's values to the lower-level values.
 \end{enumerate}
 
@@ -605,8 +605,7 @@ requires adapting the following instructions:
 \begin{description}
 \item [LDF] which loads instructions as a function, now requires tagging, so that closure values can be distinguished from others
 \item [AP ] which applies a function, now requires deciding whether to apply or generate code for application (to avoid infinite unrolling)
-\item [RTN] which returns from a function, now requires deciding whether to restore state of registers with the dump (default) or return a value to satisfy calling convention of lower level
-\AMcomment{missing text here}
+\item [RTN] which returns from a function, now requires deciding whether to restore state of registers with the dump (default) or return a value to satisfy calling convention of the interpreters below the SECD machine
 \end{description}
 
 This study demonstrates that it is feasible to collapse a particular

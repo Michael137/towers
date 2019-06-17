@@ -580,8 +580,7 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
 We can stage the SECD machine, even though doing so is unlikely to be
 optimal as it is not the user-most interpreter.
 While a definitional interpreter can be staged using TDPE by simply lifting
-its return values, the process of staging an abstract machine requires a more careful sophisticated binding-time analysis with
-({\it i\/}) design of its division rules
+its return values, the process of staging an abstract machine requires a more sophisticated binding-time analysis with careful ({\it i\/}) design of its division rules
 and ({\it ii\/}) decision on which expressions 
 to lift to avoid non-termination at PE-time.
 Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.

@@ -493,7 +493,7 @@ Reflection in an interpreter enables the introspection and modification of its s
                 &       & Scala &       &       & Lisp* &  Lisp*  & $\to$   & \mslang & \mslang             \\
                 &       &       &       &       &       &         & Scala   &         &                     \\
                 &       &       &       &       &       &         &         &         & Scala               \\
-                &       &       &       &       &       &         &         &         & |[font=\tiny]|$JVM$ \\
+                &       &       &       &       &       &         &         &         & |[font=\tiny]|JVM \\
             };
             % Outline
             \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-5.south east) |- (m-3-7.south east) |- (m-4-8.south east) |- (m-3-9.south east) |- (m-5-10.south east) |- (m-3-7.north east) |- (m-1-1.south east) |- (m-1-1.north west);
@@ -506,7 +506,7 @@ Reflection in an interpreter enables the introspection and modification of its s
 
             % Triangle
             \draw (m-5-10.south east) -- (m-6-10.south) -- (m-5-10.south west);
-            
+
             % Background
             \begin{scope}[on background layer]
                 \draw[shade] (m-2-5.north west) |- (m-2-5.south east) |- (m-3-6.south east) |- (m-3-7.north east) |- (m-2-5.north west);
@@ -531,7 +531,7 @@ P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                       
         &       &       &                               & Lisp*                             & Lisp* & $\to$   & \mslang & \mslang                           \\
         &       &       &                               & |[font=\tiny]|\textbf{(lift ...)}  &       & Scala   &         &                                   \\
         &       &       &                               &                                   &       &         &         & Scala                             \\
-        &       &       &                               &                                   &       &         &         & |[font=\tiny]|$JVM$               \\
+        &       &       &                               &                                   &       &         &         & |[font=\tiny]|JVM               \\
             };
             % Outline
             \draw (m-1-1.north west) |- (m-2-2.south east) |- (m-3-3.south east) |- (m-2-4.south east) |- (m-4-6.south east) |- (m-5-7.south east) |- (m-4-8.south east) |- (m-6-9.south east) |- (m-4-6.north west) |- (m-2-1.north east) |- (m-1-1.north west);
@@ -551,7 +551,7 @@ P       &       &       & |[font=\tiny]|\textbf{LIFT}   &                       
             \end{scope}
 
             % Arrow
-            \draw [big arrow] (m-2-4) --++(0:6cm);
+            \draw [big arrow] (m-2-4) --++(0:5cm);
         \end{tikzpicture}
     \caption{Our heterogeneous tower of interpreters after staging at the \mevl{} level (shaded tombstone). At each level, starting from \mevl, the \textit{lift} operator is implemented differently but together they achieve the effect of moving code from the \mevl{} interpreter to the base.}
     \label{fig:tombstone_het_collapse_mevl}
@@ -579,12 +579,10 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
 
 We can stage the SECD machine, even though doing so is unlikely to be
 optimal as it is not the user-most interpreter.
-\AMcomment{I tried to re-write next sentence but still unclear...}
 While a definitional interpreter can be staged using TDPE by simply lifting
 its return values, the process of staging an abstract machine requires a more sophisticated binding-time analysis with
-({\it i}) careful design of its division rules
-and ({\it ii}) consideration\AMcomment{??} of which locations
-\AMcomment{variables? expressions? SECD locations?}
+({\it i\/}) careful design of its division rules
+and ({\it ii\/}) decision on which expressions 
 to lift to avoid non-termination at PE-time.
 Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
 
@@ -632,8 +630,7 @@ We started by generalizing the concept of reflective towers to ones that consist
 \end{enumerate*}. We constructed and then collapsed a 5-level heterogeneous tower with a SECD machine as one of its levels to provide evidence for these hypotheses and gain more insights into heterogeneity.
 
 Staging an interpreter amounts to reifying literals, lambdas and product types it returns. An abstract machine is not guaranteed to distinguish these types by data structures or a type-system but can instead rely on dedicated instructions to differentiate data of these types. Hence, the points to reify at are dictated by the architecture of the underlying machine. In our experiments we created a conservative division (of variables into static and dynamic)
-tailored to the SECD stack-registers
-\AMcomment{there's only one stack register}
+tailored to the SECD registers
 and reduced static expressions in Pink's reflect operator to achieve optimal residualization. In order to propagate the decision of whether to generate or evaluate an expression through levels in the tower, we implemented a \textit{lift} operation for all languages in the tower. Observationally, \textit{lifting} an expression moves it through the tower to the base and is the key to achieving the effect of collapsing. Whereas in homogeneous towers this role of \textit{lift} was implicit and trivial due to meta-circularity, we found that heterogeneity explicates this process. We hope this furthered the understanding of some of the subtleties of collapsing towers of interpreters.
 
 The type of overhead our study concerned itself with was the dispatch logic in an interpreter that decides which operation to perform based on the current term being evaluated. The interpretative cost we removed in a tower is that between the base evaluator and the top-most staged level. We used our experimental tower to investigate the effect of staging interpreters at various points. As expected, the interpretative overhead of all levels up to the one being staged was completely reduced during specialization time. More notably, the structure of the generated code followed that of the interpreter that was staged. In our case, staging at the SECD machine level generated code that contained traces of the SECD semantics such as stack-based operations and as a result still optimizable to the programmer. In comparison, staging at a level above yielded a residual program without any signs of SECD and more optimal for our example programs.

@@ -577,9 +577,16 @@ First, as an echo to section~\ref{subsec:collapse} and as a summary, the key ing
     \item \textbf{New requirement: } The \textit{lift} operator must be exposed in each evaluator, and must translate from that level's values to the lower-level values.
 \end{enumerate}
 
-We can stage the SECD machine, even though this won't be optimal because it isn't the user-most interpreter.
-While a definitional interpreter can be staged using TDPE by simply lifting values it returns, the process of staging an abstract machine requires a more sophisticated binding-time analysis with careful design of its division rules
-and consideration of which locations to lift to avoid non-termination at PE-time. Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
+We can stage the SECD machine, even though doing so is unlikely to be
+optimal as it is not user-most interpreter.
+\AMcomment{I tried to re-write next sentence but still unclear...}
+While a definitional interpreter can be staged using TDPE by simply lifting
+its return values, the process of staging an abstract machine requires a more sophisticated binding-time analysis with
+({\it i}) careful design of its division rules
+and ({\it ii}) consideration\AMcomment{??} of which locations
+\AMcomment{variables? expressions? SECD locations?}
+to lift to avoid non-termination at PE-time.
+Figure~\ref{fig:tombstone_het_collapse_secd} depicts the effect of staging the SECD interpreter in our tower. After staging the SECD machine (highlighted in grey) it now operates as a compiler from SECD instructions to \mslang{} terms. Collapsing the tower in this configuration essentially means moving code from the SECD level to the base interpreter across the Lisp* level. Consistent with the composition rules of tombstones, the levels above SECD are residualized and present in the output as well.
 
 To stage the \mevl{} evaluator, above the SECD machine, requires a \textit{lift} operator. There are two difficulties.
 
@@ -624,7 +631,10 @@ We started by generalizing the concept of reflective towers to ones that consist
     \item semantic gaps required us to perform complex transformations on program constructs in one interpreter to adhere to their representation in adjacent interpreters
 \end{enumerate*}. We constructed and then collapsed a 5-level heterogeneous tower with a SECD machine as one of its levels to provide evidence for these hypotheses and gain more insights into heterogeneity.
 
-Staging an interpreter amounts to reifying literals, lambdas and product types it returns. An abstract machine is not guaranteed to distinguish these types by data structures or a type-system but can instead rely on dedicated instructions to differentiate data of these types. Hence, the points to reify at are dictated by the architecture of the underlying machine. In our experiments we created a conservative division tailored to the SECD stack-registers and reduced static expressions in Pink's reflect operator to achieve optimal residualization. In order to propagate the decision of whether to generate or evaluate an expression through levels in the tower, we implemented a \textit{lift} operation for all languages in the tower. Observationally, \textit{lifting} an expression moves it through the tower to the base and is the key to achieving the effect of collapsing. Whereas in homogeneous towers this role of \textit{lift} was implicit and trivial due to meta-circularity, we found that heterogeneity explicates this process. We hope this furthered the understanding of some of the subtleties of collapsing towers of interpreters.
+Staging an interpreter amounts to reifying literals, lambdas and product types it returns. An abstract machine is not guaranteed to distinguish these types by data structures or a type-system but can instead rely on dedicated instructions to differentiate data of these types. Hence, the points to reify at are dictated by the architecture of the underlying machine. In our experiments we created a conservative division (of variables into static and dynamic)
+tailored to the SECD stack-registers
+\AMcomment{there's only one stack register}
+and reduced static expressions in Pink's reflect operator to achieve optimal residualization. In order to propagate the decision of whether to generate or evaluate an expression through levels in the tower, we implemented a \textit{lift} operation for all languages in the tower. Observationally, \textit{lifting} an expression moves it through the tower to the base and is the key to achieving the effect of collapsing. Whereas in homogeneous towers this role of \textit{lift} was implicit and trivial due to meta-circularity, we found that heterogeneity explicates this process. We hope this furthered the understanding of some of the subtleties of collapsing towers of interpreters.
 
 The type of overhead our study concerned itself with was the dispatch logic in an interpreter that decides which operation to perform based on the current term being evaluated. The interpretative cost we removed in a tower is that between the base evaluator and the top-most staged level. We used our experimental tower to investigate the effect of staging interpreters at various points. As expected, the interpretative overhead of all levels up to the one being staged was completely reduced during specialization time. More notably, the structure of the generated code followed that of the interpreter that was staged. In our case, staging at the SECD machine level generated code that contained traces of the SECD semantics such as stack-based operations and as a result still optimizable to the programmer. In comparison, staging at a level above yielded a residual program without any signs of SECD and more optimal for our example programs.
 

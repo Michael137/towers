@@ -129,13 +129,13 @@ University of Cambridge\\ % Your institution for the title page
           \matrix (m) [matrix of nodes,nodes={minimum width=2.5em,minimum  height=1.7em},ampersand replacement=\&]
             {
                         \& $P$                      \\
-                        \& $L_3$                    \\
-                $I_3:$  \& $L_3$                    \\
-                        \& $L_2$                    \\
-                $I_2:$  \& $L_2$                    \\
-                        \& $L_1$                    \\
-                $I_1:$  \& $L_1$                    \\
-                        \& $L_0$                    \\
+                        \& $L$                    \\
+                $I_3:$  \& $L$                    \\
+                        \& $L$                    \\
+                $I_2:$  \& $L$                    \\
+                        \& $L$                    \\
+                $I_1:$  \& $L$                    \\
+                        \& $L$                    \\
                         \& |[font=\small]|$M$       \\
               };
               \draw (m-1-2.north west) |- (m-8-2.south east) |- (m-1-2.north west);
@@ -153,12 +153,12 @@ University of Cambridge\\ % Your institution for the title page
     \end{column}
     \begin{column}{0.5\textwidth}
         \begin{outline}
-            \1 Which combination of $I_1$, $I_2$, $I_3$ to remove?
+            \1 All interpreters meta-circular $\implies$ can remove any combination of $I_1$, $I_2$, $I_3$
                 \2 Best case: simply run $P$ on $M$
             \onslide<2->{
                 \1 Idea: generate new tower without $I_1$ to $I_3$
                     \onslide<3->{
-                        \2 Possible solution: turn interpretation into compilation
+                        \2 Possible solution: compile the tower
                     }
             }
             \end{outline}
@@ -172,10 +172,10 @@ University of Cambridge\\ % Your institution for the title page
       \begin{outline}
         \1 Python on x86 JavaScript emulator
         \1 Compared to reflective towers:
-            \2 \textit{Different internal structure}, e.g., translation to bytecode
             \2 \textit{Different language} at each level
+            \2 \textit{Different internal structure}, e.g., translation to bytecode
             \onslide<2->{
-                \3 Need some way of expressing this \textbf{generalization}
+                \3 we refer to this generalization as \textbf{heterogeneous towers}
             }
       \end{outline}
     \end{column}
@@ -207,14 +207,7 @@ University of Cambridge\\ % Your institution for the title page
 \section{Background}
 \begin{frame}{Staging}
     \begin{outline}
-        \1 How do we compile a tower of interpreters?
-        \pause
-        \1 interpreter $\stackrel{?}=$ compiler
-        \pause
-        \1 Interpreter: directly executes source
-        \1 Compiler: translates source
-        \pause
-        \1 Staging: Split interpreter's execution into multiple stages, e.g., translation to some annotated source and then execute
+        \1 Staging: Split interpreter's execution into multiple stages, e.g., translation to some annotated source and then execution
         \pause
         \1 staged interpreter $\simeq$ compiler
         \pause
@@ -223,28 +216,71 @@ University of Cambridge\\ % Your institution for the title page
                     \mathit{target} & = \llbracket \mathit{mix} \rrbracket \: (\mathit{interpreter, source}) \\
                                     & = \llbracket \mathit{compiler} \rrbracket \: (\mathit{source})
                 \end{align*}
+         \1 Can use staging to compile the program our tower executes
             %can use program specialization to derive compilers (or even compiler generators) from interpreters
     \end{outline}
 \end{frame}
 
 \begin{frame}{\texorpdfstring{\mslang}{}}
-    \begin{itemize}
-        \item Language Pink \cite{amin2017collapsing}
-        \item Partial Evaluator
-        \item Dynamic (\texttt{Exp}) vs. Static (\texttt{Val})
-        \item Normalization drives residualization
-        \item \textit{lift} operator wraps expressions which we want to keep in the residual program
-    \end{itemize}
+    \begin{outline}
+        \1 Language Pink \cite{amin2017collapsing}
+        \1 Partial Evaluator
+        \1 Dynamic expressions wrapped in \texttt{Code(...)} constructor
+        \1 \textit{lift} operator wraps expressions which we want to keep in the residual program
+    \end{outline}
 \end{frame}
 
-\section{Project Aims}
-\begin{frame}{Aims}
-    \begin{itemize}
-        \item Construct and collapse heterogeneous towers of interpreters
-        \item Explore effects of heterogeneity on collapse procedure
-    \end{itemize}
-\end{frame}
+%\begin{frame}[fragile]{Stage Polymorphism}
+%    \begin{minted}[escapeinside=||,fontsize=\scriptsize]{scala}
+%def evalms(env: Env, e: Exp): Val = e match {
+%    case Lit(n) => Cst(n)
+%    case Sym(s) => Str(s)
+%    case Var(n) => env(n)
+%    case Lam(e) => Clo(env,e)
+%    case Fst(e1) =>
+%        (evalms(env,e1)) match {
+%            case (Tup(a,b)) => 
+%              a
+%            case (Code(s1)) =>
+%              Code(reflect(Fst(s1)))
+%        }
+%    case If(c,a,b) =>
+%        evalms(env,c) match {
+%            case Cst(n) => 
+%              if (n != 0) evalms(env,a) else evalms(env,b)
+%            case (Code(c1)) =>
+%              reflectc(If(c1, reifyc(evalms(env,a)), reifyc(evalms(env,b))))
+%        }
+%    ...
+%    \end{minted}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Stage Polymorphism}
+%    \begin{minted}[escapeinside=||]{lisp}
+%(let interpreter (let maybe-lift (lambda _ e e)
+%    |\textit{<interpreter source>}|)
+%
+%(let compiler (let maybe-lift (lambda _ e (lift e))
+%    |\textit{<interpreter source>}|)
+%    \end{minted}
+%\end{frame}
 
+\begin{frame}[fragile]{Example Staged Interpreter}
+    \begin{minted}[escapeinside=||,fontsize=\scriptsize]{lisp}
+(lambda _ eval (lambda _ exp (lambda _ env
+  (if (num?                exp)    |\colorbox{green}{(lift exp)}|
+  (if (sym?                exp)    (env exp)
+  (if (sym?           (car exp))
+    (if (eq?  '+      (car exp))   (+ ((eval (cadr exp)) env)
+                                      ((eval (caddr exp)) env))
+    ...
+    (if (eq?  'lambda (car exp))   |\colorbox{green}{(lift (lambda ...}|
+    (if (eq?  'lift   (car exp))   (lift ((eval (cadr exp)) env))
+    (if (eq?  'cons   (car exp))   |\colorbox{green}{(lift (cons ...}|
+    (if (eq?  'quote  (car exp))   |\colorbox{green}{(lift (cadr exp))}|
+    ...
+    \end{minted}
+\end{frame}
 
 \section{Collapsing a Tower}
 \begin{frame}{Ingredients}
@@ -252,8 +288,9 @@ University of Cambridge\\ % Your institution for the title page
     \begin{column}{0.5\textwidth}
     \begin{itemize}
         \item Multi-level Language
-        \item Stage Polymorphism
+        \item Stage-polymorphic base: single evaluator can execute or residualize an expression
         \item TDPE-style Lift
+        %\item A way to glue together interpreters and staged interpreters to form a tower
     \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
@@ -334,20 +371,7 @@ University of Cambridge\\ % Your institution for the title page
     \end{figure}
 \end{frame}
 
-%Limitations of previous work on collapsing towers
-
-\section{Heterogeneity}
-\begin{frame}{Heterogeneous Towers}
-    \begin{itemize}
-        \item Generalization of reflective towers
-        \item Permits:
-        \begin{itemize}
-            \item non-meta-circular interpreters
-            \item \textit{semantic gap} (i.e., difference in data representation and semantic between adjacent languages)
-        \end{itemize}
-    \end{itemize}
-\end{frame}
-
+\section{Experimental Tower}
 \begin{frame}{Methodology}
   \begin{columns}
     \begin{column}{0.5\textwidth}
@@ -379,7 +403,6 @@ University of Cambridge\\ % Your institution for the title page
   \end{columns}
 \end{frame}
 
-\section{Experimental Tower}
 \begin{frame}{Experimental Tower}
     \begin{tikzpicture}
         \matrix (m) [matrix of nodes,ampersand replacement=\&]
@@ -595,7 +618,7 @@ DUM NIL LDF
     \begin{itemize}
         \item Heterogeneity raises issues: likely to include translation layers and binding-time info not propagatable
         \item \textit{lift} is able to eliminate interpretative overhead even in the presence of translation layers in a tower
-        \item We propagate annotations by implementing lift (but it requires reverse engineering and transformation of program constructs between interpreter boundaries
+        \item We propagate annotations by implementing lift (but it requires reverse engineering and transformation of program constructs between interpreter boundaries)
     \end{itemize}
 \end{frame}
 

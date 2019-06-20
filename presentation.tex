@@ -618,7 +618,7 @@ DUM NIL LDF
     \begin{itemize}
         \item Heterogeneity raises issues: likely to include translation layers and binding-time info not propagatable
         \item \textit{lift} is able to eliminate interpretative overhead even in the presence of translation layers in a tower
-        \item We propagate annotations by implementing lift (but it requires reverse engineering and transformation of program constructs between interpreter boundaries)
+        \item We propagate binding times by implementing \textit{lift} in each interpreter (but it requires reverse engineering and transformation of program constructs between interpreter boundaries)
     \end{itemize}
 \end{frame}
 

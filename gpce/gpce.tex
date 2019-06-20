@@ -259,7 +259,7 @@ Our experiments are available from \textit{**omitted for double-blind review**}.
     \hspace*{1.5cm}
     \begin{subfigure}{0.3\linewidth}
     \begin{tikzpicture}
-        \matrix (m) [matrix of nodes,nodes={minimum width=4em,minimum  height=1.7em}]
+        \matrix (m) [matrix of nodes,nodes={minimum width=4.2em,minimum  height=1.7em}]
         {
             Program                 \\
             \mevl                   \\
@@ -273,12 +273,14 @@ Our experiments are available from \textit{**omitted for double-blind review**}.
           };
           
           %Without arc
-          \draw (m-1-1.north west) |- (m-8-1.south east) |- (m-1-1.north west);
+          %\draw (m-1-1.north west) |- (m-8-1.south east) |- (m-1-1.north west);
 
-          \draw (m-2-1.south west) -- (m-2-1.south east);
-          \draw (m-4-1.south west) -- (m-4-1.south east);
-          \draw (m-6-1.south west) -- (m-6-1.south east);
-          \draw (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
+          %\draw (m-2-1.south west) -- (m-2-1.south east);
+          %\draw (m-4-1.south west) -- (m-4-1.south east);
+          %\draw (m-6-1.south west) -- (m-6-1.south east);
+          %\draw (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
+          \draw (m-1-1.north west) |- (m-2-1.south east) |- (m-4-1.south west) |- (m-6-1.south east) |- (m-8-1.south west) -- (m-9-1.south) -- (m-8-1.south east);
+          \draw (m-1-1.north west) -| (m-2-1.south east) -| (m-4-1.south west) -| (m-6-1.south east) -| (m-8-1.south west);
     \end{tikzpicture}
     \end{subfigure}
     \begin{subfigure}{0.6\linewidth}
@@ -291,7 +293,7 @@ Our experiments are available from \textit{**omitted for double-blind review**}.
                &        &    &       & Lisp* & Lisp* & $\to$ & \mslang & \mslang                \\
                &        &    &       &      &        & Scala &                                  \\[3ex]
                &        &    &       &      &        &       &         &  Scala                 \\
-               &        &    &       &      &        &       &         &  |[font=\tiny]|JVM     \\
+               &        &    &       &      &        &       &         & |[font=\tiny]|JVM     \\
       };
 
     %Without arc
@@ -325,8 +327,8 @@ Amin et al.'s multi-level language, \mslang, differentiates between static and d
 this allows \mslang{} to express binding-time information. The
 \textit{lift} operator coerces static to dynamic values, in the style
 of the reification operator of Type-Directed Partial Evaluation (TDPE)~\cite{danvy1999type}.
-To stage the evaluator, the usual recipe applies: introductory forms that
-produce values are lifted, while elimination forms that consume values
+To stage the evaluator, the usual recipe applies: lift introductory forms that
+produce values, while elimination forms that consume values
 remain unchanged (the result will be dynamic if the operands are
 dynamic, and static if the operands are static). An evaluator can be
 made \textit{stage-polymorphic}, parameterized over whether to be
@@ -609,7 +611,7 @@ requires adapting the following instructions:
 
 This study demonstrates that it is feasible to collapse a particular
 heterogeneous tower. The SECD machine acts as a bottleneck
-between two Lisp-like levels, because it forces a different lower
+between two Lisp-like levels, because it forces a different 
 stack-based representation. Collapsing the tower removes
 all interpretive overhead, translating from one Lisp to the other,
 without suffering any obfuscation due to the SECD machine.
@@ -633,7 +635,7 @@ We started by generalizing the concept of reflective towers to ones that consist
 Staging an interpreter amounts to reifying literals, lambdas and product types it returns. An abstract machine is not guaranteed to distinguish these types by data structures or a type-system but can instead rely on dedicated instructions to differentiate data of these types. Hence, the points to reify at are dictated by the architecture of the underlying machine. In our experiments we created a conservative division (of variables into static and dynamic)
 tailored to the SECD registers
 and reduced static expressions in Pink's reflect operator to achieve optimal residualization. In order to propagate the decision of whether to generate or evaluate an expression through levels in the tower, we implemented a \textit{lift} operation for all languages in the tower. Observationally, \textit{lifting} an expression moves it through the tower to the base and is the key to achieving the effect of collapsing. Whereas in homogeneous towers this role of \textit{lift} was implicit and trivial due to meta-circularity, we found that heterogeneity explicates this process. We hope this furthered the understanding of some of the subtleties of collapsing towers of interpreters.
-
+\todo{Maybe move the paragraphs below to a "discussion" section making the conclusion shorter and more focused}
 The type of overhead our study concerned itself with was the dispatch logic in an interpreter that decides which operation to perform based on the current term being evaluated. The interpretative cost we removed in a tower is that between the base evaluator and the top-most staged level. We used our experimental tower to investigate the effect of staging interpreters at various points. As expected, the interpretative overhead of all levels up to the one being staged was completely reduced during specialization time. More notably, the structure of the generated code followed that of the interpreter that was staged. In our case, staging at the SECD machine level generated code that contained traces of the SECD semantics such as stack-based operations and as a result still optimizable to the programmer. In comparison, staging at a level above yielded a residual program without any signs of SECD and more optimal for our example programs.
 
 With our experiments we demonstrated the successful collapse of a heterogeneous tower. We also showed the ability of a TDPE-style \textit{reify} operation to essentially move code across levels of a tower, which also worked across levels of compilation. However, realizing our methodology on a practical setting such as the Python--x86--JavaScript tower will require additional work. Our approach to propagating the TDPE binding-time information involved the implementation of a reification operator in each interpreter that is missing it. This then required the reverse-engineering and conversion of types in an interpreter to the representation that the interpreter below in the tower expects. In practice these changes would require intimate knowledge of and intrusive changes to an interpreter or compiler. Additionally, in our experimental tower we did not consider the residualization of side-effects which a useful collapse procedure would need for wider applicability. Our methodology could, however, help the optimization of smaller-scale systems in practice where towers consist of embedded DSL interpreters or regular expression matchers (even in the absence of meta-circularity and presence of translation layers).
@@ -644,7 +646,7 @@ We hope our study provided a platform and the necessary techniques to eventually
 
 One of the considerations is whether side-effects should be residualized, removed or executed during PE time. More broadly a next step would be to devise a method of dealing with situations where a level does not have a necessary feature that an interpreter in a different level requires.
 Currently any feature, including side-effects, needs to be implemented at each level from the base up to the interpreter that uses it.
-Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp)~\cite{kogge1990architecture}. Implementing such extensions could aid the experimentation with features not being available at adjacent levels. For example, call/cc allows us to emulate side-effects such as such as exceptions and non-determinism.
+Kogge presents various extensions to the SECD machine such as a call/cc operator, lazy evaluation or even concurrency (through MultiLisp)~\cite{kogge1990architecture}. Implementing such extensions could aid the experimentation with features not being available at adjacent levels. For example, call/cc allows us to emulate side-effects such as exceptions and non-determinism.
 
 %Nothing restricts our heterogeneous tower to using a SECD abstract machine. Instead further work could experiment with others like the Warren Abstract Machine (WAM)~\cite{warren1983abstract} as a SECD replacement. This would allow us to investigate the applicability of our method for collapsing towers to other programming paradigms such as logic programming. Even in the presence of the SECD machine we could replace the interpreters running on it, in our case \mevl, with higher-level logic-programming interpreters instead of the lower-level WAM. This could lead into a study of stratifications of towers and the extent to which certain types of towers are collapsible.
 

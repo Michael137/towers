@@ -204,31 +204,31 @@ University of Cambridge\\ % Your institution for the title page
   \end{columns}
 \end{frame}
 
-\section{Background}
-\begin{frame}{Staging}
-    \begin{outline}
-        \1 Staging: Split interpreter's execution into multiple stages, e.g., translation to some annotated source and then execution
-        \pause
-        \1 staged interpreter $\simeq$ compiler
-        \pause
-        \1 \nth{2} Futamura Projection \cite{futamura1999partial} shows we can use partial evaluator, \textit{mix}, for compilation:
-                \begin{align*}
-                    \mathit{target} & = \llbracket \mathit{mix} \rrbracket \: (\mathit{interpreter, source}) \\
-                                    & = \llbracket \mathit{compiler} \rrbracket \: (\mathit{source})
-                \end{align*}
-         \1 Can use staging to compile the program our tower executes
-            %can use program specialization to derive compilers (or even compiler generators) from interpreters
-    \end{outline}
-\end{frame}
+%\section{Background}
+%\begin{frame}{Staging}
+%    \begin{outline}
+%        \1 Staging: Split interpreter's execution into multiple stages, e.g., translation to some %annotated source and then execution
+%        \pause
+%        \1 staged interpreter $\simeq$ compiler
+%        \pause
+%        \1 \nth{2} Futamura Projection \cite{futamura1999partial} shows we can use partial evaluator, %\textit{mix}, for compilation:
+%                \begin{align*}
+%                    \mathit{target} & = \llbracket \mathit{mix} \rrbracket \: (\mathit{interpreter, %source}) \\
+%                                    & = \llbracket \mathit{compiler} \rrbracket \: (\mathit{source})
+%                \end{align*}
+%         \1 Can use staging to compile the program our tower executes
+%            %can use program specialization to derive compilers (or even compiler generators) from %interpreters
+%    \end{outline}
+%\end{frame}
 
-\begin{frame}{\texorpdfstring{\mslang}{}}
-    \begin{outline}
-        \1 Language Pink \cite{amin2017collapsing}
-        \1 Partial Evaluator
-        \1 Dynamic expressions wrapped in \texttt{Code(...)} constructor
-        \1 \textit{lift} operator wraps expressions which we want to keep in the residual program
-    \end{outline}
-\end{frame}
+%\begin{frame}{\texorpdfstring{\mslang}{}}
+%    \begin{outline}
+%        \1 Language Pink \cite{amin2017collapsing}
+%        \1 Partial Evaluator
+%        \1 Dynamic expressions wrapped in \texttt{Code(...)} constructor
+%        \1 \textit{lift} operator wraps expressions which we want to keep in the residual program
+%    \end{outline}
+%\end{frame}
 
 %\begin{frame}[fragile]{Stage Polymorphism}
 %    \begin{minted}[escapeinside=||,fontsize=\scriptsize]{scala}
@@ -265,22 +265,22 @@ University of Cambridge\\ % Your institution for the title page
 %    \end{minted}
 %\end{frame}
 
-\begin{frame}[fragile]{Example Staged Interpreter}
-    \begin{minted}[escapeinside=||,fontsize=\scriptsize]{lisp}
-(lambda _ eval (lambda _ exp (lambda _ env
-  (if (num?                exp)    |\colorbox{green}{(lift exp)}|
-  (if (sym?                exp)    (env exp)
-  (if (sym?           (car exp))
-    (if (eq?  '+      (car exp))   (+ ((eval (cadr exp)) env)
-                                      ((eval (caddr exp)) env))
-    ...
-    (if (eq?  'lambda (car exp))   |\colorbox{green}{(lift (lambda ...}|
-    (if (eq?  'lift   (car exp))   (lift ((eval (cadr exp)) env))
-    (if (eq?  'cons   (car exp))   |\colorbox{green}{(lift (cons ...}|
-    (if (eq?  'quote  (car exp))   |\colorbox{green}{(lift (cadr exp))}|
-    ...
-    \end{minted}
-\end{frame}
+%\begin{frame}[fragile]{Example Staged Interpreter}
+%    \begin{minted}[escapeinside=||,fontsize=\scriptsize]{lisp}
+%(lambda _ eval (lambda _ exp (lambda _ env
+%  (if (num?                exp)    |\colorbox{green}{(lift exp)}|
+%  (if (sym?                exp)    (env exp)
+%  (if (sym?           (car exp))
+%    (if (eq?  '+      (car exp))   (+ ((eval (cadr exp)) env)
+%                                      ((eval (caddr exp)) env))
+%    ...
+%    (if (eq?  'lambda (car exp))   |\colorbox{green}{(lift (lambda ...}|
+%    (if (eq?  'lift   (car exp))   (lift ((eval (cadr exp)) env))
+%    (if (eq?  'cons   (car exp))   |\colorbox{green}{(lift (cons ...}|
+%    (if (eq?  'quote  (car exp))   |\colorbox{green}{(lift (cadr exp))}|
+%    ...
+%    \end{minted}
+%\end{frame}
 
 \section{Collapsing a Tower}
 \begin{frame}{Ingredients}

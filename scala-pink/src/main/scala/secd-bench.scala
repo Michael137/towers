@@ -51,10 +51,13 @@ object SECDBench {
                         CONS LDF
                         (NIL LD (2 2) CONS LD (2 1) CONS LDR (1 1) AP RTN) RAP
                         RTN) AP WRITEC)"""
+      println("fac_compiled")
       println(prettycode(reifyc(Code(fac_compiled))))
       val fac_eval = parseExp(fac_y_comb) // or use fac_val
 
       val Code(secd_fac_compiled) = ev(s"($cmp $secd_fac)")
+      println("secd_fac_compiled")
+      println(prettycode(reifyc(Code(secd_fac_compiled))))
 
       def meta_eval_fac_src(n: Int) = meta_eval(s"""(((lambda (fun)
                                           ((lambda (F)
@@ -95,9 +98,12 @@ object SECDBench {
         val meta_eval_instrSrc_staged = instrsToString(compile(Lisp.parseExp(meta_eval_fac_src_staged(i)), Nil, Base.Tup(Base.Str("WRITEC"), Base.Str("."))))
         val Code(meta_fac_compiled) = ev(s"(($cmp '($meta_eval_instrSrc)) (lift '()))")
         val Code(meta_fac_compiled_staged) = ev(s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))")
-        // println(prettycode(reifyc(Code(meta_fac_compiled_staged))))
-        // println(prettycode(reifyc(Code(meta_fac_compiled))))
-
+        if (i==0) {
+          println("meta_fac_compiled")
+          println(prettycode(reifyc(Code(meta_fac_compiled))))
+          println("meta_fac_compiled_staged")
+          println(prettycode(reifyc(Code(meta_fac_compiled_staged))))
+        }
         val t4 = bench(run { evalms(Nil, meta_fac_compiled) })
         val t5 = bench(run { evalms(Nil, meta_fac_compiled_staged) })
         println(s"$i,$t1,$t2,$t3,$t4,$t5")

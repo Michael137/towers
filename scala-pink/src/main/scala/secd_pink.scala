@@ -180,10 +180,10 @@ object SECD {
   val cmp = s"(let lifting? 0 (let possible-lift (lambda _ e e) (let maybe-lift (lambda _ e (lift e)) $src)))"
   val evg = s"(let lifting? 1 (let possible-lift (lambda _ e (lift e)) (let maybe-lift (lambda _ e e) $src)))"
 
-  def runVM(vmSrc: String, src: String, env: String, runCopmiled: Boolean = true, liftEnv: Boolean = false) = {
+  def runVM(vmSrc: String, src: String, env: String, runCompiled: Boolean = true, liftEnv: Boolean = false) = {
       val e = if(liftEnv) s"(lift $env)" else env
 
-      if(runCopmiled)
+      if(runCompiled)
           ev(s"((run 0 ($vmSrc $src)) $e)")
       else
           ev(s"(($vmSrc $src) $e)")

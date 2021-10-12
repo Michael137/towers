@@ -8,6 +8,7 @@ import VMEval._
 
 object Tower {
   def main(args: Array[String]) {
+    val slowOK = args.length > 0
     val i = 6
     def meta_eval_fac_src_staged(n: Int) = meta_eval(s"""
          (((lambda (fun)
@@ -25,14 +26,16 @@ object Tower {
           ) $n)""", "lift")
     EVMComp.hasLDR = true
     val meta_eval_instrSrc_staged = instrsToString(compile(Lisp.parseExp(meta_eval_fac_src_staged(i)), Nil, Base.Tup(Base.Str("WRITEC"), Base.Str("."))))
-    val Code(meta_fac_compiled_staged0) = ev(s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))")
-    val Code(meta_fac_compiled_staged1) = ev(s"($eval_src (quote (($evg '($meta_eval_instrSrc_staged)) (lift '()))))")
-    // very slow
-    // val Code(meta_fac_compiled_staged2) = ev(s"(($eval_src (quote $eval_src)) (quote (($evg '($meta_eval_instrSrc_staged)) (lift '()))))")
-    // equally slow
-    // val Code(meta_fac_compiled_staged2) = ev(s"($eval_src (quote ($eval_src (quote (($evg '($meta_eval_instrSrc_staged)) (lift '()))))))")
+    val expc = s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))"
+    val Code(meta_fac_compiled_staged0) = ev(expc)
+    val Code(meta_fac_compiled_staged1) = ev(s"($eval_src (quote $expc))")
     assert(meta_fac_compiled_staged0 == meta_fac_compiled_staged1)
-    //assert(meta_fac_compiled_staged1 == meta_fac_compiled_staged2)
+    if (slowOK) {
+      val Code(meta_fac_compiled_staged2a) = ev(s"(($eval_src (quote $eval_src)) (quote $expc))")
+      val Code(meta_fac_compiled_staged2b) = ev(s"($eval_src (quote ($eval_src (quote $expc))))")
+      assert(meta_fac_compiled_staged1 == meta_fac_compiled_staged2a)
+      assert(meta_fac_compiled_staged1 == meta_fac_compiled_staged2b)
+    }
     println(prettycode(reifyc(Code(meta_fac_compiled_staged1))))
   }
 }

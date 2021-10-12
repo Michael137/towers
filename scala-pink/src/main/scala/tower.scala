@@ -25,7 +25,9 @@ object Tower {
           ) $n)""", "lift")
     EVMComp.hasLDR = true
     val meta_eval_instrSrc_staged = instrsToString(compile(Lisp.parseExp(meta_eval_fac_src_staged(i)), Nil, Base.Tup(Base.Str("WRITEC"), Base.Str("."))))
-    val Code(meta_fac_compiled_staged) = ev(s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))")
-    println(prettycode(reifyc(Code(meta_fac_compiled_staged))))
+    val Code(meta_fac_compiled_staged0) = ev(s"(($evg '($meta_eval_instrSrc_staged)) (lift '()))")
+    val Code(meta_fac_compiled_staged1) = ev(s"($eval_src (quote (($evg '($meta_eval_instrSrc_staged)) (lift '()))))")
+    assert(meta_fac_compiled_staged0 == meta_fac_compiled_staged1)
+    println(prettycode(reifyc(Code(meta_fac_compiled_staged1))))
   }
 }

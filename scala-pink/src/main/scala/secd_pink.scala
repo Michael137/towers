@@ -13,6 +13,7 @@ object SECD {
 (let cdar (lambda _ x (cdr (car x)))
 (let cddr (lambda _ x (cdr (cdr x)))
 (let cdddr (lambda _ x (cdr (cddr x)))
+(let cddddr (lambda _ x (cdr (cdddr x)))
 (let caar (lambda _ x (car (car x)))
 (let liftIfCode (lambda _ a (lambda _ b (if (code? b) (maybe-lift a) a)))
 (let null? (lambda _ x (eq? ((liftIfCode '()) x) x))
@@ -174,7 +175,7 @@ object SECD {
 
 (maybe-lift (cons 'ERROR ops))
 )))))))))))))))))))))))))))))))))))))))))))
-(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops))))))))))))))))))))
+(lambda _ ops (maybe-lift (((((machine '()) '()) '()) '()) ops)))))))))))))))))))))
 """
   val evl = s"(let lifting? 0 (let possible-lift (lambda _ e e) (let maybe-lift (lambda _ e e) $src)))"
   val cmp = s"(let lifting? 0 (let possible-lift (lambda _ e e) (let maybe-lift (lambda _ e (lift e)) $src)))"

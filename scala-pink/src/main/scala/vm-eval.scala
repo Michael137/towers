@@ -28,13 +28,8 @@ object VMEval {
                             ((eval (caddr exp) env))
                             (eval (cadddr exp) (lambda (z) (if (eq? z (cadr exp)) x (env z)))))
                     (if (eq? (car exp) 'letrec)
-                        (let (x)
-                            (car (caddr exp))
-							(letrec (f) ((eval (caddr r) (lambda (z) (if (eq? z (car (cadr exp))) f 
-															(if (eq? z (car (cadr r))) x
-															(env z)))))))
-										(eval (cadddr exp) (lambda (z) (if (eq? z (car (cadr exp))) ($lift f) (env z)))))
-									
+		        (letrec (f) ((lambda (x) (eval (car (cdr (cdr (car (car (cdr (cdr exp))))))) (lambda (z) (if (eq? z (car (car (cdr exp)))) (lambda (x) (f x)) (if (eq? z (car (car (cdr (car (car (cdr (cdr exp)))))))) x (env z)))))))
+                          (eval (car (cdr (cdr (cdr exp)))) (lambda (z) (if (eq? z (car (car (cdr exp)))) ($lift (lambda (x) (f x))) (env z)))))
                     (if (eq? (car exp) 'lambda)
                         ($lift (lambda (x) (eval (caddr exp) (lambda (y) (if (eq? y (car (cadr exp))) x (env y))))))
                     ((eval (car exp) env) (eval (cadr exp) env)))))))))))))))
@@ -80,6 +75,15 @@ object VMEval {
                 1
                 (* n (factorial (- n 1))))))
          ) 6)""", "'()", pretty = true, max_depth = 70))("Cst(720)")
+
+        check(evalAndRunOnVM("""
+        (letrec (factorial)
+          ((lambda (n)
+             (if (eq? n 0)
+                 1
+                 (* n (factorial (- n 1))))))
+          (factorial 6))""",
+          "'()", pretty = true, max_depth = 70))("Cst(720)")
 
         testDone()
     }
